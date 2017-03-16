@@ -1,0 +1,8 @@
+INTSTYLE=impact
+INFILE=C:\Xilinx\projects\taxi_test\SVA\impact.xsl
+OUTFILE=C:\Xilinx\projects\taxi_test\SVA\impact.xsl
+FAMILY=Single
+PART=Single
+WORKINGDIR=C:\Xilinx\projects\taxi_test\SVA
+LICENSE=iMPACT
+USER_INFO=iMPACT
