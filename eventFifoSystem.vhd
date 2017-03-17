@@ -194,6 +194,9 @@ begin
 						eventFifoWriteRequest <= '1'; -- autoreset
 						state1 <= writeDebug;
 					-- ## maybe we can save some LEs here if the assignment of eventFifoIn is changed
+					
+						eventCount <= eventCount + 1;
+						
 					else
 						state1 <= wait0;
 						eventFifoErrorCounter <= eventFifoErrorCounter + 1;
