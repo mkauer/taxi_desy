@@ -45,6 +45,7 @@ package types is
 		
 	function countZerosFromLeft8(patternIn : std_logic_vector) return unsigned;
 	function countZerosFromRight8(patternIn : std_logic_vector) return unsigned;
+	function getFistOneFromRight8(patternIn : std_logic_vector) return integer;
 	
 	type smc_registerMap is record
 		reg0 : std_logic_vector(15 downto 0);
@@ -179,39 +180,52 @@ package types is
 		resetCounter : std_logic_vector(15 downto 0);
 	end record;
 	
+	
+	type dac_array_t is array (0 to 7) of std_logic_vector(7 downto 0);
 	type dac088s085_x3_registerRead_t is record
-		discriminatorThesholdChannel0 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel1 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel2 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel3 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel4 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel5 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel6 : std_logic_vector(7 downto 0);
-		discriminatorThesholdChannel7 : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel0n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel0p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel1n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel1p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel2n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel2p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel3n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel3p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel4n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel4p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel5n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel5p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel6n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel6p : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel7n : std_logic_vector(7 downto 0);
-		discriminatorOffsetChannel7p : std_logic_vector(7 downto 0);	
-		valuesChangedChip0 : std_logic_vector(7 downto 0);
-		valuesChangedChip1 : std_logic_vector(7 downto 0);
-		valuesChangedChip2 : std_logic_vector(7 downto 0);
+		dacBusy : std_logic;
+		valuesChip0 : dac_array_t;
+		valuesChip1 : dac_array_t;
+		valuesChip2 : dac_array_t;
+		valuesChangedChip0Reset : std_logic_vector(7 downto 0);
+		valuesChangedChip1Reset : std_logic_vector(7 downto 0);
+		valuesChangedChip2Reset : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel0 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel1 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel2 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel3 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel4 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel5 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel6 : std_logic_vector(7 downto 0);
+--		discriminatorThesholdChannel7 : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel0n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel0p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel1n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel1p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel2n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel2p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel3n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel3p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel4n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel4p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel5n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel5p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel6n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel6p : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel7n : std_logic_vector(7 downto 0);
+--		discriminatorOffsetChannel7p : std_logic_vector(7 downto 0);	
+
 	end record;
 	type dac088s085_x3_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
-		resetCounter : std_logic_vector(15 downto 0);
+		init : std_logic;
+		valuesChip0 : dac_array_t;
+		valuesChip1 : dac_array_t;
+		valuesChip2 : dac_array_t;
+		valuesChangedChip0 : std_logic_vector(7 downto 0);
+		valuesChangedChip1 : std_logic_vector(7 downto 0);
+		valuesChangedChip2 : std_logic_vector(7 downto 0);
 	end record;
 	
 	
@@ -334,6 +348,32 @@ package body types is
 			temp := "1000";
 		else
 			temp := "0000";
+		end if;
+		return temp;
+	end;
+	
+	-- user has to make shure that inpus has at least one '1' / is not x"00"
+	function getFistOneFromRight8(patternIn : std_logic_vector) return integer is
+		variable temp : integer range 0 to 7 := 0;
+	begin
+		if(std_match(patternIn, "-------1")) then
+			temp := 0;
+		elsif(std_match(patternIn, "------10")) then
+			temp := 1;
+		elsif(std_match(patternIn, "-----100")) then
+			temp := 2;
+		elsif(std_match(patternIn, "----1000")) then
+			temp := 3;
+		elsif(std_match(patternIn, "---10000")) then
+			temp := 4;
+		elsif(std_match(patternIn, "--100000")) then
+			temp := 5;
+		elsif(std_match(patternIn, "-1000000")) then
+			temp := 6;
+		elsif(std_match(patternIn, "10000000")) then
+			temp := 7;
+		else
+			temp := 0; -- illegal
 		end if;
 		return temp;
 	end;

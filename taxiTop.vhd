@@ -228,11 +228,17 @@ architecture behaviour of taxiTop is
 	signal triggerDataDelay0_w: triggerDataDelay_registerWrite_t;
 	signal pixelRateCounter0_r : pixelRateCounter_registerRead_t;
 	signal pixelRateCounter0_w : pixelRateCounter_registerWrite_t;
+	signal dac088s085_x3_r: dac088s085_x3_registerRead_t;
+	signal dac088s085_x3_w: dac088s085_x3_registerWrite_t;
 	
 	signal triggerTiming : triggerTiming_t;
-	signal dsr4Timing : dsr4Timing_t;
+	signal dsr4Timing : dsr4Timing_t := (newData => '0', timingDone => '1', others => (others=>'0'));
 	signal dsr4Sampling : dsr4Sampling_t := (newData => '0', samplingDone => '1', others => (others=>'0'));
 	signal dsr4Charge : dsr4Charge_t := (newData => '0', chargeDone => '1', others => (others=>'0'));
+	
+	signal dacMosi : std_logic_vector(2 downto 0) := "000";
+	signal dacSclk : std_logic_vector(2 downto 0) := "000";
+	signal dacNSync : std_logic_vector(2 downto 0) := "111";
 	
 begin
 
@@ -326,9 +332,9 @@ begin
 	end generate;
 	
 	g10: for i in 1 to 3 generate
-		k1: OBUF port map(O => DAC_DIN(i), I => '0');
-		k2: OBUF port map(O => DAC_SCLK(i), I => '0');
-		k3: OBUF port map(O => DAC_SYNCn(i), I => '1');
+		k1: OBUF port map(O => DAC_DIN(i), I => dacMosi(i-1));
+		k2: OBUF port map(O => DAC_SCLK(i), I => dacSclk(i-1));
+		k3: OBUF port map(O => DAC_SYNCn(i), I => dacNSync(i-1));
 	end generate;
 	
 	g11: for i in 1 to 3 generate 
@@ -384,6 +390,8 @@ begin
 		registerWrite => eventFifoSystem0_w
 		);
 	
+	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_r, dac088s085_x3_w);
+	
 	x1: entity work.smcBusCollector port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), asyncReset, asyncAddressAndControlBus);
 	x2: entity work.smcBusEntry port map(serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
 	x3: entity work.testRam_test port map(addressAndControlBus, ebiDataIn, ebiDataOut, 
@@ -394,7 +402,9 @@ begin
 		triggerDataDelay0_r,
 		triggerDataDelay0_w,
 		pixelRateCounter0_r,
-		pixelRateCounter0_w
+		pixelRateCounter0_w,
+		dac088s085_x3_r,
+		dac088s085_x3_w
 		);
 
 end behaviour;
