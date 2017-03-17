@@ -35,10 +35,9 @@ entity dac088s085_x3 is
 --	);
 	port
 	(
-		nSync :out std_logic;
+		notSync :out std_logic;
 		mosi :out std_logic;
 		sclk :out std_logic;
-		triggerPixelIn : in std_logic_vector(8*8-1 downto 0);
 		registerRead : out dac088s085_x3_registerRead_t;
 		registerWrite : in dac088s085_x3_registerWrite_t
 	);
@@ -50,14 +49,14 @@ architecture behavioral of dac088s085_x3 is
 	constant sclkDefaultLevel : std_logic := '0';
 	constant mosiDefaultLevel : std_logic := '0';
 	--constant mosiValidEdge : std_logic := '0'; -- '0'=rising, '1'=falling
-	--constant mosiMsbFirst : std_logic := '1'; -- '0'=LsbFirst, '1'=MsbFirst
+	--constant mosiMsbinitState : std_logic := '1'; -- '0'=LsbinitState, '1'=MsbinitState
 
-	type spiState_t is (idle, init,load,transfer0,transfer1,transfer2,transfer3);
-	signal spiState : spiState_t := init;
+	type spiState_t is (idle, init1, init2, load, prepare, transfer2, transfer3);
+	signal spiState : spiState_t := init1;
 
 	signal mosiBuffer_latched : std_logic_vector (spiNumberOfBits-1 downto 0);
 
-	signal spiCounter : integer range 0 to 31 := 0;
+	signal spiCounter : integer range 0 to spiNumberOfBits := 0;
 	signal sclkDivisorCounter : unsigned (3 downto 0) := x"0";
 	signal sclk_i : std_logic;
 	signal sclkEnable : std_logic;
@@ -66,31 +65,39 @@ architecture behavioral of dac088s085_x3 is
 	
 	signal busy : std_logic;
 	
-	signal registerSpiRx : std_logic_vector(31 downto 0) := (others => '0');
-		alias registerSpiRxData is registerSpiRx(15 downto 0);
-		alias registerSpiRxChannel is registerSpiRx(18 downto 16);
-		alias registerSpiRxChip is registerSpiRx(23 downto 19);
-		alias registerSpiRxMagic is registerSpiRx(31 downto 24);
 	signal nSync : std_logic := '0';
 	signal ss : std_logic_vector(4 downto 0) := "00000";
-	signal first : std_logic := '0';
+	signal initState : integer range 0 to 2 := 2;
 	signal chip : std_logic_vector(4 downto 0) := "00000";
+	
+	signal i : integer range 0 to 7 := 0;
+	signal j : integer range 0 to 7 := 0;
+	signal k : integer range 0 to 7 := 0;
 	
 begin
 
-	P0:process (clock)
+	mosi <= mosiBuffer_latched(mosiBuffer_latched'length-1);
+	sclk <= sclk_i;
+	notSync <= nSync;
+	registerRead.dacBusy <= busy;
+	
+	registerRead.valuesChip0 <= registerWrite.valuesChip0;
+	registerRead.valuesChip1 <= registerWrite.valuesChip1;
+	registerRead.valuesChip2 <= registerWrite.valuesChip2;
+	
+	P0:process (registerWrite.clock)
 	begin
-		if rising_edge(clock) then
+		if rising_edge(registerWrite.clock) then
 			sclkEdgeRising <= '0'; -- autoreset
 			sclkEdgeFalling <= '0'; -- autoreset
-			if (reset = '1') then
+			if (registerWrite.reset = '1') then
 				sclkDivisorCounter <= to_unsigned(0, sclkDivisorCounter'length);
 				sclk_i <= sclkDefaultLevel;
 			else
-				if (sclkDivisorCounter = sclkDivisor) then
-					sclkDivisorCounter <= to_unsigned(0, sclkDivisorCounter'length);
-					if (sclkEnable = '1') then
-						sclk_i <= NOT sclk_i;
+				if (sclkEnable = '1') then
+					if (sclkDivisorCounter = sclkDivisor) then
+						sclkDivisorCounter <= to_unsigned(0, sclkDivisorCounter'length);
+						sclk_i <= not sclk_i;
 						if ((sclk_i = '0')) then
 							sclkEdgeRising <= '1'; -- autoreset
 						end if;
@@ -98,44 +105,97 @@ begin
 							sclkEdgeFalling <= '1'; -- autoreset
 						end if;
 					else
-						sclk_i <= sclkDefaultLevel;
+						sclkDivisorCounter <= sclkDivisorCounter + 1;
 					end if;
 				else
-					sclkDivisorCounter <= sclkDivisorCounter + 1;
+					sclk_i <= sclkDefaultLevel;
+					sclkDivisorCounter <= to_unsigned(0, sclkDivisorCounter'length);
 				end if;
 			end if;
 		end if;
 	end process P0;
 
-	spi2:process (clock)
+	spi2:process (registerWrite.clock)
+		variable tempChannl0 : std_logic_vector(2 downto 0) := "000";
+		variable tempChannl1 : std_logic_vector(2 downto 0) := "000";
+		variable tempChannl2 : std_logic_vector(2 downto 0) := "000";
+		variable tempValue0 : std_logic_vector(7 downto 0) := x"00";
+		variable tempValue1 : std_logic_vector(7 downto 0) := x"00";
+		variable tempValue2 : std_logic_vector(7 downto 0) := x"00";
 	begin
-		if rising_edge(clock) then
+		if rising_edge(registerWrite.clock) then
 			sclkEnable <= '0'; -- autoreset
 			busy <= '0'; -- autoreset
-			nSync <= '0'; -- autoreset
-			registerSpiRx <= dacData;
-			if (reset = '1') then
-				spiState <= init;
-				first <= '0';
+			nSync <= '1'; -- autoreset
+			registerRead.valuesChangedChip0Reset <= x"00"; -- autoreset
+			registerRead.valuesChangedChip1Reset <= x"00"; -- autoreset
+			registerRead.valuesChangedChip2Reset <= x"00"; -- autoreset
+			if (registerWrite.reset = '1') then
+				spiState <= init1;
+				initState <= 2;
+				i <= 0;
+				j <= 0;
+				k <= 0;
+				tempChannl0 := "000";
+				tempChannl1 := "000";
+				tempChannl2 := "000";
+				tempValue0 := x"00";
+				tempValue1 := x"00";
+				tempValue2 := x"00";
 			else
-				case spiState is					
+					
+				case spiState is										
+					when init1 =>						
+						mosiBuffer_latched <= x"9000" & x"9000" & x"9000"; -- mode: WTM
+						spiState <= prepare;
+				
+					when init2 =>						
+						mosiBuffer_latched <= x"c000" & x"c000" & x"c000"; -- broadcast: set all dacs to 0
+						spiState <= prepare;
+				
 					when idle =>
-						if(spiStartTransfer = '1') then
+						if((registerWrite.valuesChangedChip0 /= x"00") or (registerWrite.valuesChangedChip1 /= x"00") or (registerWrite.valuesChangedChip2 /= x"00")) then
 							spiState <= load;
+							i <= getFistOneFromRight8(registerWrite.valuesChangedChip0);
+							j <= getFistOneFromRight8(registerWrite.valuesChangedChip1);
+							k <= getFistOneFromRight8(registerWrite.valuesChangedChip2);
+						end if;
+						
+						if(registerWrite.init = '1') then
+							initState <= 2;
+						end if;
+						if(initState = 1) then
+							spiState <= init1;
+							initState <= initState - 1;
+						end if;
+						if(initState = 2) then
+							spiState <= init2;
+							initState <= initState - 1;
 						end if;
 
 					when load =>
-						nSync <= '1'; -- autoreset
-						mosiBuffer_latched <= "0000" & "0011" & '0'&registerSpiRxChannel & registerSpiRxData & "0000";
-						ss <= registerSpiRxChip;
+						busy <= '1'; -- autoreset
+						tempChannl0 := std_logic_vector(to_unsigned(i, tempChannl0'length));
+						tempChannl1 := std_logic_vector(to_unsigned(j, tempChannl1'length));
+						tempChannl2 := std_logic_vector(to_unsigned(k, tempChannl2'length));
+						tempValue0 := registerWrite.valuesChip0(i);
+						tempValue1 := registerWrite.valuesChip1(j);
+						tempValue2 := registerWrite.valuesChip2(k);
+						
+						registerRead.valuesChangedChip0Reset(i) <= '1'; -- autoreset
+						registerRead.valuesChangedChip1Reset(j) <= '1'; -- autoreset
+						registerRead.valuesChangedChip2Reset(k) <= '1'; -- autoreset
+						
+						mosiBuffer_latched <= "0" & tempChannl2 & tempValue2 & "0000" & "0" & tempChannl1 & tempValue1 & "0000" & "0" & tempChannl0 & tempValue0 & "0000";
 						spiState <= prepare;
-					
+
 					when prepare =>
-						nSync <= '1'; -- autoreset
+						busy <= '1'; -- autoreset
 						spiCounter <= mosiBuffer_latched'length-1;
 						spiState <= transfer2;
 					
 					when transfer2 =>
+						nSync <= '0'; -- autoreset
 						busy <= '1'; -- autoreset
 						sclkEnable <= '1'; -- autoreset
 						if (sclkEdgeRising = '1') then
@@ -149,6 +209,7 @@ begin
 						end if;
 										
 					when transfer3 =>
+						nSync <= '0'; -- autoreset
 						busy <= '1'; -- autoreset
 						sclkEnable <= '1'; -- autoreset
 						if (sclkEdgeFalling = '1') then
