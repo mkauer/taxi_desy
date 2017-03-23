@@ -120,6 +120,15 @@ package types is
 		chargeDone : std_logic;
 	end record;
 	
+	type gpsTiming_t is record
+		week : std_logic_vector(15 downto 0);
+		quantizationError : std_logic_vector(31 downto 0);
+		timeOfWeekMilliSecond : std_logic_vector(31 downto 0);
+		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
+		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
+		newData : std_logic;
+	end record;
+	
 	type eventFifoSystem_registerRead_t is record
 		dmaBuffer : std_logic_vector(15 downto 0);
 		eventFifoWordsDma : std_logic_vector(15 downto 0);
@@ -178,8 +187,7 @@ package types is
 		clock : std_logic;
 		reset : std_logic;
 		resetCounter : std_logic_vector(15 downto 0);
-	end record;
-	
+	end record;	
 	
 	type dac_array_t is array (0 to 7) of std_logic_vector(7 downto 0);
 	type dac088s085_x3_registerRead_t is record
@@ -190,31 +198,6 @@ package types is
 		valuesChangedChip0Reset : std_logic_vector(7 downto 0);
 		valuesChangedChip1Reset : std_logic_vector(7 downto 0);
 		valuesChangedChip2Reset : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel0 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel1 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel2 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel3 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel4 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel5 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel6 : std_logic_vector(7 downto 0);
---		discriminatorThesholdChannel7 : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel0n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel0p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel1n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel1p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel2n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel2p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel3n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel3p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel4n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel4p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel5n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel5p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel6n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel6p : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel7n : std_logic_vector(7 downto 0);
---		discriminatorOffsetChannel7p : std_logic_vector(7 downto 0);	
-
 	end record;
 	type dac088s085_x3_registerWrite_t is record
 		clock : std_logic;
@@ -228,8 +211,19 @@ package types is
 		valuesChangedChip2 : std_logic_vector(7 downto 0);
 	end record;
 	
-	
-	
+	type gpsTiming_registerRead_t is record
+		--unused : std_logic;
+		week : std_logic_vector(15 downto 0);
+		quantizationError : std_logic_vector(31 downto 0);
+		timeOfWeekMilliSecond : std_logic_vector(31 downto 0);
+		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
+		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
+	end record;
+	type gpsTiming_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+	end record;
+		
 end types;
 
 package body types is

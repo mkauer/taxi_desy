@@ -230,15 +230,26 @@ architecture behaviour of taxiTop is
 	signal pixelRateCounter0_w : pixelRateCounter_registerWrite_t;
 	signal dac088s085_x3_r: dac088s085_x3_registerRead_t;
 	signal dac088s085_x3_w: dac088s085_x3_registerWrite_t;
+	signal gpsTiming0_r : gpsTiming_registerRead_t;
+	signal gpsTiming0_w : gpsTiming_registerWrite_t;
 	
 	signal triggerTiming : triggerTiming_t;
 	signal dsr4Timing : dsr4Timing_t := (newData => '0', timingDone => '1', others => (others=>'0'));
 	signal dsr4Sampling : dsr4Sampling_t := (newData => '0', samplingDone => '1', others => (others=>'0'));
 	signal dsr4Charge : dsr4Charge_t := (newData => '0', chargeDone => '1', others => (others=>'0'));
+	signal gpsTiming : gpsTiming_t := (newData => '0', others => (others=>'0'));
 	
 	signal dacMosi : std_logic_vector(2 downto 0) := "000";
 	signal dacSclk : std_logic_vector(2 downto 0) := "000";
 	signal dacNSync : std_logic_vector(2 downto 0) := "111";
+	
+	signal gpsPps : std_logic := '0';
+	signal gpsTimePulse2 : std_logic := '0';
+	signal gpsRx : std_logic := '0';
+	signal gpsTx : std_logic := '0';
+	signal gpsNotReset : std_logic := '0';
+	signal gpsIrq : std_logic := '0';
+	
 	
 begin
 
@@ -351,18 +362,22 @@ begin
 	i34: OBUF port map(O => RS485_DE, I => '0');
 	i35: OBUF port map(O => RS485_REn, I => '0');
 	i36: OBUF port map(O => RS485_TXD, I => '0');
-	i37: OBUF port map(O => GPS_RESET_N, I => '1');
-	i38: OBUF port map(O => GPS_EXTINT0, I => '0');
-	i39: OBUF port map(O => GPS_RXD1, I => '0');
+	
+	i37: OBUF port map(O => GPS_RESET_N, I => gpsNotReset);
+	i38: OBUF port map(O => GPS_EXTINT0, I => gpsIrq);
+	i39: OBUF port map(O => GPS_RXD1, I => gpsTx);
+	i40: IBUF port map(I => GPS_TIMEPULSE, O => gpsPps);
+	i41: IBUF port map(I => GPS_TIMEPULSE2, O => gpsTimePulse2);
+	i42: IBUF port map(I => GPS_TXD1, O => gpsRx);
 	
 	g13: for i in 1 to 3 generate k: OBUF port map(O => TEST_GATE(i), I => '0'); end generate;
-	i40: OBUF port map(O => TEST_PDn, I => '0');
-	i41: OBUF port map(O => TEMPERATURE, I => '0');
+	i43: OBUF port map(O => TEST_PDn, I => '0');
+	i44: OBUF port map(O => TEMPERATURE, I => '0');
 	
-	i42: IOBUF port map(O => open, IO => ADDR_64BIT, I => '0', T => '1');
+	i45: IOBUF port map(O => open, IO => ADDR_64BIT, I => '0', T => '1');
 
-	i43: IOBUF port map(O => open, IO => TEST_DAC_SCL, I => '0', T => '1');
-	i44: IOBUF port map(O => open, IO => TEST_DAC_SDA, I => '0', T => '1');
+	i46: IOBUF port map(O => open, IO => TEST_DAC_SCL, I => '0', T => '1');
+	i47: IOBUF port map(O => open, IO => TEST_DAC_SDA, I => '0', T => '1');
 
 	asyncReset <= not(PON_RESETn and clockValid);
 
@@ -382,6 +397,7 @@ begin
 	
 	x11: entity work.eventFifoSystem port map(
 		newEvent => trigger,
+		pps => '0',
 		triggerTiming => triggerTiming,
 		dsr4Timing => dsr4Timing,
 		dsr4Sampling => dsr4Sampling,
@@ -389,6 +405,8 @@ begin
 		registerRead => eventFifoSystem0_r,
 		registerWrite => eventFifoSystem0_w
 		);
+		
+	x14: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, gpsTiming, gpsTiming0_r, gpsTiming0_w);
 	
 	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_r, dac088s085_x3_w);
 	
@@ -404,7 +422,9 @@ begin
 		pixelRateCounter0_r,
 		pixelRateCounter0_w,
 		dac088s085_x3_r,
-		dac088s085_x3_w
+		dac088s085_x3_w,
+		gpsTiming0_r,
+		gpsTiming0_w
 		);
 
 end behaviour;

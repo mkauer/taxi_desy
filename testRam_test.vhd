@@ -49,7 +49,9 @@ entity testRam_test is
 		pixelRateCounter0_r : in pixelRateCounter_registerRead_t;
 		pixelRateCounter0_w : out pixelRateCounter_registerWrite_t;
 		dac088s085_x3_r : in dac088s085_x3_registerRead_t;
-		dac088s085_x3_w : out dac088s085_x3_registerWrite_t
+		dac088s085_x3_w : out dac088s085_x3_registerWrite_t;
+		gpsTiming0_r : in gpsTiming_registerRead_t;
+		gpsTiming0_w : out gpsTiming_registerWrite_t
 	);
 end testRam_test;
 
@@ -89,6 +91,8 @@ g0: if moduleEnabled /= 0 generate
 	pixelRateCounter0_w.reset <= controlBus.reset;
 	dac088s085_x3_w.clock <= controlBus.clock;
 	dac088s085_x3_w.reset <= controlBus.reset;
+	gpsTiming0_w.clock <= controlBus.clock;
+	gpsTiming0_w.reset <= controlBus.reset;
 	
 	dac088s085_x3_w.valuesChangedChip0 <= valuesChangedChip0Temp;
 	dac088s085_x3_w.valuesChangedChip1 <= valuesChangedChip1Temp;
@@ -225,6 +229,15 @@ g0: if moduleEnabled /= 0 generate
 						when x"007a" => readDataBuffer <= x"00" & dac088s085_x3_r.valuesChip2(5);
 						when x"007c" => readDataBuffer <= x"00" & dac088s085_x3_r.valuesChip2(6);
 						when x"007e" => readDataBuffer <= x"00" & dac088s085_x3_r.valuesChip2(7);
+						
+						when x"0080" => readDataBuffer <= gpsTiming0_r.week;
+						when x"0082" => readDataBuffer <= gpsTiming0_r.quantizationError(31 downto 16);
+						when x"0084" => readDataBuffer <= gpsTiming0_r.quantizationError(15 downto 0);
+						when x"0086" => readDataBuffer <= gpsTiming0_r.timeOfWeekMilliSecond(31 downto 16);
+						when x"0088" => readDataBuffer <= gpsTiming0_r.timeOfWeekMilliSecond(15 downto 0);
+						when x"008a" => readDataBuffer <= gpsTiming0_r.timeOfWeekSubMilliSecond(31 downto 16);
+						when x"008c" => readDataBuffer <= gpsTiming0_r.timeOfWeekSubMilliSecond(15 downto 0);
+						when x"008e" => readDataBuffer <= gpsTiming0_r.differenceGpsToLocalClock;
 						
 --						when others  => readDataBuffer <= (others => '0');
 						when others  => readDataBuffer <= x"dead";
