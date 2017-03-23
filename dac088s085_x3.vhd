@@ -150,7 +150,7 @@ begin
 						spiState <= prepare;
 				
 					when init2 =>						
-						mosiBuffer_latched <= x"c000" & x"c000" & x"c000"; -- broadcast: set all dacs to 0
+						mosiBuffer_latched <= x"c000" & x"c000" & x"c100"; -- broadcast: set all dacs
 						spiState <= prepare;
 				
 					when idle =>
