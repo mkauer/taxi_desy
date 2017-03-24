@@ -220,18 +220,20 @@ architecture behaviour of taxiTop is
 	signal edgeData : std_logic_vector(8*16-1 downto 0);
 	signal edgeDataReady : std_logic := '0';
 	
-	signal triggerTimeToRisingEdge0_r : triggerTimeToRisingEdge_registerRead_t;
-	signal triggerTimeToRisingEdge0_w : triggerTimeToRisingEdge_registerWrite_t;
-	signal eventFifoSystem0_r : eventFifoSystem_registerRead_t;
-	signal eventFifoSystem0_w : eventFifoSystem_registerWrite_t;
-	signal triggerDataDelay0_r: triggerDataDelay_registerRead_t;
-	signal triggerDataDelay0_w: triggerDataDelay_registerWrite_t;
-	signal pixelRateCounter0_r : pixelRateCounter_registerRead_t;
-	signal pixelRateCounter0_w : pixelRateCounter_registerWrite_t;
-	signal dac088s085_x3_r: dac088s085_x3_registerRead_t;
-	signal dac088s085_x3_w: dac088s085_x3_registerWrite_t;
-	signal gpsTiming0_r : gpsTiming_registerRead_t;
-	signal gpsTiming0_w : gpsTiming_registerWrite_t;
+	signal triggerTimeToRisingEdge_0r : triggerTimeToRisingEdge_registerRead_t;
+	signal triggerTimeToRisingEdge_0w : triggerTimeToRisingEdge_registerWrite_t;
+	signal eventFifoSystem_0r : eventFifoSystem_registerRead_t;
+	signal eventFifoSystem_0w : eventFifoSystem_registerWrite_t;
+	signal triggerDataDelay_0r: triggerDataDelay_registerRead_t;
+	signal triggerDataDelay_0w: triggerDataDelay_registerWrite_t;
+	signal pixelRateCounter_0r : pixelRateCounter_registerRead_t;
+	signal pixelRateCounter_0w : pixelRateCounter_registerWrite_t;
+	signal dac088s085_x3_0r: dac088s085_x3_registerRead_t;
+	signal dac088s085_x3_0w: dac088s085_x3_registerWrite_t;
+	signal gpsTiming_0r : gpsTiming_registerRead_t;
+	signal gpsTiming_0w : gpsTiming_registerWrite_t;
+	signal ad56x1_0r : ad56x1_registerRead_t;
+	signal ad56x1_0w : ad56x1_registerWrite_t;
 	
 	signal triggerTiming : triggerTiming_t;
 	signal dsr4Timing : dsr4Timing_t := (newData => '0', timingDone => '1', others => (others=>'0'));
@@ -250,6 +252,11 @@ architecture behaviour of taxiTop is
 	signal gpsNotReset : std_logic := '0';
 	signal gpsIrq : std_logic := '0';
 	
+	signal vcxoQ1DacNotSync : std_logic := '0';
+	signal vcxoQ3DacNotSync : std_logic := '0';
+	signal vcxoQ13DacSclk : std_logic := '0';
+	signal vcxoQ13DacMosi : std_logic := '0';
+	signal vcxoQ2Enable : std_logic := '0';
 	
 begin
 
@@ -314,11 +321,11 @@ begin
 			port map(O => ebiDataIn(i), IO => EBI1_D(i), I => ebiDataOut(i), T => ebiNotRead);
    end generate;
 
-	i20: OBUF port map(O => QOSC1_DAC_SYNCn, I => '1');
-	i21: OBUF port map(O => QOSC2_ENA, I => '0');
-	i22: OBUF port map(O => QOSC2_DAC_SYNCn, I => '1');
-	i23: OBUF port map(O => QOSC2_DAC_SCKL, I => '0');
-	i24: OBUF port map(O => QOSC2_DAC_SDIN, I => '0');
+	i20: OBUF port map(O => QOSC1_DAC_SYNCn, I => vcxoQ3DacNotSync);
+	i21: OBUF port map(O => QOSC2_ENA, I => vcxoQ2Enable);
+	i22: OBUF port map(O => QOSC2_DAC_SYNCn, I => vcxoQ1DacNotSync);
+	i23: OBUF port map(O => QOSC2_DAC_SCKL, I => vcxoQ13DacSclk);
+	i24: OBUF port map(O => QOSC2_DAC_SDIN, I => vcxoQ13DacMosi);
 	
 	i25: OBUF port map(O => ADC_SDI, I => '0');
 	i26: OBUF port map(O => ADC_SCK, I => '0');
@@ -380,6 +387,8 @@ begin
 	i47: IOBUF port map(O => open, IO => TEST_DAC_SDA, I => '0', T => '1');
 
 	asyncReset <= not(PON_RESETn and clockValid);
+	
+	vcxoQ2Enable <= '0'; -- Q2 not mounted
 
 	--x0: entity work.pll1 port map(QOSC1_OUT, clock0, "not"(PON_RESETn), clockValid);
 	
@@ -389,11 +398,11 @@ begin
 	x7b: entity work.serdesOut_8to1 port map(serdesIoClock_2, serdesStrobe_2, reset, serdesDivClock, discriminatorSerdes(15 downto 8), LVDS_IO_P(0 downto 0), LVDS_IO_N(0 downto 0));
 	
 	x8: entity work.triggerLogic generic map(8) port map(serdesDivClock, reset, discriminatorSerdes, trigger);
-	x9: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay0_r, triggerDataDelay0_w);
+	x9: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
 	
-	x10: entity work.triggerTimeToRisingEdge generic map(8) port map(discriminatorSerdesDelayed, trigger, edgeData, edgeDataReady, triggerTimeToRisingEdge0_r, triggerTimeToRisingEdge0_w, triggerTiming);
+	x10: entity work.triggerTimeToRisingEdge generic map(8) port map(discriminatorSerdesDelayed, trigger, edgeData, edgeDataReady, triggerTimeToRisingEdge_0r, triggerTimeToRisingEdge_0w, triggerTiming);
 	
-	x12: entity work.pixelRateCounter port map(discriminatorSerdes, pixelRateCounter0_r, pixelRateCounter0_w);
+	x12: entity work.pixelRateCounter port map(discriminatorSerdes, pixelRateCounter_0r, pixelRateCounter_0w);
 	
 	x11: entity work.eventFifoSystem port map(
 		newEvent => trigger,
@@ -402,29 +411,33 @@ begin
 		dsr4Timing => dsr4Timing,
 		dsr4Sampling => dsr4Sampling,
 		dsr4Charge => dsr4Charge,
-		registerRead => eventFifoSystem0_r,
-		registerWrite => eventFifoSystem0_w
+		gpsTiming => gpsTiming,
+		registerRead => eventFifoSystem_0r,
+		registerWrite => eventFifoSystem_0w
 		);
 		
-	x14: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, gpsTiming, gpsTiming0_r, gpsTiming0_w);
+	x14: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, gpsTiming, gpsTiming_0r, gpsTiming_0w);
 	
-	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_r, dac088s085_x3_w);
+	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_0r, dac088s085_x3_0w);
+	x15: entity work.ad56x1 port map(vcxoQ3DacNotSync, vcxoQ1DacNotSync, vcxoQ13DacMosi, vcxoQ13DacSclk, ad56x1_0r, ad56x1_0w);
 	
 	x1: entity work.smcBusCollector port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), asyncReset, asyncAddressAndControlBus);
 	x2: entity work.smcBusEntry port map(serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
 	x3: entity work.testRam_test port map(addressAndControlBus, ebiDataIn, ebiDataOut, 
-		triggerTimeToRisingEdge0_r,
-		triggerTimeToRisingEdge0_w,
-		eventFifoSystem0_r,
-		eventFifoSystem0_w,
-		triggerDataDelay0_r,
-		triggerDataDelay0_w,
-		pixelRateCounter0_r,
-		pixelRateCounter0_w,
-		dac088s085_x3_r,
-		dac088s085_x3_w,
-		gpsTiming0_r,
-		gpsTiming0_w
+		triggerTimeToRisingEdge_0r,
+		triggerTimeToRisingEdge_0w,
+		eventFifoSystem_0r,
+		eventFifoSystem_0w,
+		triggerDataDelay_0r,
+		triggerDataDelay_0w,
+		pixelRateCounter_0r,
+		pixelRateCounter_0w,
+		dac088s085_x3_0r,
+		dac088s085_x3_0w,
+		gpsTiming_0r,
+		gpsTiming_0w,
+		ad56x1_0r,
+		ad56x1_0w
 		);
 
 end behaviour;

@@ -51,7 +51,9 @@ entity testRam_test is
 		dac088s085_x3_r : in dac088s085_x3_registerRead_t;
 		dac088s085_x3_w : out dac088s085_x3_registerWrite_t;
 		gpsTiming0_r : in gpsTiming_registerRead_t;
-		gpsTiming0_w : out gpsTiming_registerWrite_t
+		gpsTiming0_w : out gpsTiming_registerWrite_t;
+		ad56x1_0r : in ad56x1_registerRead_t;
+		ad56x1_0w : out ad56x1_registerWrite_t
 	);
 end testRam_test;
 
@@ -93,6 +95,8 @@ g0: if moduleEnabled /= 0 generate
 	dac088s085_x3_w.reset <= controlBus.reset;
 	gpsTiming0_w.clock <= controlBus.clock;
 	gpsTiming0_w.reset <= controlBus.reset;
+	ad56x1_0w.clock <= controlBus.clock;
+	ad56x1_0w.reset <= controlBus.reset;
 	
 	dac088s085_x3_w.valuesChangedChip0 <= valuesChangedChip0Temp;
 	dac088s085_x3_w.valuesChangedChip1 <= valuesChangedChip1Temp;
@@ -107,6 +111,9 @@ g0: if moduleEnabled /= 0 generate
 			debugReset <= '0'; -- autoreset
 			eventFifoClear <= '0'; -- autoreset
 			dac088s085_x3_w.init <= '0'; -- autoreset
+			--ad56x1_0w.init <= '0'; -- autoreset
+			ad56x1_0w.valueChangedChip0 <= '0'; -- autoreset
+			ad56x1_0w.valueChangedChip1 <= '0'; -- autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
@@ -115,6 +122,11 @@ g0: if moduleEnabled /= 0 generate
 				valuesChangedChip0Temp <= x"00";
 				valuesChangedChip1Temp <= x"00";
 				valuesChangedChip2Temp <= x"00";
+				ad56x1_0w.valueChip0 <= x"800";
+				ad56x1_0w.valueChip1 <= x"800";
+				--ad56x1_0w.init <= '1';
+				ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
+				ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_r.valuesChangedChip1Reset);
@@ -161,6 +173,10 @@ g0: if moduleEnabled /= 0 generate
 						when x"007a" => dac088s085_x3_w.valuesChip2(5) <= dataBusIn(7 downto 0); valuesChangedChip2Temp(5) <= '1';
 						when x"007c" => dac088s085_x3_w.valuesChip2(6) <= dataBusIn(7 downto 0); valuesChangedChip2Temp(6) <= '1';
 						when x"007e" => dac088s085_x3_w.valuesChip2(7) <= dataBusIn(7 downto 0); valuesChangedChip2Temp(7) <= '1';
+						
+						when x"0090" => ad56x1_0w.valueChip0 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
+						when x"0092" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
+						when x"0094" => ad56x1_0w.valueChangedChip0 <= dataBusIn(0); ad56x1_0w.valueChangedChip1 <= dataBusIn(1); -- autoreset
 						
 						when others => null;
 					end case;
@@ -238,6 +254,10 @@ g0: if moduleEnabled /= 0 generate
 						when x"008a" => readDataBuffer <= gpsTiming0_r.timeOfWeekSubMilliSecond(31 downto 16);
 						when x"008c" => readDataBuffer <= gpsTiming0_r.timeOfWeekSubMilliSecond(15 downto 0);
 						when x"008e" => readDataBuffer <= gpsTiming0_r.differenceGpsToLocalClock;
+						
+						when x"0090" => readDataBuffer <= x"0" & ad56x1_0r.valueChip0;
+						when x"0092" => readDataBuffer <= x"0" & ad56x1_0r.valueChip1;
+						when x"0094" => readDataBuffer <= x"000" & "000" & ad56x1_0r.dacBusy;
 						
 --						when others  => readDataBuffer <= (others => '0');
 						when others  => readDataBuffer <= x"dead";

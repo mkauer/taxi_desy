@@ -131,7 +131,7 @@ begin
 			registerRead.valuesChangedChip1Reset <= x"00"; -- autoreset
 			registerRead.valuesChangedChip2Reset <= x"00"; -- autoreset
 			if (registerWrite.reset = '1') then
-				spiState <= init1;
+				spiState <= idle;
 				initState <= 2;
 				i <= 0;
 				j <= 0;
@@ -143,7 +143,11 @@ begin
 				tempValue1 := x"00";
 				tempValue2 := x"00";
 			else
-					
+			
+				if(registerWrite.init = '1') then
+					initState <= 2;
+				end if;
+						
 				case spiState is										
 					when init1 =>						
 						mosiBuffer_latched <= x"9000" & x"9000" & x"9000"; -- mode: WTM
@@ -161,15 +165,12 @@ begin
 							k <= getFistOneFromRight8(registerWrite.valuesChangedChip2);
 						end if;
 						
-						if(registerWrite.init = '1') then
-							initState <= 2;
-						end if;
 						if(initState = 1) then
-							spiState <= init1;
+							spiState <= init2;
 							initState <= initState - 1;
 						end if;
 						if(initState = 2) then
-							spiState <= init2;
+							spiState <= init1;
 							initState <= initState - 1;
 						end if;
 

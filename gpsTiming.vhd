@@ -65,8 +65,8 @@ architecture behavioral of gpsTiming is
 			alias id is PacketTimTp(4*8-1 downto 3*8);
 			alias len is PacketTimTp(6*8-1 downto 4*8);
 		
-			alias towMS is PacketTimTp(10*8-1 downto 6*8);
-			alias towSubMS is PacketTimTp(14*8-1 downto 10*8);
+			alias towMS is PacketTimTp(10*8-1 downto 6*8); 
+			alias towSubMS is PacketTimTp(14*8-1 downto 10*8); -- will be 0
 			alias qErr is PacketTimTp(18*8-1 downto 14*8);
 			alias week is PacketTimTp(20*8-1 downto 18*8);
 			alias flags is PacketTimTp(21*8-1 downto 20*8);

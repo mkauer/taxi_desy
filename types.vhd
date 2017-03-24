@@ -223,6 +223,20 @@ package types is
 		clock : std_logic;
 		reset : std_logic;
 	end record;
+	
+	type ad56x1_registerRead_t is record
+		dacBusy : std_logic;
+		valueChip0 : std_logic_vector(11 downto 0);
+		valueChip1 : std_logic_vector(11 downto 0);
+	end record;
+	type ad56x1_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		valueChip0 : std_logic_vector(11 downto 0);
+		valueChip1 : std_logic_vector(11 downto 0);
+		valueChangedChip0 : std_logic;
+		valueChangedChip1 : std_logic;
+	end record;
 		
 end types;
 
