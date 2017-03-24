@@ -74,3 +74,5 @@ ipcore_dir/coregen.log
 *.xmsgs
 iseconfig/taxi.projectmgr
 iseconfig/taxiTop.xreport
+*.un~
+*.swp
