@@ -19,6 +19,7 @@
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use work.types.all;
 
 library UNISIM;
 use UNISIM.VComponents.all;
@@ -28,11 +29,8 @@ entity clockConfig is
 		clockPin : in std_logic;
 		asyncReset : in std_logic;
 		reset : out std_logic;
-		serdesDivClock : out std_logic;
-		serdesIoClock_1 : out std_logic;
-		serdesStrobeBufpll_1 : out std_logic;
-		serdesIoClock_2 : out std_logic;
-		serdesStrobeBufpll_2 : out std_logic;
+		triggerSerdesClocks : out triggerSerdesClocks_t;
+		drs4Clocks : out drs4Clocks_t;
 		clockValid : out std_logic
 --		locked : out std_logic_vector(3 downto 0)
 	);
@@ -46,29 +44,32 @@ architecture Behavioral of clockConfig is
 	signal dcmStatus : std_logic_vector(7 downto 0) := x"00";
 	signal dcmClock0 : std_logic := '0';
 	signal dcmReset : std_logic := '0';
-	signal pllFeedBack : std_logic := '0';
-	signal pllReset : std_logic := '0';
-	signal pllLocked : std_logic := '0';
+	signal pllFeedBack1 : std_logic := '0';
+	signal pllReset1 : std_logic := '0';
+	signal pllLocked1 : std_logic := '0';
 	signal serdesFastClock : std_logic := '0';
 	signal serdesSlowClock : std_logic := '0';
 	signal serdesSlowClockGlobal : std_logic := '0';
 	--signal serdesIoClock_1 : std_logic := '0';
 	--signal serdesIoClock_2 : std_logic := '0';
-	signal bufpllLocked_1 : std_logic := '0';
-	signal bufpllLocked_2 : std_logic := '0';
+	signal bufpllLocked1 : std_logic := '0';
+--	signal bufpllLocked2 : std_logic := '0';
 --	signal serdesStrobe_i : std_logic := '0';
 	signal reset_i : std_logic_vector(7 downto 0) := x"00";
 	signal error : std_logic := '1';
 	
+--	signal pllFeedBack2 : std_logic := '0';
+--	signal pllReset2 : std_logic := '0';
+--	signal pllLocked2 : std_logic := '0';
+	
 begin
 
-	--serdesIoClock <= serdesIoClock_i;
-	serdesDivClock <= serdesSlowClockGlobal;
-	--serdesStrobe <= serdesStrobe_i;
+	triggerSerdesClocks.serdesDivClock <= serdesSlowClockGlobal;
+	drs4Clocks <= (others=>'0');
 	
 --	locked <= error;
---	locked <= dcmLocked & bufpllLocked_1 & bufpllLocked_2 & pllLocked;
-	clockValid <= dcmLocked and bufpllLocked_1 and bufpllLocked_2 and pllLocked;
+--	locked <= dcmLocked & bufpllLocked1_1 & bufpllLocked1_2 & pllLocked1;
+	clockValid <= dcmLocked and bufpllLocked1 and pllLocked1;
 
 	BUFIO2_inst : BUFIO2
 	generic map(
@@ -147,20 +148,20 @@ begin
         CLKOUT5_DUTY_CYCLE   => 0.500
     )
     port map (
-        CLKFBOUT            => pllFeedBack,
+        CLKFBOUT            => pllFeedBack1,
         CLKOUT0             => serdesFastClock,
         CLKOUT1             => open,
         CLKOUT2             => serdesSlowClock,
         CLKOUT3             => open,
         CLKOUT4             => open,
         CLKOUT5             => open,
-        LOCKED              => pllLocked,
-        RST                 => pllReset,
-        CLKFBIN             => pllFeedBack,
+        LOCKED              => pllLocked1,
+        RST                 => pllReset1,
+        CLKFBIN             => pllFeedBack1,
         CLKIN               => clockDcmToPll
     );
 
-	bufg_inst: BUFG port map (I => serdesSlowClock, O => serdesSlowClockGlobal);
+	bufg_inst1: BUFG port map (I => serdesSlowClock, O => serdesSlowClockGlobal);
 	
 	bufpll_inst1 : BUFPLL
 	generic map (
@@ -169,23 +170,10 @@ begin
 	port map (
       PLLIN				=> serdesFastClock,			-- PLL Clock input
       GCLK				=> serdesSlowClockGlobal, 	-- Global Clock input
-      LOCKED			=> pllLocked,					-- Clock0 locked input
-      IOCLK				=> serdesIoClock_1, 			-- Output PLL Clock
-      LOCK				=> bufpllLocked_1,        	-- BUFPLL Clock and strobe locked
-      serdesstrobe	=> serdesStrobeBufpll_1	 	-- Output SERDES strobe
-	);
-	
-	bufpll_inst2 : BUFPLL
-	generic map (
-		DIVIDE => 8
-	)
-	port map (
-      PLLIN				=> serdesFastClock,			-- PLL Clock input
-      GCLK				=> serdesSlowClockGlobal, 	-- Global Clock input
-      LOCKED			=> pllLocked,					-- Clock0 locked input
-      IOCLK				=> serdesIoClock_2, 			-- Output PLL Clock
-      LOCK				=> bufpllLocked_2,        	-- BUFPLL Clock and strobe locked
-      serdesstrobe	=> serdesStrobeBufpll_2	 	-- Output SERDES strobe
+      LOCKED			=> pllLocked1,					-- Clock0 locked input
+      IOCLK				=> triggerSerdesClocks.serdesIoClock, 			-- Output PLL Clock
+      LOCK				=> bufpllLocked1,        	-- BUFPLL Clock and strobe locked
+      serdesstrobe	=> triggerSerdesClocks.serdesStrobe	 	-- Output SERDES strobe
 	);
 	
 	dcmReset <= ((not(dcmLocked) and  dcmStatus(2)) or asyncReset);
@@ -206,7 +194,8 @@ begin
 --		end if;
 --	end process;
 	
-	error <= '1' when ((dcmLocked = '0') or (bufpllLocked_1 = '0') or (bufpllLocked_2 = '0') or (pllLocked = '0')) else '0';
+	error <= '1' when ((dcmLocked = '0') or (bufpllLocked1 = '0') or (pllLocked1 = '0')) else '0';
+--	error <= '1' when ((dcmLocked = '0') or (bufpllLocked1 = '0') or (bufpllLocked2 = '0') or (pllLocked1 = '0') or (pllLocked2 = '0')) else '0';
 	reset <= reset_i(reset_i'length-1);
 	
 	p2: process(serdesSlowClockGlobal, error)
@@ -218,5 +207,67 @@ begin
 			reset_i(reset_i'length-2 downto 0) <= (others => '1');
 		end if;
 	end process;
+	
+-------------------------------------------------------------------------------
+
+--	pll_base_inst2 : PLL_BASE
+--	generic map (
+--        BANDWIDTH            => "OPTIMIZED",
+--        CLK_FEEDBACK         => "CLKFBOUT",
+--        COMPENSATION         => "DCM2PLL",
+--		  CLKIN_PERIOD         => 40.000,
+--        REF_JITTER           => 0.100,
+--        DIVCLK_DIVIDE        => 1,
+--        CLKFBOUT_MULT        => 4,
+--        CLKFBOUT_PHASE       => 0.000,
+--        CLKOUT0_DIVIDE       => 1,
+--        CLKOUT0_PHASE        => 0.000,
+--        CLKOUT0_DUTY_CYCLE   => 0.500,
+--        CLKOUT1_DIVIDE       => 1,
+--        CLKOUT1_PHASE        => 0.000,
+--        CLKOUT1_DUTY_CYCLE   => 0.500,
+--        CLKOUT2_DIVIDE       => 1,
+--        CLKOUT2_PHASE        => 0.000,
+--        CLKOUT2_DUTY_CYCLE   => 0.500,
+--        CLKOUT3_DIVIDE       => 3,
+--        CLKOUT3_PHASE        => 0.000,
+--        CLKOUT3_DUTY_CYCLE   => 0.500,
+--		  CLKOUT4_DIVIDE       => 1,
+--        CLKOUT4_PHASE        => 0.000,
+--        CLKOUT4_DUTY_CYCLE   => 0.500,
+--		  CLKOUT5_DIVIDE       => 1,
+--        CLKOUT5_PHASE        => 0.000,
+--        CLKOUT5_DUTY_CYCLE   => 0.500
+--    )
+--    port map (
+--        CLKFBOUT            => pllFeedBack2,
+--        CLKOUT0             => open, --drs4SerdesFastClock,
+--        CLKOUT1             => open,
+--        CLKOUT2             => open, --drs4SerdesSlowClockGlobal,
+--        CLKOUT3             => drs4Clocks.drs4SamplingClock,
+--        CLKOUT4             => open, --drs4Clocks.drs4SamplingClock,
+--        CLKOUT5             => open, --drs4Clocks.adcSamplingClock,
+--        LOCKED              => pllLocked2,
+--        RST                 => pllReset2,
+--        CLKFBIN             => pllFeedBack2,
+--        CLKIN               => clockDcmToPll
+--    );
+	 
+--	bufg_inst2: BUFG port map (I => drs4SerdesSlowClock, O => serdesSlowClockGlobal);
+--	
+--	bufpll_inst2 : BUFPLL
+--	generic map (
+--		DIVIDE => 7
+--	)
+--	port map (
+--      PLLIN				=> drs4SerdesFastClock,			-- PLL Clock input
+--      GCLK				=> drs4SerdesSlowClockGlobal, 	-- Global Clock input
+--      LOCKED			=> pllLocked2,					-- Clock0 locked input
+--      IOCLK				=> serdesIoClock_2, 			-- Output PLL Clock
+--      LOCK				=> bufpllLocked1_2,        	-- BUFPLL Clock and strobe locked
+--      serdesstrobe	=> serdesStrobeBufpll_2	 	-- Output SERDES strobe
+--	);
+
+--	bufg_inst: BUFG port map (I => drs4SamplingClock, O => drs4SamplingClockGlobal);
 
 end Behavioral;

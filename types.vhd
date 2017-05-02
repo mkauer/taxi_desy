@@ -120,6 +120,26 @@ package types is
 		chargeDone : std_logic;
 	end record;
 	
+	type drs4Fifo_t is record
+		fifoOutA : std_logic_vector(55 downto 0);
+		fifoWordsA : std_logic_vector(3 downto 0);
+		fifoOutB : std_logic_vector(55 downto 0);
+		fifoWordsB : std_logic_vector(3 downto 0);
+	end record;
+	
+	type drs4Clocks_t is record
+		drs4RefClock : std_logic;
+		drs4SamplingClock : std_logic;
+		AdcSamplingClock : std_logic;
+		chargeDone : std_logic;
+	end record;
+	
+	type triggerSerdesClocks_t is record
+		serdesDivClock : std_logic;
+		serdesIoClock : std_logic;
+		serdesStrobe : std_logic;
+	end record;
+		
 	type gpsTiming_t is record
 		week : std_logic_vector(15 downto 0);
 		quantizationError : std_logic_vector(31 downto 0);
@@ -128,6 +148,7 @@ package types is
 		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
 		newData : std_logic;
 	end record;
+	
 	
 	type eventFifoSystem_registerRead_t is record
 		dmaBuffer : std_logic_vector(15 downto 0);
@@ -139,6 +160,7 @@ package types is
 		eventFifoWords : std_logic_vector(15 downto 0);
 		eventFifoFlags : std_logic_vector(15 downto 0);
 		packetConfig : std_logic_vector(15 downto 0);
+		registerSamplesToRead : std_logic_vector(15 downto 0);
 	end record;
 	type eventFifoSystem_registerWrite_t is record
 		clock : std_logic;
@@ -146,6 +168,7 @@ package types is
 		nextWord : std_logic;
 		eventFifoClear : std_logic;
 		packetConfig : std_logic_vector(15 downto 0);
+		registerSamplesToRead : std_logic_vector(15 downto 0);
 	end record;
 	
 	type triggerTimeToRisingEdge_registerRead_t is record
@@ -236,6 +259,16 @@ package types is
 		valueChip1 : std_logic_vector(11 downto 0);
 		valueChangedChip0 : std_logic;
 		valueChangedChip1 : std_logic;
+	end record;
+
+	type drs4_registerRead_t is record
+		regionOfInterest : std_logic_vector(9 downto 0);
+	end record;
+	type drs4_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		stoftTrigger : std_logic;
+		resetStates : std_logic;
 	end record;
 		
 end types;

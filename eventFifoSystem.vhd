@@ -54,8 +54,8 @@ architecture behavioral of eventFifoSystem is
 	signal eventFifoIn : std_logic_vector(16*9-1 downto 0) := (others=>'0');
 	signal eventFifoOut : std_logic_vector(16*9-1 downto 0) := (others=>'0');
 	
-	signal eventFifoClearBuffer : std_logic := '0';
-	signal eventFifoClearBuffer_old : std_logic := '0';
+--	signal eventFifoClearBuffer : std_logic := '0';
+--	signal eventFifoClearBuffer_old : std_logic := '0';
 	signal eventFifoClearCounter : integer range 0 to 7 := 0;
 	
 	signal dmaBuffer : std_logic_vector(15 downto 0) := (others=>'0');
@@ -63,14 +63,15 @@ architecture behavioral of eventFifoSystem is
 --	signal dmaLookAheadIsIdle : std_logic := '0';
 	signal s : integer range 0 to 63 := 0;
 	
-	type state1_t is (wait0, idle, writeSecondInfo, writeHeader, writeDebug, writeTriggerTiming, writeDsr4Sampling, writeDsr4Charge, writeDsr4Timing);
+	type state1_t is (wait0, idle, writeSecondInfo, writeHeader, writeDebug, writeTriggerTiming, writeDsr4Sampling, writeDsr4Charge, writeDsr4Timing,testDataHeader,testData);
 	signal state1 : state1_t := idle;
 	
 	type state7_t is (wait0, wait1, idle, read0, read1, read2, read3);
 	signal state7 : state7_t := wait0;
 	
 	signal eventFifoErrorCounter : unsigned(15 downto 0) := (others=>'0');
-	constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(1024,16);
+	--constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(1024,16);
+	constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(4096,16);
 	
 	signal eventCount : unsigned(32 downto 0) := (others=>'0');
 	signal counterSecounds : unsigned(32 downto 0) := (others=>'0'); -- move
@@ -94,6 +95,7 @@ architecture behavioral of eventFifoSystem is
 	constant DATATYPE_DATAPERSECOND : std_logic_vector(5 downto 0) := x"7" & "00";
 	constant DATATYPE_TESTDATA_STATICEVENTFIFOHEADER : std_logic_vector(5 downto 0) := x"a" & "00";
 	constant DATATYPE_TESTDATA_COUNTEREVENTFIFOHEADER : std_logic_vector(5 downto 0) := x"b" & "00";
+	constant DATATYPE_TESTDATA_COUNTER : std_logic_vector(5 downto 0) := x"c" & "00";
 	
 	signal nextWord : std_logic := '0';
 	signal packetConfig : std_logic_vector(15 downto 0);
@@ -109,9 +111,14 @@ architecture behavioral of eventFifoSystem is
 	alias testDataEventFifoCounter_bit : std_logic is packetConfig(9);
 	alias testDataFrondEndFifo_bit : std_logic is packetConfig(10);
 	
-	signal registerSamplesToRead : std_logic_vector(15 downto 0) := x"0001"; -- ## dummy
+	signal registerSamplesToRead : std_logic_vector(15 downto 0) := x"0000";
 	signal registerDeviceId : std_logic_vector(15 downto 0) := x"a5a5"; -- ## dummy
 --	signal packetConfig : std_logic_vector(15 downto 0) := x"0000";
+	
+	signal testDataWords : unsigned(15 downto 0) := x"0000";
+	signal testDataCounter : unsigned(12 downto 0) := (others=>'0'); --  range 0 to 2**16-1 := 0;
+	signal fifoTestDataEnabled : std_logic := '0';
+	signal newEvent_old : std_logic := '0';
 	
 begin
 
@@ -127,10 +134,10 @@ begin
 		overflow => eventFifoOverflow,
 		empty => eventFifoEmpty,
 		underflow => eventFifoUnderflow,
-		data_count => eventFifoWords(9 downto 0)
+		data_count => eventFifoWords(11 downto 0)
 	);
 	
-	eventFifoWords(10) <= eventFifoFull and not(eventFifoClearBuffer); -- ## has side effecs after fifoClear
+	eventFifoWords(12) <= eventFifoFull; -- and not(eventFifoClearBuffer); -- ## has side effecs after fifoClear
 	
 	registerRead.dmaBuffer <= dmaBuffer;
 	registerRead.eventFifoWordsDma <= eventFifoWordsDma;
@@ -139,6 +146,9 @@ begin
 	packetConfig <= registerWrite.packetConfig;
 	registerRead.packetConfig <= registerWrite.packetConfig;
 	registerRead.eventFifoErrorCounter <= std_logic_vector(eventFifoErrorCounter);
+	
+	registerSamplesToRead <= registerWrite.registerSamplesToRead;
+	registerRead.registerSamplesToRead <= registerWrite.registerSamplesToRead;
 	
 P1:process (registerWrite.clock)
 	constant HEADER_LENGTH : integer := 1;
@@ -152,27 +162,16 @@ begin
 	
 		if (registerWrite.reset = '1') then
 			eventFifoClear <= '1';
-			eventFifoClearBuffer <= '1';
-			eventFifoClearBuffer_old <= '0';
+			--eventFifoClearBuffer <= '1';
+			--eventFifoClearBuffer_old <= '0';
 			state1 <= idle;
 			eventLength <= to_unsigned(0,eventLength'length);
 			eventFifoErrorCounter <= to_unsigned(0,eventFifoErrorCounter'length);
 			eventCount <= (others=>'0');
 		else
+			newEvent_old <= newEvent;
 			eventFifoClear <= registerWrite.eventFifoClear;
-			eventFifoClearBuffer <= registerWrite.eventFifoClear;
-			
-			-- hide 'eventFifoFull' for dmaBuffer
-			eventFifoClearBuffer_old <= eventFifoClearBuffer;
-			if((eventFifoClearBuffer = '1') and (eventFifoClearBuffer_old = '0')) then
-				eventFifoClearCounter <= 7;
-			else
-				if(eventFifoClearCounter > 0) then
-					eventFifoClearCounter <= eventFifoClearCounter - 1;
-				else
-					eventFifoClearBuffer <= '0';
-				end if;
-			end if;
+			--eventFifoClearBuffer <= registerWrite.eventFifoClear;
 			
 			case state1 is
 				when wait0 =>
@@ -181,19 +180,64 @@ begin
 					end if;
 					
 				when idle =>
-					if(newEvent = '1') then
+					if((newEvent = '1') and (newEvent_old = '0')) then
 						state1 <= writeHeader;
 						tempLength := to_unsigned(0,tempLength'length) + HEADER_LENGTH + unsigned(writeDebugToFifo_bit_v) + unsigned(writeDsr4SamplingToFifo_bit_v) + unsigned(writeDsr4ChargeToFifo_bit_v) + unsigned(writeDsr4TimingToFifo_bit_v); -- ## is this efficient?!
+						eventLength <= tempLength;
+						
 						if(writeDsr4SamplingToFifo_bit_v = "1") then
 							eventLength <= unsigned(registerSamplesToRead) + tempLength;
-						else
-							eventLength <= tempLength;
 						end if;
+						if(testDataEventFifoCounter_bit = '1') then
+							eventLength <= unsigned(registerSamplesToRead) + HEADER_LENGTH;
+						end if;
+					--	if(testDataEventFifoCounter_bit = '1')then
+					--		state1 <= testDataHeader;
+					--		testDataCounter <= (others=>'0');
+					--		testDataWords <= to_unsigned(0,testDataWords'length);
+					--	end if;
 					end if;
 					if(pps = '1') then
 						state1 <= writeSecondInfo;
 					end if;
 				
+				when testDataHeader =>
+					eventFifoIn <= (others=>'0');
+					eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
+					eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventCount(31 downto 16));
+					eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventCount(15 downto 0));
+					eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "010";
+					eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "011";
+					eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "100";
+					eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "101";
+					eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "110";
+					eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "111";
+					testDataCounter <= testDataCounter + 1;
+					testDataWords <= testDataWords + 1;
+					eventFifoWriteRequest <= '1'; -- autoreset
+					eventCount <= eventCount + 1;
+					state1 <= testData;
+
+				when testData =>
+					if(testDataWords < unsigned(registerSamplesToRead))then
+						eventFifoIn <= (others=>'0');
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
+						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "000";
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "001";
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "010";
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "011";
+						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "100";
+						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "101";
+						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "110";
+						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "111";
+						testDataCounter <= testDataCounter + 1;
+						testDataWords <= testDataWords + 1;
+						eventFifoWriteRequest <= '1'; -- autoreset
+					else
+						state1 <= idle;
+					end if;
+
+
 				when writeSecondInfo =>
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax)) then
 						eventFifoIn <= (others=>'0');
@@ -206,12 +250,14 @@ begin
 						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= gpsTiming.differenceGpsToLocalClock;
 						--eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= gpsTiming.
 						--eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= registerDeviceId;
+						eventFifoWriteRequest <= '1'; -- autoreset
 					else
 						eventFifoErrorCounter <= eventFifoErrorCounter + 1;
 					end if;
 					state1 <= idle;
 					
 				when writeHeader =>
+					eventCount <= eventCount + 1;
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax - eventLength)) then
 						eventFifoIn <= (others=>'0');
 						--eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_HEADER & "00" & x"00";
@@ -224,21 +270,22 @@ begin
 						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(realTimeCounterSubSecounds(15 downto 0));
 						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= registerDeviceId; -- ## can be moved
 							
+						state1 <= writeDebug;
+						
 						if(testDataEventFifoStatic_bit = '1') then
 							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_STATICEVENTFIFOHEADER & "00" & x"00"; -- ## not implemented...
 						elsif(testDataEventFifoCounter_bit = '1') then
 							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTEREVENTFIFOHEADER & "00" & x"00"; -- ## not implemented...
+							state1 <= testData;
+							testDataCounter <= (others=>'0');
+							testDataWords <= to_unsigned(0,testDataWords'length);
 						else
 							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_HEADER & "00" & x"00"; -- ## 'unknown' as default would be better						
 						end if;
 						eventFifoWriteRequest <= '1'; -- autoreset
-						state1 <= writeDebug;
 					-- ## maybe we can save some LEs here if the assignment of eventFifoIn is changed
-					
-						eventCount <= eventCount + 1;
-						
 					else
-						state1 <= wait0;
+						state1 <= idle;
 						eventFifoErrorCounter <= eventFifoErrorCounter + 1;
 					end if;
 				

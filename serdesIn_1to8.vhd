@@ -76,6 +76,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_unsigned.all ;
+use work.types.all;
 
 library unisim ;
 use unisim.vcomponents.all ;
@@ -90,10 +91,11 @@ entity serdesIn_1to8 is
 		use_phase_detector	:  in std_logic ;				-- Set generation of phase detector logic
 		datain_p		:  in std_logic_vector(D-1 downto 0) ;		-- Input from LVDS receiver pin
 		datain_n		:  in std_logic_vector(D-1 downto 0) ;		-- Input from LVDS receiver pin
-		rxioclk			:  in std_logic ;				-- IO Clock network
-		rxserdesstrobe		:  in std_logic ;				-- Parallel data capture strobe
+--		rxioclk			:  in std_logic ;				-- IO Clock network
+--		rxserdesstrobe		:  in std_logic ;				-- Parallel data capture strobe
 		reset			:  in std_logic ;				-- Reset line
-		gclk			:  in std_logic ;				-- Global clock
+--		gclk			:  in std_logic ;				-- Global clock
+		triggerSerdesClocks : in triggerSerdesClocks_t;
 		bitslip			:  in std_logic ;				-- Bitslip control line
 		debug_in  		:  in std_logic_vector(1 downto 0) ;		-- input debug data, set to "00" if not required
 		data_out		: out std_logic_vector((D*S)-1 downto 0) ;  	-- Output data
@@ -139,7 +141,15 @@ architecture behavioral of serdesIn_1to8 is
 
 	constant RX_SWAP_MASK 		: std_logic_vector(D-1 downto 0) := (others => '0') ;	-- pinswap mask for input bits (0 = no swap (default), 1 = swap). Allows inputs to be connected the wrong way round to ease PCB routing.
 
+	signal rxioclk : std_logic;
+	signal rxserdesstrobe : std_logic;
+	signal gclk : std_logic;
+
 begin
+
+	rxioclk <= triggerSerdesClocks.serdesIoClock;
+	rxserdesstrobe <= triggerSerdesClocks.serdesStrobe;
+	gclk <= triggerSerdesClocks.serdesDivClock;
 
 	pd_state_machine : phase_detector generic map (
 		D		      	=> D) 				-- Set the number of inputs
