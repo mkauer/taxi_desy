@@ -1,8 +1,0 @@
-Storage Target: SPI Flash Single FPGA
-32M
-FF
-taxi_rom
-C:/Xilinx/projects/taxi_firmware
-
-MCS
-No

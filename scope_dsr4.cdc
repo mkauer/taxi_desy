@@ -1,5 +1,5 @@
 #ChipScope Core Inserter Project File Version 3.0
-#Thu Apr 13 19:36:59 CEST 2017
+#Thu Jun 01 13:31:36 CEST 2017
 Project.device.designInputFile=C\:\\Xilinx\\projects\\taxi_firmware\\taxiTop_cs.ngc
 Project.device.designOutputFile=C\:\\Xilinx\\projects\\taxi_firmware\\taxiTop_cs.ngc
 Project.device.deviceFamily=18
@@ -7,7 +7,7 @@ Project.device.enableRPMs=true
 Project.device.outputDirectory=C\:\\Xilinx\\projects\\taxi_firmware\\_ngo
 Project.device.useSRL16=true
 Project.filter.dimension=19
-Project.filter<0>=*srout*
+Project.filter<0>=
 Project.filter<10>=x16*rsr*
 Project.filter<11>=x16*rs*
 Project.filter<12>=x16*txb*
@@ -17,10 +17,10 @@ Project.filter<15>=x16*roi*
 Project.filter<16>=x16*
 Project.filter<17>=*drs4_a*
 Project.filter<18>=drs4_a
-Project.filter<1>=*rsout*
-Project.filter<2>=rsout
-Project.filter<3>=*miso*
-Project.filter<4>=
+Project.filter<1>=*srout*
+Project.filter<2>=*rsout*
+Project.filter<3>=rsout
+Project.filter<4>=*miso*
 Project.filter<5>=*srclk*
 Project.filter<6>=*clk*
 Project.filter<7>=x16*clk*
@@ -73,6 +73,7 @@ Project.unit<0>.dataChannel<41>=x16/txBuffer<6>
 Project.unit<0>.dataChannel<42>=x16/txBuffer<7>
 Project.unit<0>.dataChannel<43>=drs4Rsrload<0>
 Project.unit<0>.dataChannel<44>=drs4Srclk<0>
+Project.unit<0>.dataChannel<45>=drs4Srout<0>
 Project.unit<0>.dataChannel<4>=x16/address[3]_PWR_69_o_mux_28_OUT<1>
 Project.unit<0>.dataChannel<5>=x16/address[3]_PWR_69_o_mux_28_OUT<0>
 Project.unit<0>.dataChannel<6>=x16/spiTransfer
