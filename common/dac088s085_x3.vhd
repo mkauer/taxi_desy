@@ -73,6 +73,10 @@ architecture behavioral of dac088s085_x3 is
 	signal i : integer range 0 to 7 := 0;
 	signal j : integer range 0 to 7 := 0;
 	signal k : integer range 0 to 7 := 0;
+
+	signal valuesChangedChip0 : std_logic_vector(7 downto 0) := x"00";
+	signal valuesChangedChip1 : std_logic_vector(7 downto 0) := x"00";
+	signal valuesChangedChip2 : std_logic_vector(7 downto 0) := x"00";
 	
 begin
 
@@ -127,9 +131,9 @@ begin
 			sclkEnable <= '0'; -- autoreset
 			busy <= '0'; -- autoreset
 			nSync <= '1'; -- autoreset
-			registerRead.valuesChangedChip0Reset <= x"00"; -- autoreset
-			registerRead.valuesChangedChip1Reset <= x"00"; -- autoreset
-			registerRead.valuesChangedChip2Reset <= x"00"; -- autoreset
+			--registerRead.valuesChangedChip0Reset <= x"00"; -- autoreset
+			--registerRead.valuesChangedChip1Reset <= x"00"; -- autoreset
+			--registerRead.valuesChangedChip2Reset <= x"00"; -- autoreset
 			if (registerWrite.reset = '1') then
 				spiState <= idle;
 				initState <= 2;
@@ -142,11 +146,18 @@ begin
 				tempValue0 := x"00";
 				tempValue1 := x"00";
 				tempValue2 := x"00";
+				valuesChangedChip0 <= (others=>'1');
+				valuesChangedChip1 <= (others=>'1');
+				valuesChangedChip2 <= (others=>'1');
 			else
 			
 				if(registerWrite.init = '1') then
 					initState <= 2;
 				end if;
+				
+				valuesChangedChip0 <= valuesChangedChip0 or registerWrite.valuesChangedChip0;
+				valuesChangedChip1 <= valuesChangedChip1 or registerWrite.valuesChangedChip1;
+				valuesChangedChip2 <= valuesChangedChip2 or registerWrite.valuesChangedChip2;
 						
 				case spiState is										
 					when init1 =>						
@@ -158,11 +169,11 @@ begin
 						spiState <= prepare;
 				
 					when idle =>
-						if((registerWrite.valuesChangedChip0 /= x"00") or (registerWrite.valuesChangedChip1 /= x"00") or (registerWrite.valuesChangedChip2 /= x"00")) then
+						if((valuesChangedChip0 /= x"00") or (valuesChangedChip1 /= x"00") or (valuesChangedChip2 /= x"00")) then
 							spiState <= load;
-							i <= getFistOneFromRight8(registerWrite.valuesChangedChip0);
-							j <= getFistOneFromRight8(registerWrite.valuesChangedChip1);
-							k <= getFistOneFromRight8(registerWrite.valuesChangedChip2);
+							i <= getFistOneFromRight8(valuesChangedChip0);
+							j <= getFistOneFromRight8(valuesChangedChip1);
+							k <= getFistOneFromRight8(valuesChangedChip2);
 						end if;
 						
 						if(initState = 1) then
@@ -183,9 +194,12 @@ begin
 						tempValue1 := registerWrite.valuesChip1(j);
 						tempValue2 := registerWrite.valuesChip2(k);
 						
-						registerRead.valuesChangedChip0Reset(i) <= '1'; -- autoreset
-						registerRead.valuesChangedChip1Reset(j) <= '1'; -- autoreset
-						registerRead.valuesChangedChip2Reset(k) <= '1'; -- autoreset
+						--registerRead.valuesChangedChip0Reset(i) <= '1'; -- autoreset
+						--registerRead.valuesChangedChip1Reset(j) <= '1'; -- autoreset
+						--registerRead.valuesChangedChip2Reset(k) <= '1'; -- autoreset
+						valuesChangedChip0(i) <= '0';
+						valuesChangedChip1(j) <= '0';
+						valuesChangedChip2(k) <= '0';
 						
 						mosiBuffer_latched <= "0" & tempChannl2 & tempValue2 & "0000" & "0" & tempChannl1 & tempValue1 & "0000" & "0" & tempChannl0 & tempValue0 & "0000";
 						spiState <= prepare;
@@ -216,7 +230,6 @@ begin
 						if (sclkEdgeFalling = '1') then
 							spiState <= idle;
 						end if;
-
 				end case;
 			end if;
 		end if;

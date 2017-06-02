@@ -1,8 +1,0 @@
-INTSTYLE=ise
-INFILE=C:\Xilinx\projects\taxi_firmware\taxiTop.ncd
-OUTFILE=C:\Xilinx\projects\taxi_firmware\taxiTop.bit
-FAMILY=Spartan6
-PART=xc6slx45-3fgg484
-WORKINGDIR=C:\Xilinx\projects\taxi_firmware
-LICENSE=ISE
-USER_INFO=180383582_180500054_210646328_043

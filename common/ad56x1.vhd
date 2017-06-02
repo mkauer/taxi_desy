@@ -62,7 +62,7 @@ architecture Behavioral of ad56x1 is
 	signal busy : std_logic;
 	
 	signal nSync : std_logic := '0';
-	signal initState : integer range 0 to 2 := 2;
+	--signal initState : integer range 0 to 2 := 2;
 	signal chip : std_logic := '0';
 	
 	constant nSyncIdle : std_logic := '0';
@@ -119,7 +119,7 @@ begin
 			nSync <= nSyncIdle; -- autoreset
 			if (registerWrite.reset = '1') then
 				spiState <= idle;
-				initState <= 2;
+				--initState <= 2;
 				chip <= '0';
 				activeChip <= "00";
 				valueChangedChip0 <= '0';

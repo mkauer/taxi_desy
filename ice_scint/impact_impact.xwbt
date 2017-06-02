@@ -1,8 +1,0 @@
-INTSTYLE=impact
-INFILE=C:\Xilinx\projects\taxi_firmware\impact.xsl
-OUTFILE=C:\Xilinx\projects\taxi_firmware\impact.xsl
-FAMILY=Single
-PART=Single
-WORKINGDIR=C:\Xilinx\projects\taxi_firmware
-LICENSE=iMPACT
-USER_INFO=iMPACT
