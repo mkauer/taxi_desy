@@ -246,14 +246,11 @@ architecture behaviour of taxiTop is
 	signal gpsTiming_0w : gpsTiming_registerWrite_t;
 	signal ad56x1_0r : ad56x1_registerRead_t;
 	signal ad56x1_0w : ad56x1_registerWrite_t;
-	signal drs4_0r : drs4_registerRead_t;
-	signal drs4_0w : drs4_registerWrite_t;
 	signal triggerLogic_0r : triggerLogic_registerRead_t;
 	signal triggerLogic_0w : triggerLogic_registerWrite_t;
 	
 	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
-	signal triggerTiming_0 : triggerTiming_t;
-	signal triggerTiming_1 : triggerTiming_t;
+	signal triggerTiming : triggerTiming_t;
 	signal dsr4Timing : dsr4Timing_t := (newData => '0', timingDone => '1', others => (others=>'0'));
 	signal dsr4Sampling : dsr4Sampling_t := (newData => '0', samplingDone => '1', others => (others=>'0'));
 	signal dsr4Charge : dsr4Charge_t := (newData => '0', chargeDone => '1', others => (others=>'0'));
@@ -449,7 +446,7 @@ begin
 	x8: entity work.triggerLogic port map(discriminatorSerdes, trigger, triggerRateCounter_0, triggerLogic_0r, triggerLogic_0w);
 	x9: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
 
-	x10: entity work.triggerTimeToEdge port map(discriminatorSerdesDelayed_all, trigger, triggerTimeToEdge_0r, triggerTimeToEdge_0w, triggerTiming_0);
+	x10: entity work.triggerTimeToEdge port map(discriminatorSerdesDelayed_all, trigger, triggerTimeToEdge_0r, triggerTimeToEdge_0w, triggerTiming);
 --	x10b: entity work.triggerTimeToEdge port map(discriminatorSerdesDelayed(1), trigger, edgeData(1), edgeDataReady(1), triggerTimeToRisingEdge_1r, triggerTimeToRisingEdge_1w, triggerTiming_1);
 --	x10c: entity work.triggerTimeToEdge port map(discriminatorSerdesDelayed(2), trigger, edgeData(2), edgeDataReady(2), triggerTimeToRisingEdge_2r, triggerTimeToRisingEdge_2w, triggerTiming_2);
 	
@@ -457,7 +454,7 @@ begin
 --	x12b: entity work.pixelRateCounter port map(discriminatorSerdes(1), pixelRateCounter_1r, pixelRateCounter_1w);
 --	x12c: entity work.pixelRateCounter port map(discriminatorSerdes(2), pixelRateCounter_2r, pixelRateCounter_2w);
 	
-	x11: entity work.eventFifoSystem port map(trigger, triggerTiming_0, pixelRateCounter_0, triggerRateCounter_0, gpsTiming, eventFifoSystem_0r, eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger, triggerTiming, pixelRateCounter_0, triggerRateCounter_0, gpsTiming, eventFifoSystem_0r, eventFifoSystem_0w);
 		
 	x14: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, gpsTiming, gpsTiming_0r, gpsTiming_0w);
 
@@ -486,8 +483,6 @@ begin
 		gpsTiming_0w,
 		ad56x1_0r,
 		ad56x1_0w,
-		drs4_0r,
-		drs4_0w,
 		triggerLogic_0r,
 		triggerLogic_0w
 		);

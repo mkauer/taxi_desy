@@ -62,8 +62,8 @@ entity registerInterface is
 		gpsTiming_0w : out gpsTiming_registerWrite_t;
 		ad56x1_0r : in ad56x1_registerRead_t;
 		ad56x1_0w : out ad56x1_registerWrite_t;
-		drs4_0r : in drs4_registerRead_t;
-		drs4_0w : out drs4_registerWrite_t;
+		--drs4_0r : in drs4_registerRead_t;
+		--drs4_0w : out drs4_registerWrite_t;
 		triggerLogic_0r : in triggerLogic_registerRead_t;
 		triggerLogic_0w : out triggerLogic_registerWrite_t
 	);
@@ -111,8 +111,8 @@ g0: if moduleEnabled /= 0 generate
 	gpsTiming_0w.reset <= controlBus.reset;
 	ad56x1_0w.clock <= controlBus.clock;
 	ad56x1_0w.reset <= controlBus.reset;
-	drs4_0w.clock <= controlBus.clock;
-	drs4_0w.reset <= controlBus.reset;
+	--drs4_0w.clock <= controlBus.clock;
+	--drs4_0w.reset <= controlBus.reset;
 	triggerLogic_0w.clock <= controlBus.clock;
 	triggerLogic_0w.reset <= controlBus.reset;
 	triggerLogic_0w.tick_ms <= gpsTiming_0r.tick_ms;
@@ -132,8 +132,8 @@ g0: if moduleEnabled /= 0 generate
 			--ad56x1_0w.init <= '0'; -- autoreset
 			ad56x1_0w.valueChangedChip0 <= '0'; -- autoreset
 			ad56x1_0w.valueChangedChip1 <= '0'; -- autoreset
-			drs4_0w.stoftTrigger <= '0'; -- autoreset
-			drs4_0w.resetStates <= '0'; -- autoreset
+			--drs4_0w.stoftTrigger <= '0'; -- autoreset
+			--drs4_0w.resetStates <= '0'; -- autoreset
 			dac088s085_x3_0w.valuesChangedChip0 <= (others=>'0'); -- autoreset
 			dac088s085_x3_0w.valuesChangedChip1 <= (others=>'0'); -- autoreset
 			dac088s085_x3_0w.valuesChangedChip2 <= (others=>'0'); -- autoreset
@@ -179,8 +179,8 @@ g0: if moduleEnabled /= 0 generate
 						when x"0092" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
 						when x"0094" => ad56x1_0w.valueChangedChip0 <= dataBusIn(0); ad56x1_0w.valueChangedChip1 <= dataBusIn(1); -- autoreset
 						
-						when x"00a0" => drs4_0w.stoftTrigger <= '1'; -- autoreset
-						when x"00a4" => drs4_0w.resetStates <= '1'; -- autoreset
+						--when x"00a0" => drs4_0w.stoftTrigger <= '1'; -- autoreset
+						--when x"00a4" => drs4_0w.resetStates <= '1'; -- autoreset
 
 						when x"0180" => pixelRateCounter_0w.counterPeriod <= dataBusIn; 
 										triggerLogic_0w.counterPeriod <= dataBusIn;
@@ -285,7 +285,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"0092" => readDataBuffer <= x"0" & ad56x1_0r.valueChip1;
 						when x"0094" => readDataBuffer <= x"000" & "000" & ad56x1_0r.dacBusy;
 						
-						when x"00a2" => readDataBuffer <= x"0" & "00" & drs4_0r.regionOfInterest;
+						--when x"00a2" => readDataBuffer <= x"0" & "00" & drs4_0r.regionOfInterest;
 
 						when x"0100" => readDataBuffer <= triggerTimeToEdge_0r.timeToRisingEdge(0);
 						when x"0102" => readDataBuffer <= triggerTimeToEdge_0r.timeToRisingEdge(1);

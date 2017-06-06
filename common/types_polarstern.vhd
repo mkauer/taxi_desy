@@ -15,6 +15,7 @@ package types is
 
 	constant numberOfChannels : integer := 16;
 	type channelData16_t is array (0 to numberOfChannels-1) of std_logic_vector(15 downto 0);
+	type channelData8w_t is array (0 to 7) of std_logic_vector(15 downto 0);
 
 	type smc_bus is record
 		clock : std_logic;
@@ -51,8 +52,9 @@ package types is
 	function findFallingEdgeFromRight9(patternIn : std_logic_vector) return unsigned;
 	function getFistOneFromRight8(patternIn : std_logic_vector) return integer;
 	
-	function capValue(value : unsigned; newSize : integer) return unsigned;
-	function capValue(value : std_logic_vector; newSize : integer) return std_logic_vector;
+	function capValue(value : unsigned; newSizeBit : integer) return unsigned;
+	function capValue(value : std_logic_vector; newSizeBit : integer) return std_logic_vector;
+	function capAndResizeValue(value : unsigned; newSizeBit : integer; maxValue : integer) return unsigned;
 	
 --	type smc_registerMap is record
 --		reg0 : std_logic_vector(15 downto 0);
@@ -332,7 +334,7 @@ package types is
 		mode : std_logic_vector(3 downto 0);
 		rateCounter : triggerPathCounter_t;
 		rateCounterLatched : triggerPathCounter_t;
-		rateCounterSectorLatched : channelData16_t;
+		rateCounterSectorLatched : channelData8w_t;
 	end record;
 	
 	type triggerLogic_registerWrite_t is record
@@ -347,7 +349,7 @@ package types is
 	type triggerRateCounter_t is record
 		newData : std_logic;
 		rateCounterLatched : triggerPathCounter_t;
-		rateCounterSectorLatched : channelData16_t;
+		rateCounterSectorLatched : channelData8w_t;
 	end record;
 		
 end types;
@@ -527,22 +529,35 @@ package body types is
 		return temp;
 	end;
 
-	function capValue(value : unsigned; newSize : integer) return unsigned is
-		variable zero : unsigned(value'length-1 downto newSize) := (others=>'0');
-		variable temp : unsigned(newSize-1 downto 0) := (others=>'0');
+	function capValue(value : unsigned; newSizeBit : integer) return unsigned is
+		variable zero : unsigned(value'length-1 downto newSizeBit) := (others=>'0');
+		variable temp : unsigned(newSizeBit-1 downto 0) := (others=>'0');
 	begin
-		if(value(value'length-1 downto newSize) /= zero) then
+		if(value(value'length-1 downto newSizeBit) /= zero) then
 			temp := (others=>'1');
 		else
-			temp := value(newSize-1 downto 0);
+			temp := value(newSizeBit-1 downto 0);
 		end if;
 		
 		return temp;
 	end;
 
-	function capValue(value : std_logic_vector; newSize : integer) return std_logic_vector is
+	function capValue(value : std_logic_vector; newSizeBit : integer) return std_logic_vector is
 	begin
-		return std_logic_vector(capValue(unsigned(value),newSize));
+		return std_logic_vector(capValue(unsigned(value),newSizeBit));
+	end;
+	
+	-- TODO: test me!
+	function capAndResizeValue(value : unsigned; newSizeBit : integer; maxValue : integer) return unsigned is
+		variable temp : unsigned(newSizeBit-1 downto 0) := (others=>'0');
+	begin
+		if(value > maxValue) then
+			temp := to_unsigned(maxValue,newSizeBit);
+		else
+			temp := value(newSizeBit-1 downto 0);
+		end if;
+		
+		return temp;
 	end;
 
 --	function smc_vectorToRegisterMap(inputVector : std_logic_vector) return smc_registerMap is

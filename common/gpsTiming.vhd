@@ -31,7 +31,7 @@ entity gpsTiming is
 	generic(
 		ticksPerBit : integer := 12370; --12370 => 9600baud@118.75MHz
 		bitTimeSamlePoint : integer := 6000;
-		globalClockRate : integer := 118750
+		globalClockRate_Hz : integer := 118750000
 	);
 	port(
 		gpsPps : in std_logic;
@@ -143,14 +143,14 @@ begin
 			if((gpsPps_old = '0') and (gpsPps_now = '1')) then
 				cycleCountLatched <= std_logic_vector(localClockSubSecondCounter);
 				localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
-				differenceGpsToLocalClock <= to_signed(118750000,differenceGpsToLocalClock'length) - localClockSubSecondCounter;
+				differenceGpsToLocalClock <= to_signed(globalClockRate_Hz,differenceGpsToLocalClock'length) - localClockSubSecondCounter;
 				realTimeCounterLatched <= std_logic_vector(realTimeCounter);
 			else
 				localClockSubSecondCounter <= localClockSubSecondCounter + 1;
 			end if;
 			
 			counter_clock <= counter_clock + 1;
-			if(counter_clock = globalClockRate) then
+			if(counter_clock = globalClockRate_Hz/1000) then
 				counter_clock <= 1;
 				tick_ms <= '1'; -- autoreset
 				counter_ms <= counter_ms + 1;
