@@ -1,0 +1,121 @@
+#:C49    
+#Xilinx FPGA Editor Command Log File
+#Editor Version:
+#:V   NT M2.1 P.20131013
+#Current Working Directory:
+#:D   C:\Xilinx\projects\taxi_firmware\iceScint
+#Date/Time:
+#:T   Tue Jun 13 12:40:19 2017
+#------------------------------
+	#Reading taxiTop.ncd...
+	#Loading device for application Rf_Device from file '6slx45.nph' in environment C:\Xilinx\14.7\ISE_DS\ISE\.
+	#   "taxiTop" is an NCD, version 3.2, device xc6slx45, package fgg484, speed -3
+	#Design creation date: 2017.06.13.10.38.05
+	#Building chip graphics...
+	#Loading speed info...
+	#1
+setattr main edit-mode no-logic-changes
+	#2
+select -k comp 'ADC_FRA_N<1>'
+	#3
+select comp 'ADC_FRA_P<1>'
+	#4
+unselect comp 'ADC_FRA_N<1>'
+	#5
+unselect comp 'ADC_FRA_P<1>'
+	#6
+select -k comp 'ADC_FRA_N<1>'
+	#7
+select comp 'ADC_FRA_P<1>'
+	#8
+select comp 'ADC_FRB_N<1>'
+	#9
+select comp 'ADC_FRB_P<1>'
+	#10
+unselect -all
+	#11
+select -k comp 'ADC_OUTA_1N<0>'
+	#12
+select comp 'ADC_OUTA_1N<1>'
+	#13
+unselect comp 'ADC_OUTA_1N<0>'
+	#14
+unselect comp 'ADC_OUTA_1N<1>'
+	#15
+select -k comp 'ADC_OUTA_1N<2>'
+	#16
+unselect comp 'ADC_OUTA_1N<2>'
+	#17
+select -k comp 'ADC_OUTA_1N<0>'
+	#18
+select comp 'ADC_OUTA_1N<2>'
+	#19
+select comp 'ADC_OUTA_1N<4>'
+	#20
+select comp 'ADC_OUTA_1N<6>'
+	#21
+select comp 'ADC_OUTA_1P<0>'
+	#22
+select comp 'ADC_OUTA_1P<2>'
+	#23
+select comp 'ADC_OUTA_1P<4>'
+	#24
+select comp 'ADC_OUTA_1P<6>'
+	#25
+select comp 'ADC_FRA_N<1>'
+	#26
+select comp 'ADC_FRA_P<1>'
+	#27
+select comp 'ADC_FRB_N<1>'
+	#28
+select comp 'ADC_FRB_P<1>'
+	#29
+select comp 'ADC_OUTA_1N<1>'
+	#30
+select comp 'ADC_OUTA_1N<3>'
+	#31
+select comp 'ADC_OUTA_1N<5>'
+	#32
+select comp 'ADC_OUTA_1N<7>'
+	#33
+select comp 'ADC_OUTA_1P<1>'
+	#34
+select comp 'ADC_OUTA_1P<3>'
+	#35
+select comp 'ADC_OUTA_1P<5>'
+	#36
+unselect comp 'ADC_OUTA_1N<0>'
+	#37
+unselect comp 'ADC_OUTA_1N<2>'
+	#38
+unselect comp 'ADC_OUTA_1N<4>'
+	#39
+unselect comp 'ADC_OUTA_1N<6>'
+	#40
+unselect comp 'ADC_OUTA_1P<0>'
+	#41
+unselect comp 'ADC_OUTA_1P<2>'
+	#42
+unselect comp 'ADC_OUTA_1P<6>'
+	#43
+unselect comp 'ADC_FRA_N<1>'
+	#44
+unselect comp 'ADC_FRA_P<1>'
+	#45
+unselect comp 'ADC_FRB_N<1>'
+	#46
+unselect comp 'ADC_FRB_P<1>'
+	#47
+unselect comp 'ADC_OUTA_1N<1>'
+	#48
+unselect comp 'ADC_OUTA_1N<3>'
+	#49
+unselect comp 'ADC_OUTA_1N<5>'
+	#50
+unselect comp 'ADC_OUTA_1N<7>'
+	#51
+unselect comp 'ADC_OUTA_1P<1>'
+	#52
+unselect comp 'ADC_OUTA_1P<3>'
+	#53
+unselect comp 'ADC_OUTA_1P<5>'

@@ -4,7 +4,7 @@
 -- 
 -- Create Date:    16:05:09 03/01/2017 
 -- Design Name: 
--- Module Name:    testRam_test - Behavioral 
+-- Module Name:    registerInterface_iceScint - Behavioral 
 -- Project Name: 
 -- Target Devices: 
 -- Tool versions: 
@@ -27,7 +27,7 @@ use work.types.all;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity testRam_test is
+entity registerInterface_iceScint is
 	generic 
 	(
 		subAddress : std_logic_vector(15 downto 0) := x"0000";
@@ -55,11 +55,13 @@ entity testRam_test is
 		ad56x1_0r : in ad56x1_registerRead_t;
 		ad56x1_0w : out ad56x1_registerWrite_t;
 		drs4_0r : in drs4_registerRead_t;
-		drs4_0w : out drs4_registerWrite_t
+		drs4_0w : out drs4_registerWrite_t;
+		ltm9007_14_0r : in ltm9007_14_registerRead_t;
+		ltm9007_14_0w : out ltm9007_14_registerWrite_t
 	);
-end testRam_test;
+end registerInterface_iceScint;
 
-architecture behavior of testRam_test is
+architecture behavior of registerInterface_iceScint is
 
 	signal chipSelectInternal : std_logic := '0';
 	signal readDataBuffer : std_logic_vector(15 downto 0) := (others => '0');
@@ -101,6 +103,8 @@ g0: if moduleEnabled /= 0 generate
 	ad56x1_0w.reset <= controlBus.reset;
 	drs4_0w.clock <= controlBus.clock;
 	drs4_0w.reset <= controlBus.reset;
+	ltm9007_14_0w.clock <= controlBus.clock;
+	ltm9007_14_0w.reset <= controlBus.reset;
 	
 	dac088s085_x3_0w.valuesChangedChip0 <= valuesChangedChip0Temp;
 	dac088s085_x3_0w.valuesChangedChip1 <= valuesChangedChip1Temp;
@@ -120,6 +124,7 @@ g0: if moduleEnabled /= 0 generate
 			ad56x1_0w.valueChangedChip1 <= '0'; -- autoreset
 			drs4_0w.stoftTrigger <= '0'; -- autoreset
 			drs4_0w.resetStates <= '0'; -- autoreset
+			ltm9007_14_0w.init <= '0'; --autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
@@ -135,6 +140,10 @@ g0: if moduleEnabled /= 0 generate
 				ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
 				eventFifoSystem_0w.packetConfig <= x"000f";
 				eventFifoSystem_0w.registerSamplesToRead <= x"0001";
+				drs4_0w.numberOfSamplesToRead <= x"0010";
+				drs4_0w.sampleMode <= x"0";
+				drs4_0w.readoutMode <= x"0"; 
+				ltm9007_14_0w.testMode <= '0';
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
@@ -189,6 +198,12 @@ g0: if moduleEnabled /= 0 generate
 						
 						when x"00a0" => drs4_0w.stoftTrigger <= '1'; -- autoreset
 						when x"00a4" => drs4_0w.resetStates <= '1'; -- autoreset
+						when x"00a6" => drs4_0w.numberOfSamplesToRead <= dataBusIn;
+						when x"00a8" => drs4_0w.sampleMode <= dataBusIn(3 downto 0);
+						when x"00aa" => drs4_0w.readoutMode <= dataBusIn(3 downto 0);
+						
+						when x"00b0" => ltm9007_14_0w.init <= '1'; -- autoreset
+						when x"00b2" => ltm9007_14_0w.testMode <= '1'; 
 						
 						when others => null;
 					end case;
@@ -273,6 +288,19 @@ g0: if moduleEnabled /= 0 generate
 						when x"0094" => readDataBuffer <= x"000" & "000" & ad56x1_0r.dacBusy;
 						
 						when x"00a2" => readDataBuffer <= x"0" & "00" & drs4_0r.regionOfInterest;
+						when x"00a6" => readDataBuffer <= drs4_0r.numberOfSamplesToRead;
+						when x"00a8" => readDataBuffer <= x"000" & drs4_0r.sampleMode;
+						when x"00aa" => readDataBuffer <= x"000" & drs4_0r.readoutMode;
+						
+						when x"00b2" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.testMode;
+						when x"00c0" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+0*14 downto 0+0*14);
+						when x"00c2" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+1*14 downto 0+1*14);
+						when x"00c4" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+2*14 downto 0+2*14);
+						when x"00c6" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+3*14 downto 0+3*14);
+						when x"00c8" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+0*14 downto 0+0*14);
+						when x"00ca" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+1*14 downto 0+1*14);
+						when x"00cc" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+2*14 downto 0+2*14);
+						when x"00ce" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+3*14 downto 0+3*14);
 						
 --						when others  => readDataBuffer <= (others => '0');
 						when others  => readDataBuffer <= x"dead";

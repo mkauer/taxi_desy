@@ -4,7 +4,7 @@
 -- 
 -- Create Date:    16:05:09 03/01/2017 
 -- Design Name: 
--- Module Name:    testRam_test - Behavioral 
+-- Module Name:    registerInterface_iceScint - Behavioral 
 -- Project Name: 
 -- Target Devices: 
 -- Tool versions: 
@@ -27,7 +27,7 @@ use work.types.all;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity testRam_test is
+entity registerInterface_iceScint is
 	generic 
 	(
 		subAddress : std_logic_vector(15 downto 0) := x"0000";
@@ -57,9 +57,9 @@ entity testRam_test is
 		drs4_0r : in drs4_registerRead_t;
 		drs4_0w : out drs4_registerWrite_t
 	);
-end testRam_test;
+end registerInterface_iceScint;
 
-architecture behavior of testRam_test is
+architecture behavior of registerInterface_iceScint is
 
 	signal chipSelectInternal : std_logic := '0';
 	signal readDataBuffer : std_logic_vector(15 downto 0) := (others => '0');

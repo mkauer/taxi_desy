@@ -122,16 +122,18 @@ package types is
 	
 	type drs4Fifo_t is record
 		fifoOutA : std_logic_vector(55 downto 0);
-		fifoWordsA : std_logic_vector(3 downto 0);
+		fifoWordsA : std_logic_vector(4 downto 0);
 		fifoOutB : std_logic_vector(55 downto 0);
-		fifoWordsB : std_logic_vector(3 downto 0);
+		fifoWordsB : std_logic_vector(4 downto 0);
 	end record;
 	
 	type drs4Clocks_t is record
+		drs4Clock_125MHz : std_logic;
 		drs4RefClock : std_logic;
-		drs4SamplingClock : std_logic;
-		AdcSamplingClock : std_logic;
-		chargeDone : std_logic;
+		adcSerdesDivClockPhase : std_logic;
+		--drs4SamplingClock : std_logic;
+		--AdcSamplingClock : std_logic;
+		--chargeDone : std_logic;
 	end record;
 	
 	type triggerSerdesClocks_t is record
@@ -263,14 +265,44 @@ package types is
 
 	type drs4_registerRead_t is record
 		regionOfInterest : std_logic_vector(9 downto 0);
+		numberOfSamplesToRead : std_logic_vector(15 downto 0);
+		sampleMode : std_logic_vector(3 downto 0);
+		readoutMode : std_logic_vector(3 downto 0);
 	end record;
 	type drs4_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
 		stoftTrigger : std_logic;
 		resetStates : std_logic;
+		numberOfSamplesToRead : std_logic_vector(15 downto 0);
+		sampleMode : std_logic_vector(3 downto 0);
+		readoutMode : std_logic_vector(3 downto 0);
 	end record;
-		
+
+-------------------------------------------------------------------------------
+	
+	type adcClocks_t is record
+		serdesDivClock : std_logic;
+		serdesDivClockPhase : std_logic;
+		serdesIoClock : std_logic;
+		serdesStrobe : std_logic;
+	end record;
+	
+	type ltm9007_14_registerRead_t is record
+		fifoA : std_logic_vector(4*14-1 downto 0);
+		fifoB : std_logic_vector(4*14-1 downto 0);
+		testMode : std_logic;
+	end record;
+	type ltm9007_14_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		init : std_logic;
+		testMode : std_logic;
+	end record;
+
+-------------------------------------------------------------------------------
+
+
 end types;
 
 package body types is

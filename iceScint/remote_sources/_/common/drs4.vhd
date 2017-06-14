@@ -62,10 +62,10 @@ architecture Behavioral of drs4 is
 	--constant mosiValidEdge : std_logic := '0'; -- '0'=rising, '1'=falling
 	--constant mosiMsbinitState : std_logic := '1'; -- '0'=LsbinitState, '1'=MsbinitState
 
-	type stateDrs4Spi_t is (idle, transfer1, transfer2, readRegionOfInterest, transferEnd);
+	type stateDrs4Spi_t is (idle, transfer1, transfer2, readRegionOfInterest, transferEnd, readFullChip, readRegionOfInterest2, readFullChip2, transferEnd2);
 	signal stateDrs4Spi : stateDrs4Spi_t := idle;
 
-	signal txBuffer : std_logic_vector(spiNumberOfBits-1 downto 0);
+	signal txBuffer : std_logic_vector(spiNumberOfBits downto 0);
 	signal roiBuffer : std_logic_vector(9 downto 0) := (others=>'0');
 
 	signal busy : std_logic := '0';
@@ -77,17 +77,19 @@ architecture Behavioral of drs4 is
 	signal sclkEnable : std_logic := '0';
 	signal sclkEdgeRising : std_logic := '0';
 	signal sclkEdgeFalling : std_logic := '0';
+	signal inhibitSclk : std_logic := '0';
+	signal enableRsrload : std_logic := '0';
 --	type readoutMode_t is (regionOfIntrest,fullReadout,configRegister);
 --	signal readoutMode : readoutMode_t := regionOfIntrest;
-	type spiTransferMode_t is (sample, transparentMode, standby, regionOfIntrest, fullReadout, readShiftRegister_write, writeShiftRegister_write, configRegister_write);
-	signal spiTransferMode : spiTransferMode_t := sample;
-	signal bitCounter : integer range 0 to 4095 := 0;--unsigned(15 downto 0) := x"0000";
+	type spiTransferMode_t is (sampleNormalMode, sampleTransparentMode, standby, regionOfIntrest, fullReadout, readShiftRegister_write, writeShiftRegister_write, configRegister_write, writeConfigRegister_write, regionOfIntrest2, fullReadout2);
+	signal spiTransferMode : spiTransferMode_t := sampleNormalMode;
+	signal bitCounter : integer range 0 to 65535 := 0; --unsigned(15 downto 0) := x"0000";
 	signal roiCounter : integer range 0 to 15 := 0;
 	signal edgeCounter : integer range 0 to 3 := 0;
 	signal spiDone : std_logic := '0';
 	
-	type state4_t is (init1, init2, init3, init4, init5, drs4start0, drs4start1, startSampling, sampling, readRoi);
-	signal state4 : state4_t := init1;
+	type stateDrs4_t is (init1, init2, init3, init4, init5, init6, init7, drs4start0, drs4start1, startSampling, sampling, readRoi, readFull, debug, readRoi2, readFull2);
+	signal stateDrs4 : stateDrs4_t := init1;
 	
 --	signal readShiftRegister : std_logic_vector(7 downto 0);
 	signal configRegister : std_logic_vector(2 downto 0) := "111";
@@ -96,7 +98,7 @@ architecture Behavioral of drs4 is
 	 alias configRegister_wsrloop_bit is configRegister(2);
 	 --alias configRegister_reserved_bits is configRegister(7 downto 3); -- hast to be 1
 	signal writeShiftRegister : std_logic_vector(7 downto 0) := "11111111"; -- 8x1024 samples
-	signal writeConfigRegister : std_logic_vector(7 downto 0);
+	signal writeConfigRegister : std_logic_vector(7 downto 0) := "11111111";
 	
 	constant address_enableAllOutputs : std_logic_vector(3 downto 0) := "1001";
 	constant address_transparentMode : std_logic_vector(3 downto 0) := "1010";
@@ -106,18 +108,46 @@ architecture Behavioral of drs4 is
 	constant address_writeConfigRegister : std_logic_vector(3 downto 0) := "1110";
 	constant address_stabdby : std_logic_vector(3 downto 0) := "1111";
 	
-	constant numberOfSamplesToRead : std_logic_vector(11 downto 0) := x"010";
-	signal stopDrs4_old :std_logic := '0';
+	--constant numberOfSamplesToRead : std_logic_vector(11 downto 0) := x"010";
+	signal stopDrs4_old : std_logic := '0';
 	signal counter1 : integer range 0 to 1023 := 0;
+
+	
+	signal sendFullReadoutSync : std_logic_vector(2 downto 0) := (others=>'0');
+	signal sendRoiReadoutSync : std_logic_vector(2 downto 0) := (others=>'0');
+	signal spi2DoneSync : std_logic_vector(2 downto 0) := (others=>'0');
+	signal sclk2 : std_logic := '0';
+	signal sclk2Enabled : std_logic := '0';
+	signal rsrload2Enabled : std_logic := '0';
+	signal bitCounter2 : integer range 0 to 65535 := 0;
+	signal bitCounter2Max : integer range 0 to 65535 := 0;
+	type stateSpi2_t is (idle, full, roi, prepare);
+	signal stateSpi2 : stateSpi2_t := idle;
+	signal spi2Done : std_logic := '0';
+	
+	signal rsrload1 : std_logic := '0';
+	signal srclk1 : std_logic := '0';
+	signal sendFullReadout : std_logic := '0';
+	signal sendRoiReadout : std_logic := '0';
+
 	
 begin
 	
-	rsrload <= sclk_i when ((spiTransferMode = regionOfIntrest) and (edgeCounter < 2)) else sclkDefaultLevel;	
-	srclk <= sclk_i when ((spiTransferMode = regionOfIntrest) and (edgeCounter >= 2)) else sclkDefaultLevel;
+	rsrload1 <= sclk_i when enableRsrload = '1' else sclkDefaultLevel;	
+	srclk1 <= sclk_i when inhibitSclk = '0' else sclkDefaultLevel;
+	
+	rsrload <= rsrload1 or (sclk2 and rsrload2Enabled);
+	srclk <= srclk1 or (sclk2 and sclk2Enabled);
 
-	P0:process (registerWrite.clock) --drs4Clocks.drs4SamplingClock) -- ~33MHz
+	--srclk <= sclkDefaultLevel when ((spiTransferMode = regionOfIntrest) and (edgeCounter < 2)) or (inhibitSclk = '1') else sclk_i;
+	
+	registerRead.numberOfSamplesToRead <= registerWrite.numberOfSamplesToRead; 
+	registerRead.sampleMode <= registerWrite.sampleMode; 
+	registerRead.readoutMode <= registerWrite.readoutMode; 
+
+	P0:process (registerWrite.clock)
 	begin
-		if rising_edge(registerWrite.clock) then --drs4Clocks.drs4SamplingClock) then
+		if rising_edge(registerWrite.clock) then
 			sclkEdgeRising <= '0'; -- autoreset
 			sclkEdgeFalling <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
@@ -150,17 +180,95 @@ begin
 			end if;
 		end if;
 	end process P0;
+
+	P01:process (drs4Clocks.adcSerdesDivClockPhase) -- ~66MHz
+	begin
+		if rising_edge(drs4Clocks.adcSerdesDivClockPhase) then
+			if (registerWrite.reset = '1') then
+				sclk2 <= sclkDefaultLevel;
+				sendFullReadoutSync <= (others=>'0');
+				sendRoiReadoutSync <= (others=>'0');
+				sclk2Enabled <= '0';
+				rsrload2Enabled <= '0';
+				stateSpi2 <= idle;
+				spi2Done <= '0';
+			else
+				sendFullReadoutSync <= sendFullReadout & sendFullReadoutSync(sendFullReadoutSync'length-1 downto 1);
+				sendRoiReadoutSync <= sendRoiReadout & sendRoiReadoutSync(sendRoiReadoutSync'length-1 downto 1);
+				sclk2 <= not sclk2;
+				
+				case stateSpi2 is
+					when idle =>
+						spi2Done <= '0';
+						if (sendFullReadoutSync(0) = '1') then
+							bitCounter2 <= 0;
+							bitCounter2Max <= bitCounter;
+							stateSpi2 <= full; 
+						elsif (sendRoiReadoutSync(0) = '1') then
+							bitCounter2 <= 0;
+							bitCounter2Max <= bitCounter;
+							stateSpi2 <= roi; 
+						end if;
+
+					when full =>
+						if (sclk2 = '0') then
+							sclk2Enabled <= '1';
+							bitCounter2 <= bitCounter2 + 1;
+						end if;
+						if (bitCounter2 >= bitCounter2Max) then
+							sclk2Enabled <= '0';
+							spi2Done <= '1';
+							stateSpi2 <= prepare; 
+						end if;
+
+					when roi =>
+						if (sclk2 = '0') then
+							if (bitCounter2 > 0) then
+								sclk2Enabled <= '1';
+								rsrload2Enabled <= '0';
+							else
+								sclk2Enabled <= '0';
+								rsrload2Enabled <= '1';
+							end if;
+							bitCounter2 <= bitCounter2 + 1;
+						end if;
+						if (bitCounter2 >= bitCounter2Max) then
+							sclk2Enabled <= '0';
+							rsrload2Enabled <= '0';
+							spi2Done <= '1';
+							stateSpi2 <= prepare; 
+						end if;
+					
+					when prepare =>
+						spi2Done <= '1';
+						if ((sendFullReadoutSync(0) = '0') and (sendRoiReadoutSync(0) = '0')) then
+							spi2Done <= '0';
+							stateSpi2 <= idle; 
+						end if;
+
+					when others =>
+						stateSpi2 <= idle;
+				end case;
+			end if;
+		end if;
+	end process P01;
 	
 	P1:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
 			sclkEnable <= '0'; -- autoreset
 			spiDone <= '0'; -- autoreset
+			sendFullReadout <= '0'; -- autoreset
+			sendRoiReadout <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then				
 				stateDrs4Spi <= idle;
 				address <= address_stabdby;
+				inhibitSclk <= '0';
+				enableRsrload <= '0';
 			else
 				spiTransfer_old <= spiTransfer;
+				spi2DoneSync <= spi2Done & spi2DoneSync(spi2DoneSync'length-1 downto 1);
+
 				case stateDrs4Spi is	
 					when idle =>
 						if((spiTransfer_old = '0') and (spiTransfer = '1')) then
@@ -168,29 +276,55 @@ begin
 								address <= address_readShiftRegister;
 								stateDrs4Spi <= transfer1;
 								bitCounter <= 1024;
-								txBuffer <= "01000000";
+								--bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								txBuffer <= "010000000";
 							elsif(spiTransferMode = configRegister_write) then
 								address <= address_configRegister;
-								stateDrs4Spi <= transfer2;
+								stateDrs4Spi <= transfer1;
+								--stateDrs4Spi <= transfer2;
 								bitCounter <= 8;
-								txBuffer <= "11111" & configRegister;
+								txBuffer <= "011111" & configRegister;
 							elsif(spiTransferMode = writeShiftRegister_write) then
 								address <= address_writeShiftRegister;
-								stateDrs4Spi <= transfer2;
+								stateDrs4Spi <= transfer1;
+								--stateDrs4Spi <= transfer2;
 								bitCounter <= 8;
-								txBuffer <= writeShiftRegister;
+								txBuffer <= "0" & writeShiftRegister;
 							elsif(spiTransferMode = standby) then
 								address <= address_stabdby;
 								spiDone <= '1'; -- autoreset
-							elsif(spiTransferMode = transparentMode) then
+							elsif(spiTransferMode = sampleTransparentMode) then
 								address <= address_transparentMode;
+								spiDone <= '1'; -- autoreset
+							elsif(spiTransferMode = sampleNormalMode) then
+								address <= address_enableAllOutputs;
 								spiDone <= '1'; -- autoreset
 							elsif(spiTransferMode = regionOfIntrest) then
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readRegionOfInterest;
-								bitCounter <= to_integer(unsigned(numberOfSamplesToRead));
+								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
 								roiCounter <= 0;
-								txBuffer <= "00000000";
+								txBuffer <= "000000000";
+								inhibitSclk <= '1';
+								enableRsrload <= '1';
+							elsif(spiTransferMode = fullReadout) then
+								address <= address_enableAllOutputs;
+								stateDrs4Spi <= readFullChip;
+								--bitCounter <= 999;
+								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+							elsif(spiTransferMode = regionOfIntrest2) then
+								address <= address_enableAllOutputs;
+								stateDrs4Spi <= readRegionOfInterest2;
+								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+							elsif(spiTransferMode = fullReadout2) then
+								address <= address_enableAllOutputs;
+								stateDrs4Spi <= readFullChip2;
+								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+							elsif(spiTransferMode = writeConfigRegister_write) then
+								address <= address_writeConfigRegister;
+								stateDrs4Spi <= transfer1;
+								bitCounter <= 8;
+								txBuffer <= "0" & writeConfigRegister;
 							end if;
 						end if;
 						
@@ -198,32 +332,44 @@ begin
 						sclkEnable <= '1'; -- autoreset
 						busy <= '1'; -- autoreset
 						if (sclkEdgeRising = '1') then
-							if(bitCounter <= 1) then
-								txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
+							if(spiTransferMode = readShiftRegister_write) then
+								if(bitCounter <= 1) then
+									txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
+									--txBuffer(txBuffer'length-1) <= '1';
+								end if;
+							else
+								if(bitCounter /= 0) then
+									txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
+								end if;
 							end if;
 							bitCounter <= bitCounter - 1;
 							if (bitCounter = 0) then
 								stateDrs4Spi <= transferEnd;
+								bitCounter <= 0;
 							end if;
+						end if;
+						if ((sclkEdgeFalling = '1') and (bitCounter = 0)) then
+							inhibitSclk <= '1';
 						end if;
 						
-					when transfer2 =>
-						sclkEnable <= '1'; -- autoreset
-						busy <= '1'; -- autoreset
-						if (sclkEdgeRising = '1') then
-							if(bitCounter /= 0) then
-								txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
-							end if;
-							bitCounter <= bitCounter - 1;
+					when readFullChip2 =>
+						busy <= '1';
+						sendFullReadout <= '1'; -- autoreset
+						if (spi2DoneSync(0) = '1') then
+							stateDrs4Spi <= transferEnd2;
 						end if;
-						if (bitCounter = 1) then
-							stateDrs4Spi <= transferEnd;
+
+					when readRegionOfInterest2 =>
+						busy <= '1';
+						sendRoiReadout <= '1'; -- autoreset
+						if (spi2DoneSync(0) = '1') then
+							stateDrs4Spi <= transferEnd2;
 						end if;
 						
 					when readRegionOfInterest =>
 						sclkEnable <= '1'; -- autoreset
 						busy <= '1'; -- autoreset
-						if (sclkEdgeRising = '1') then
+						if (sclkEdgeRising = '1') then	
 							if((roiCounter > 0) and (roiCounter < 9)) then
 								roiBuffer <= roiBuffer(roiBuffer'length-2 downto 0) & miso;
 							end if;
@@ -236,20 +382,56 @@ begin
 								bitCounter <= bitCounter - 1;
 							end if;
 							
-							if((bitCounter = 0) and (roiCounter = 9)) then
+							if(roiCounter = 9) then
+								registerRead.regionOfInterest <= roiBuffer;
+								if(bitCounter = 0) then
+									stateDrs4Spi <= transferEnd;
+									bitCounter <= 0;
+								end if;
+							end if;
+
+						end if;
+						
+						if (sclkEdgeFalling = '1') then	
+							if(roiCounter = 1) then
+								inhibitSclk <= '0';
+								enableRsrload <= '0';
+							end if;
+						end if;
+
+					when readFullChip =>
+						sclkEnable <= '1'; -- autoreset
+						busy <= '1'; -- autoreset
+						if (sclkEdgeRising = '1') then
+							if(bitCounter > 0) then
+								bitCounter <= bitCounter - 1;
+							else
 								stateDrs4Spi <= transferEnd;
+								bitCounter <= 0;
 							end if;
 						end if;
 										
 					when transferEnd =>
 						busy <= '1'; -- autoreset
-						sclkEnable <= '1'; -- autoreset
-						if (sclkEdgeRising = '1') then
-							registerRead.regionOfInterest <= roiBuffer;
+						bitCounter <= bitCounter + 1;
+						--sclkEnable <= '1'; -- autoreset
+						--if (sclkEdgeFalling = '1') then
+						--	inhibitSclk <= '1';
+						--end if;
+						if(bitCounter >= 4) then -- ## may be we dont have to wait at all ...
+						--if (sclkEdgeRising = '1') then
+							--registerRead.regionOfInterest <= roiBuffer;
 							stateDrs4Spi <= idle;
 							txBuffer <= (others=>'0');
+							inhibitSclk <= '0';
 							spiDone <= '1'; -- autoreset
 						end if;		
+					
+					when transferEnd2 =>
+						if (spi2DoneSync(0) = '0') then
+							stateDrs4Spi <= idle;
+							spiDone <= '1'; -- autoreset
+						end if;
 						
 					when others => null;
 				end case;
@@ -265,25 +447,27 @@ begin
 		if rising_edge(registerWrite.clock) then
 			notReset <= '1'; -- autoreset
 			spiTransfer <= '0'; -- autoreset
+			denable <= '0'; -- autoreset
+			dwrite <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
-				denable <= '0';
-				dwrite <= '0';
+				--denable <= '0';
+				--dwrite <= '0';
 				
-				state4 <= init1;
+				stateDrs4 <= init1;
 			else
 				stopDrs4_old <= stopDrs4;
 				
 				if(registerWrite.resetStates = '1') then
-					state4 <= init1;
+					stateDrs4 <= init1;
 				end if;
 				
-				case state4 is
+				case stateDrs4 is
 					when init1 =>
 						counter1 <= 0;
 						spiTransferMode <= standby;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							state4 <= init2;
+							stateDrs4 <= init2;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 						
@@ -291,14 +475,14 @@ begin
 						notReset <= '0'; -- autoreset
 						counter1 <= counter1 + 1;
 						if(counter1 = 10) then
-							state4 <= init3;
+							stateDrs4 <= init3;
 							counter1 <= 0;
 						end if;
 					
 					when init3 =>
 						counter1 <= counter1 + 1;
 						if(counter1 = 250) then -- 250 = ~2us
-							state4 <= init4;
+							stateDrs4 <= init4;
 							counter1 <= 0;
 						end if;
 						
@@ -306,7 +490,7 @@ begin
 						spiTransferMode <= configRegister_write;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							state4 <= init5;
+							stateDrs4 <= init5;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 						
@@ -314,7 +498,24 @@ begin
 						spiTransferMode <= writeShiftRegister_write;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							state4 <= drs4start0;
+							--stateDrs4 <= drs4start0;
+							stateDrs4 <= init6;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+						
+					when init6 =>
+						spiTransferMode <= writeConfigRegister_write;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= init7;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+						
+					when init7 =>
+						spiTransferMode <= readShiftRegister_write;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= drs4start0;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 						
@@ -322,38 +523,105 @@ begin
 						counter1 <= 0;
 						denable <= '1';
 						dwrite <= '1';
-						state4 <= drs4start1;
+						stateDrs4 <= drs4start1;
 						
 					when drs4start1 =>
+						denable <= '1';
+						dwrite <= '1';
 						counter1 <= counter1 + 1;
 						if(counter1 = 125) then -- 125 = ~1us ## ?!?
-							state4 <= startSampling;
+							stateDrs4 <= startSampling;
 						end if;
-					
+						
 					when startSampling =>
+						denable <= '1';
 						dwrite <= '1';
-						spiTransferMode <= transparentMode;
+						if(registerWrite.sampleMode = x"0") then
+							spiTransferMode <= sampleNormalMode;
+						elsif(registerWrite.sampleMode = x"1") then
+							spiTransferMode <= sampleTransparentMode;
+						else
+							spiTransferMode <= sampleNormalMode;
+						end if;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							state4 <= sampling;
+							stateDrs4 <= sampling;
 							spiTransfer <= '0'; -- autoreset
 						end if;
-					
+						
 					when sampling =>
+						denable <= '1';
+						dwrite <= '1';
 						if(((stopDrs4_old = '0') and (stopDrs4 = '1')) or (registerWrite.stoftTrigger = '1')) then
-							state4 <= readRoi;
+							if(registerWrite.readoutMode = x"0") then
+								stateDrs4 <= readFull;
+							elsif(registerWrite.readoutMode = x"1") then
+								stateDrs4 <= readRoi;
+							elsif(registerWrite.readoutMode = x"2") then
+								stateDrs4 <= debug;
+							elsif(registerWrite.readoutMode = x"3") then
+								stateDrs4 <= debug;
+							elsif(registerWrite.readoutMode = x"4") then
+								stateDrs4 <= readFull2;
+							elsif(registerWrite.readoutMode = x"5") then
+								stateDrs4 <= readRoi2;
+							else
+								stateDrs4 <= readFull;
+							end if;
 							dwrite <= '0';
 						end if;
 						
+					when debug =>
+						spiTransferMode <= readShiftRegister_write;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							spiTransfer <= '0'; -- autoreset
+							if(registerWrite.readoutMode = x"2") then
+								stateDrs4 <= readFull;
+							elsif(registerWrite.readoutMode = x"3") then
+								stateDrs4 <= readRoi;
+							else
+								stateDrs4 <= readFull;
+							end if;
+						end if;
+						
 					when readRoi =>
+						denable <= '1';
 						spiTransferMode <= regionOfIntrest;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							state4 <= startSampling;
+							stateDrs4 <= startSampling;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 						
-					when others => state4 <= init1;
+					when readFull =>
+						denable <= '1';
+						spiTransferMode <= fullReadout;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= startSampling;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+
+					when readRoi2 =>
+						denable <= '1';
+						spiTransferMode <= regionOfIntrest2;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= startSampling;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+						
+					when readFull2 =>
+						denable <= '1';
+						spiTransferMode <= fullReadout2;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= startSampling;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+						
+					when others => stateDrs4 <= init1;
 				end case;
 				
 			end if;
