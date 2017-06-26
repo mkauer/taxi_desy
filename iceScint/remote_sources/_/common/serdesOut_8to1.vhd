@@ -83,7 +83,8 @@ entity serdesOut_8to1 is
 	generic (
 		S			: integer := 8 ;				-- Parameter to set the serdes factor 1..8
 		D			: integer := 1 ;				-- Set the number of inputs and outputs
-		DATA_STRIPING 		: string := "PER_CHANL") ;			-- Used to determine method for mapping input parallel word to output serial words
+		DATA_STRIPING : string := "PER_CHANL" ; -- Used to determine method for mapping input parallel word to output serial words
+		OUTPUT_TYPE : string := "DIFFERENTIAL") ;
 	port 	(
 		txioclk			:  in std_logic ;				-- IO Clock network
 		txserdesstrobe		:  in std_logic ;				-- Parallel data capture strobe
@@ -109,10 +110,17 @@ begin
 
 	loop0 : for i in 0 to (D - 1) generate
 
+		g0: if OUTPUT_TYPE = "DIFFERENTIAL" generate	
 		io_clk_out : obufds port map (
 			O    			=> dataout_p(i),
 			OB       		=> dataout_n(i),
 			I         		=> tx_data_out(i));
+		end generate;
+		g1: if OUTPUT_TYPE = "SINGLEENDED" generate	
+		io_clk_out : obuf port map (
+			O    			=> dataout_p(i),
+			I         		=> tx_data_out(i));
+		end generate;
 
 		loop2 : for j in 0 to 7 generate
 		-- re-arrange data bits for transmission and invert lines as given by the mask

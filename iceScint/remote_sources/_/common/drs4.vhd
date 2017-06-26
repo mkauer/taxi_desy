@@ -33,7 +33,8 @@ entity drs4 is
 		address : out std_logic_vector(3 downto 0);
 		
 		denable : out std_logic;
-		dwrite : out std_logic;
+		--dwrite : out std_logic;
+		dwriteSerdes : out std_logic_vector(7 downto 0);
 			
 		rsrload : out std_logic;
 		miso : in std_logic;
@@ -43,11 +44,11 @@ entity drs4 is
 		dtap : in std_logic;
 		plllck : in std_logic;
 		
-		--refclk : out std_logic;
-		
-		stopDrs4 : in std_logic;
-		
+		--stopDrs4 : in std_logic; -- should be truly async later on
+		--stopDrs4Serdes : in std_logic_vector(7 downto 0); -- should be truly async later on
+		trigger : in triggerLogic_t;
 		drs4Clocks : in drs4Clocks_t;
+		drs4_to_ltm9007_14 : out drs4_to_ltm9007_14_t;
 		
 		registerRead : out drs4_registerRead_t;
 		registerWrite : in drs4_registerWrite_t	
@@ -66,7 +67,9 @@ architecture Behavioral of drs4 is
 	signal stateDrs4Spi : stateDrs4Spi_t := idle;
 
 	signal txBuffer : std_logic_vector(spiNumberOfBits downto 0);
-	signal roiBuffer : std_logic_vector(9 downto 0) := (others=>'0');
+	signal roiBuffer_66 : std_logic_vector(9 downto 0) := (others=>'0');
+	signal roiBufferLatched_66 : std_logic_vector(9 downto 0) := (others=>'0');
+	signal roiBufferReady_66 : std_logic := '0';
 
 	signal busy : std_logic := '0';
 	signal spiTransfer : std_logic := '0';
@@ -113,8 +116,9 @@ architecture Behavioral of drs4 is
 	signal counter1 : integer range 0 to 1023 := 0;
 
 	
-	signal sendFullReadoutSync : std_logic_vector(2 downto 0) := (others=>'0');
-	signal sendRoiReadoutSync : std_logic_vector(2 downto 0) := (others=>'0');
+	signal sendFullReadoutSync_66 : std_logic_vector(2 downto 0) := (others=>'0');
+	signal sendRoiReadoutSync_66 : std_logic_vector(2 downto 0) := (others=>'0');
+	signal roiBufferReadySync : std_logic_vector(2 downto 0) := (others=>'0');
 	signal spi2DoneSync : std_logic_vector(2 downto 0) := (others=>'0');
 	signal sclk2 : std_logic := '0';
 	signal sclk2Enabled : std_logic := '0';
@@ -129,15 +133,27 @@ architecture Behavioral of drs4 is
 	signal srclk1 : std_logic := '0';
 	signal sendFullReadout : std_logic := '0';
 	signal sendRoiReadout : std_logic := '0';
-
+	
+	signal dwrite_i : std_logic := '0';
+	signal stopDrs4 : std_logic := '0';
+	signal sumTrigger : std_logic := '0';
+	
 	
 begin
 	
 	rsrload1 <= sclk_i when enableRsrload = '1' else sclkDefaultLevel;	
 	srclk1 <= sclk_i when inhibitSclk = '0' else sclkDefaultLevel;
 	
-	rsrload <= rsrload1 or (sclk2 and rsrload2Enabled);
-	srclk <= srclk1 or (sclk2 and sclk2Enabled);
+	rsrload <= rsrload1 or (sclk2 and rsrload2Enabled); -- ## add fixed otput buffer for better timing
+	srclk <= srclk1 or (sclk2 and sclk2Enabled); -- ## add fixed otput buffer for better timing
+
+	stopDrs4 <= sumTrigger;
+	sumTrigger <=  trigger.triggerNotDelayed or trigger.softTrigger;
+	dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) when sumTrigger = '0' else x"00";
+	
+	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) and not(fillXFromY8("ONES","FROM_RIGHT",trigger.triggerSerdesNotDelayed));
+	
+	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) and not(stopDrs4Serdes);
 
 	--srclk <= sclkDefaultLevel when ((spiTransferMode = regionOfIntrest) and (edgeCounter < 2)) or (inhibitSclk = '1') else sclk_i;
 	
@@ -184,41 +200,49 @@ begin
 	P01:process (drs4Clocks.adcSerdesDivClockPhase) -- ~66MHz
 	begin
 		if rising_edge(drs4Clocks.adcSerdesDivClockPhase) then
+			roiBufferReady_66 <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
 				sclk2 <= sclkDefaultLevel;
-				sendFullReadoutSync <= (others=>'0');
-				sendRoiReadoutSync <= (others=>'0');
+				sendFullReadoutSync_66 <= (others=>'0');
+				sendRoiReadoutSync_66 <= (others=>'0');
 				sclk2Enabled <= '0';
 				rsrload2Enabled <= '0';
 				stateSpi2 <= idle;
 				spi2Done <= '0';
+				drs4_to_ltm9007_14.adcDataStart_66 <= '0';
 			else
-				sendFullReadoutSync <= sendFullReadout & sendFullReadoutSync(sendFullReadoutSync'length-1 downto 1);
-				sendRoiReadoutSync <= sendRoiReadout & sendRoiReadoutSync(sendRoiReadoutSync'length-1 downto 1);
+				sendFullReadoutSync_66 <= sendFullReadout & sendFullReadoutSync_66(sendFullReadoutSync_66'length-1 downto 1);
+				sendRoiReadoutSync_66 <= sendRoiReadout & sendRoiReadoutSync_66(sendRoiReadoutSync_66'length-1 downto 1);
 				sclk2 <= not sclk2;
 				
 				case stateSpi2 is
 					when idle =>
+						drs4_to_ltm9007_14.adcDataStart_66 <= '0';
 						spi2Done <= '0';
-						if (sendFullReadoutSync(0) = '1') then
+						if (sendFullReadoutSync_66(0) = '1') then
 							bitCounter2 <= 0;
-							bitCounter2Max <= bitCounter;
+							bitCounter2Max <= bitCounter; -- ## sync?!
 							stateSpi2 <= full; 
-						elsif (sendRoiReadoutSync(0) = '1') then
+						elsif (sendRoiReadoutSync_66(0) = '1') then
 							bitCounter2 <= 0;
-							bitCounter2Max <= bitCounter;
+							bitCounter2Max <= bitCounter; -- ## sync?!
 							stateSpi2 <= roi; 
+							roiCounter <= 0;
 						end if;
 
 					when full =>
 						if (sclk2 = '0') then
 							sclk2Enabled <= '1';
 							bitCounter2 <= bitCounter2 + 1;
+							if (bitCounter2 = 5) then
+								drs4_to_ltm9007_14.adcDataStart_66 <= '1';
+							end if;
 						end if;
 						if (bitCounter2 >= bitCounter2Max) then
 							sclk2Enabled <= '0';
 							spi2Done <= '1';
 							stateSpi2 <= prepare; 
+							bitCounter2 <= 0;
 						end if;
 
 					when roi =>
@@ -231,19 +255,49 @@ begin
 								rsrload2Enabled <= '1';
 							end if;
 							bitCounter2 <= bitCounter2 + 1;
+							if (bitCounter2 = 5) then
+								drs4_to_ltm9007_14.adcDataStart_66 <= '1';
+							end if;
 						end if;
-						if (bitCounter2 >= bitCounter2Max) then
+						if (bitCounter2 >= bitCounter2Max) then -- has to be long enought, we need the full roi address
 							sclk2Enabled <= '0';
 							rsrload2Enabled <= '0';
 							spi2Done <= '1';
 							stateSpi2 <= prepare; 
+							bitCounter2 <= 0;
 						end if;
+
+						-- implement roi !!!
+						--if (sclkEdgeRising = '1') then	
+						if (sclk2 = '1') then	
+							if((roiCounter > 0) and (roiCounter < 9)) then
+								roiBuffer_66 <= roiBuffer_66(roiBuffer_66'length-2 downto 0) & miso;
+							end if;
+							
+							if(roiCounter <= 9) then
+								roiCounter <= roiCounter + 1;
+							end if;
+							
+							if(roiCounter = 9) then
+								roiBufferLatched_66 <= roiBuffer_66;
+								roiBufferReady_66 <= '1'; -- autoreset
+							end if;
+						end if;	
+						--
 					
 					when prepare =>
 						spi2Done <= '1';
-						if ((sendFullReadoutSync(0) = '0') and (sendRoiReadoutSync(0) = '0')) then
-							spi2Done <= '0';
-							stateSpi2 <= idle; 
+						if (sclk2 = '0') then
+							if (bitCounter2 <= 5) then
+								bitCounter2 <= bitCounter2 + 1;
+								drs4_to_ltm9007_14.adcDataStart_66 <= '1';
+							else
+								drs4_to_ltm9007_14.adcDataStart_66 <= '0';
+								if ((sendFullReadoutSync_66(0) = '0') and (sendRoiReadoutSync_66(0) = '0')) then
+									spi2Done <= '0';
+									stateSpi2 <= idle; 
+								end if;
+							end if;
 						end if;
 
 					when others =>
@@ -252,6 +306,22 @@ begin
 			end if;
 		end if;
 	end process P01;
+								
+	P02:process (registerWrite.clock)
+	begin
+		if rising_edge(registerWrite.clock) then
+			roiBufferReadySync <= roiBufferReady_66 & roiBufferReadySync(roiBufferReadySync'length-1 downto 1);
+			drs4_to_ltm9007_14.roiBufferReady <= '0'; -- autoreset
+			if (registerWrite.reset = '1') then
+				drs4_to_ltm9007_14.roiBuffer <= (others=>'0');
+			else
+				if((roiBufferReadySync(1) = '1') and (roiBufferReadySync(0) = '0')) then
+					drs4_to_ltm9007_14.roiBuffer <= roiBufferLatched_66;
+					drs4_to_ltm9007_14.roiBufferReady <= '1'; -- autoreset
+				end if;
+			end if;
+		end if;
+	end process P02;
 	
 	P1:process (registerWrite.clock)
 	begin
@@ -260,11 +330,14 @@ begin
 			spiDone <= '0'; -- autoreset
 			sendFullReadout <= '0'; -- autoreset
 			sendRoiReadout <= '0'; -- autoreset
+			--drs4_to_ltm9007_14.roiBufferReady <= '0'; -- autoreset 
+			--drs4_to_ltm9007_14.drs4RoiValid <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then				
 				stateDrs4Spi <= idle;
 				address <= address_stabdby;
 				inhibitSclk <= '0';
 				enableRsrload <= '0';
+				--drs4_to_ltm9007_14.roiBuffer <= (others=>'0');
 			else
 				spiTransfer_old <= spiTransfer;
 				spi2DoneSync <= spi2Done & spi2DoneSync(spi2DoneSync'length-1 downto 1);
@@ -303,7 +376,7 @@ begin
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readRegionOfInterest;
 								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
-								roiCounter <= 0;
+								--roiCounter <= 0;
 								txBuffer <= "000000000";
 								inhibitSclk <= '1';
 								enableRsrload <= '1';
@@ -366,38 +439,40 @@ begin
 							stateDrs4Spi <= transferEnd2;
 						end if;
 						
-					when readRegionOfInterest =>
+					when readRegionOfInterest => -- ## drs4RoiValid is not used anymore....
 						sclkEnable <= '1'; -- autoreset
 						busy <= '1'; -- autoreset
 						if (sclkEdgeRising = '1') then	
-							if((roiCounter > 0) and (roiCounter < 9)) then
-								roiBuffer <= roiBuffer(roiBuffer'length-2 downto 0) & miso;
-							end if;
+							--if((roiCounter > 0) and (roiCounter < 9)) then
+							--	roiBuffer <= roiBuffer(roiBuffer'length-2 downto 0) & miso;
+							--end if;
 							
-							if(roiCounter < 9) then
-								roiCounter <= roiCounter + 1;
-							end if;
+							--if(roiCounter < 9) then
+							--	roiCounter <= roiCounter + 1;
+							--end if;
 							
 							if(bitCounter > 0) then
 								bitCounter <= bitCounter - 1;
 							end if;
 							
-							if(roiCounter = 9) then
-								registerRead.regionOfInterest <= roiBuffer;
+							--if(roiCounter = 9) then
+							--	registerRead.regionOfInterest <= roiBuffer;
+							--	drs4_to_ltm9007_14.roiBuffer <= roiBuffer;
+							--	drs4_to_ltm9007_14.roiBufferReady <= '1'; -- autoreset
 								if(bitCounter = 0) then
 									stateDrs4Spi <= transferEnd;
 									bitCounter <= 0;
 								end if;
-							end if;
+							--end if;
 
 						end if;
 						
-						if (sclkEdgeFalling = '1') then	
-							if(roiCounter = 1) then
-								inhibitSclk <= '0';
-								enableRsrload <= '0';
-							end if;
-						end if;
+						--if (sclkEdgeFalling = '1') then	
+						--	if(roiCounter = 1) then
+						--		inhibitSclk <= '0';
+						--		enableRsrload <= '0';
+						--	end if;
+						--end if;
 
 					when readFullChip =>
 						sclkEnable <= '1'; -- autoreset
@@ -448,10 +523,10 @@ begin
 			notReset <= '1'; -- autoreset
 			spiTransfer <= '0'; -- autoreset
 			denable <= '0'; -- autoreset
-			dwrite <= '0'; -- autoreset
+			dwrite_i <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
 				--denable <= '0';
-				--dwrite <= '0';
+				--dwrite_i <= '0';
 				
 				stateDrs4 <= init1;
 			else
@@ -522,12 +597,12 @@ begin
 					when drs4start0 =>
 						counter1 <= 0;
 						denable <= '1';
-						dwrite <= '1';
+						dwrite_i <= '1';
 						stateDrs4 <= drs4start1;
 						
 					when drs4start1 =>
 						denable <= '1';
-						dwrite <= '1';
+						dwrite_i <= '1';
 						counter1 <= counter1 + 1;
 						if(counter1 = 125) then -- 125 = ~1us ## ?!?
 							stateDrs4 <= startSampling;
@@ -535,7 +610,7 @@ begin
 						
 					when startSampling =>
 						denable <= '1';
-						dwrite <= '1';
+						dwrite_i <= '1';
 						if(registerWrite.sampleMode = x"0") then
 							spiTransferMode <= sampleNormalMode;
 						elsif(registerWrite.sampleMode = x"1") then
@@ -551,8 +626,8 @@ begin
 						
 					when sampling =>
 						denable <= '1';
-						dwrite <= '1';
-						if(((stopDrs4_old = '0') and (stopDrs4 = '1')) or (registerWrite.stoftTrigger = '1')) then
+						dwrite_i <= '1';
+						if((stopDrs4_old = '0') and (stopDrs4 = '1'))then -- or (trigger.softTrigger = '1')) then
 							if(registerWrite.readoutMode = x"0") then
 								stateDrs4 <= readFull;
 							elsif(registerWrite.readoutMode = x"1") then
@@ -568,7 +643,7 @@ begin
 							else
 								stateDrs4 <= readFull;
 							end if;
-							dwrite <= '0';
+							dwrite_i <= '0';
 						end if;
 						
 					when debug =>

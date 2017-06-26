@@ -41,6 +41,8 @@
 --		- phase detector state machine moved down in the hierarchy to line up with the version in coregen, will need adding to ISE project
 --		- DATA_STRIPING added
 --
+--	  Rev 1.x -bitslip handling changed (marko)
+--
 ------------------------------------------------------------------------------
 --
 --  Disclaimer: 
@@ -96,9 +98,12 @@ entity serdesIn_1to7 is
 		reset			:  in std_logic ;				-- Reset line
 --		gclk			:  in std_logic ;				-- Global clock
 		serdesClocks : in adcClocks_t;
-		bitslip			:  in std_logic ;				-- Bitslip control line
+		bitslipStart	:  in std_logic ;				-- 
+		bitslipDone		: out std_logic ;				-- 
+		bitslipFailed	: out std_logic ;				-- 
+		bitslipPattern	:  in std_logic_vector(S-1 downto 0) ;		-- 
 		debug_in  		:  in std_logic_vector(1 downto 0) ;		-- input debug data, set to "00" if not required
-		data_out		: out std_logic_vector((D*S)-1 downto 0) ;  	-- Output data
+		dataOut			: out std_logic_vector((D*S)-1 downto 0) ;  	-- Output data
 		debug			: out std_logic_vector((3*D)+5 downto 0)) ;  	-- Debug bus, 5D+5 = 3 lines per input (from inc, mux and ce) + 6, leave nc if debug not required
 end serdesIn_1to7;
 
@@ -144,12 +149,75 @@ architecture behavioral of serdesIn_1to7 is
 	signal rxioclk : std_logic;
 	signal rxserdesstrobe : std_logic;
 	signal gclk : std_logic;
+	
+	signal bitslip : std_logic := '0';
+	type stateBitslip_t is (idle, run1, run2, run3);
+	signal stateBitslip : stateBitslip_t := idle;
+	signal bitslipCounter : integer range 0 to 31 := 0;
+	signal bitslipWaitCounter : integer range 0 to 31 := 0;
+	signal bitslipStartSync : std_logic_vector(4 downto 0) := (others=>'0');
+	signal data_out : std_logic_vector((D*S)-1 downto 0) := (others=>'0');
+	signal bitslipDoneShift : std_logic_vector(4 downto 0) := (others=>'0');
 
 begin
 
 	rxioclk <= serdesClocks.serdesIoClock;
 	rxserdesstrobe <= serdesClocks.serdesStrobe;
 	gclk <= serdesClocks.serdesDivClock;
+
+	dataOut <= data_out;
+
+	bitslipDone <= bitslipDoneShift(0);
+
+	P_bitslip:process (gclk)
+	begin
+		if rising_edge(gclk) then
+			bitslip <= '0'; -- autoreset
+			if (reset = '1') then
+				stateBitslip <= idle;
+				bitslipStartSync <= (others=>'0');
+				bitslipDoneShift <= (others=>'0');
+			else
+				bitslipStartSync <= bitslipStart & bitslipStartSync(bitslipStartSync'length-1 downto 1);
+				bitslipDoneShift <= "0" & bitslipDoneShift(bitslipDoneShift'length-1 downto 1);
+
+				case stateBitslip is	
+					when run1 =>
+						if(bitslipPattern /= data_out(S-1 downto 0)) then
+							bitslip <= '1'; -- autoreset
+							stateBitslip <= run2;
+							bitslipCounter <= bitslipCounter + 1;
+							bitslipWaitCounter <= 9;
+						else
+							stateBitslip <= run3;
+							bitslipFailed <= '0';
+						end if;
+						if(bitslipCounter >= 15) then
+							stateBitslip <= run3;
+							bitslipFailed <= '1';
+						end if;
+					
+					when run2 =>
+						bitslipWaitCounter <= bitslipWaitCounter - 1;
+						if(bitslipWaitCounter = 0) then
+							stateBitslip <= run1;
+						end if;
+
+					when run3 =>
+						bitslipDoneShift <= (others=>'1');
+						stateBitslip <= idle;
+
+					when idle =>
+						if((bitslipStartSync(1) = '1') and (bitslipStartSync(0) = '0')) then
+							stateBitslip <= run1;
+							bitslipCounter <= 0;
+						end if;
+
+					when others => stateBitslip <= idle;
+				end case;
+			end if;
+		end if;
+	end process P_bitslip;
 
 	pd_state_machine : phase_detector generic map (
 		D		      	=> D) 				-- Set the number of inputs

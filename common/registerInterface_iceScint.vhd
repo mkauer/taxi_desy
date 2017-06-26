@@ -31,7 +31,7 @@ entity registerInterface_iceScint is
 	generic 
 	(
 		subAddress : std_logic_vector(15 downto 0) := x"0000";
-		subAddressMask : std_logic_vector(15 downto 0) := x"FF00";
+		subAddressMask : std_logic_vector(15 downto 0) := x"0000";
 		moduleEnabled : integer := 1
 	);
 	port
@@ -57,7 +57,11 @@ entity registerInterface_iceScint is
 		drs4_0r : in drs4_registerRead_t;
 		drs4_0w : out drs4_registerWrite_t;
 		ltm9007_14_0r : in ltm9007_14_registerRead_t;
-		ltm9007_14_0w : out ltm9007_14_registerWrite_t
+		ltm9007_14_0w : out ltm9007_14_registerWrite_t;
+		triggerLogic_0r : in triggerLogic_registerRead_t;
+		triggerLogic_0w : out triggerLogic_registerWrite_t;
+		iceTad_0r : in iceTad_registerRead_t;
+		iceTad_0w : out iceTad_registerWrite_t
 	);
 end registerInterface_iceScint;
 
@@ -77,6 +81,9 @@ architecture behavior of registerInterface_iceScint is
 	signal valuesChangedChip0Temp : std_logic_vector(7 downto 0) := (others => '0');
 	signal valuesChangedChip1Temp : std_logic_vector(7 downto 0) := (others => '0');
 	signal valuesChangedChip2Temp : std_logic_vector(7 downto 0) := (others => '0');
+	
+	signal numberOfSamplesToRead : std_logic_vector(15 downto 0) := (others => '0');
+	signal actualOffsetCorrectionRamValue : std_logic_vector(15 downto 0) := (others => '0');
 	
 begin
 
@@ -105,10 +112,21 @@ g0: if moduleEnabled /= 0 generate
 	drs4_0w.reset <= controlBus.reset;
 	ltm9007_14_0w.clock <= controlBus.clock;
 	ltm9007_14_0w.reset <= controlBus.reset;
+	triggerLogic_0w.clock <= controlBus.clock;
+	triggerLogic_0w.reset <= controlBus.reset;
+	iceTad_0w.clock <= controlBus.clock;
+	iceTad_0w.reset <= controlBus.reset;
 	
 	dac088s085_x3_0w.valuesChangedChip0 <= valuesChangedChip0Temp;
 	dac088s085_x3_0w.valuesChangedChip1 <= valuesChangedChip1Temp;
 	dac088s085_x3_0w.valuesChangedChip2 <= valuesChangedChip2Temp;
+				
+	drs4_0w.numberOfSamplesToRead <= numberOfSamplesToRead;
+	ltm9007_14_0w.numberOfSamplesToRead <= numberOfSamplesToRead;
+	eventFifoSystem_0w.registerSamplesToRead <= numberOfSamplesToRead;
+	
+	--ltm9007_14_0r.offsetCorrectionRamAddress <= controlBus.address(10 downto 1) when controlBus.address(15 downto 11) = x"1"&"0" else "0000000000";
+	--da sollte 'Jemand' mal einen richtigen address decoder fuer den ram bauen.....
 	
 	P0:process (controlBus.clock)
 	begin
@@ -122,9 +140,12 @@ g0: if moduleEnabled /= 0 generate
 			--ad56x1_0w.init <= '0'; -- autoreset
 			ad56x1_0w.valueChangedChip0 <= '0'; -- autoreset
 			ad56x1_0w.valueChangedChip1 <= '0'; -- autoreset
-			drs4_0w.stoftTrigger <= '0'; -- autoreset
+			--drs4_0w.stoftTrigger <= '0'; -- autoreset
 			drs4_0w.resetStates <= '0'; -- autoreset
 			ltm9007_14_0w.init <= '0'; --autoreset
+			ltm9007_14_0w.bitslipStart <= '0'; --autoreset
+			triggerLogic_0w.triggerSerdesDelayInit <= '0'; --autoreset
+			triggerLogic_0w.softTrigger <= '0'; --autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
@@ -139,23 +160,28 @@ g0: if moduleEnabled /= 0 generate
 				ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
 				ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
 				eventFifoSystem_0w.packetConfig <= x"000f";
-				eventFifoSystem_0w.registerSamplesToRead <= x"0001";
-				drs4_0w.numberOfSamplesToRead <= x"0010";
-				drs4_0w.sampleMode <= x"0";
-				drs4_0w.readoutMode <= x"0"; 
-				ltm9007_14_0w.testMode <= '0';
+				numberOfSamplesToRead <= x"0020";
+				drs4_0w.sampleMode <= x"1";
+				drs4_0w.readoutMode <= x"5"; 
+				ltm9007_14_0w.testMode <= x"0";
+				ltm9007_14_0w.init <= '1'; --autoreset
+				triggerLogic_0w.triggerMask <= x"ff"; -- ## debug
+				triggerLogic_0w.triggerSerdesDelayInit <= '1'; --autoreset
+				triggerLogic_0w.triggerSerdesDelay <= "00" & x"10";
+				triggerLogic_0w.triggerSerdesDelayInit <= '1'; --autoreset
+				triggerLogic_0w.triggerSerdesDelayInit <= '1'; --autoreset
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
 				valuesChangedChip2Temp <= valuesChangedChip2Temp and not(dac088s085_x3_0r.valuesChangedChip2Reset);
-				
+
 				if ((controlBus.writeStrobe = '1') and (controlBus.readStrobe = '0') and (chipSelectInternal = '1')) then
 					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						when x"0000" => registerA <= dataBusIn(7 downto 0);
 						when x"0002" => registerB <= dataBusIn;
 						
 						when x"0004" => eventFifoSystem_0w.packetConfig <= dataBusIn;
-						when x"0008" => eventFifoSystem_0w.registerSamplesToRead <= dataBusIn;
+					--	when x"0008" => eventFifoSystem_0w.registerSamplesToRead <= dataBusIn;
 											
 						when x"0022" => eventFifoClear <= '1'; -- autoreset
 						when x"002c" => debugReset <= '1'; -- autoreset
@@ -196,14 +222,34 @@ g0: if moduleEnabled /= 0 generate
 						when x"0092" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
 						when x"0094" => ad56x1_0w.valueChangedChip0 <= dataBusIn(0); ad56x1_0w.valueChangedChip1 <= dataBusIn(1); -- autoreset
 						
-						when x"00a0" => drs4_0w.stoftTrigger <= '1'; -- autoreset
+						--when x"00a0" => drs4_0w.stoftTrigger <= '1'; -- autoreset
 						when x"00a4" => drs4_0w.resetStates <= '1'; -- autoreset
-						when x"00a6" => drs4_0w.numberOfSamplesToRead <= dataBusIn;
+						when x"00a6" => numberOfSamplesToRead <= dataBusIn;
 						when x"00a8" => drs4_0w.sampleMode <= dataBusIn(3 downto 0);
 						when x"00aa" => drs4_0w.readoutMode <= dataBusIn(3 downto 0);
 						
-						when x"00b0" => ltm9007_14_0w.init <= '1'; -- autoreset
-						when x"00b2" => ltm9007_14_0w.testMode <= '1'; 
+						when x"00b0" => ltm9007_14_0w.testMode <= dataBusIn(3 downto 0);
+							ltm9007_14_0w.init <= '1'; -- autoreset
+						when x"00b2" => ltm9007_14_0w.testPattern <= dataBusIn(13 downto 0); 
+						when x"00b4" => ltm9007_14_0w.bitslipStart <= '1'; -- autoreset 
+						when x"00b6" => ltm9007_14_0w.bitslipPattern <= dataBusIn(6 downto 0); 
+						
+						when x"00d0" => triggerLogic_0w.triggerSerdesDelay <= dataBusIn(9 downto 0);
+							triggerLogic_0w.triggerSerdesDelayInit <= '1'; --autoreset
+						when x"00d2" => triggerLogic_0w.softTrigger <= '1'; --autoreset
+						when x"00d4" => triggerLogic_0w.triggerMask <= dataBusIn(7 downto 0);
+						when x"00d6" => triggerLogic_0w.singleSeq <= dataBusIn(0);
+						when x"00d8" => triggerLogic_0w.triggerGeneratorEnabled <= dataBusIn(0);
+						when x"00da" => triggerLogic_0w.triggerGeneratorPeriod(15 downto 0) <= unsigned(dataBusIn);
+						when x"00dc" => triggerLogic_0w.triggerGeneratorPeriod(31 downto 16) <= unsigned(dataBusIn);
+						
+						when x"00e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(7 downto 0); 
+						--when x"00e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(2 downto 0); 
+						when x"00e2" => ltm9007_14_0w.offsetCorrectionRamAddress <= dataBusIn(9 downto 0); 
+						when x"00e4" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
+						
+						--when x"1000" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
+						--when x"1800" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
 						
 						when others => null;
 					end case;
@@ -292,7 +338,10 @@ g0: if moduleEnabled /= 0 generate
 						when x"00a8" => readDataBuffer <= x"000" & drs4_0r.sampleMode;
 						when x"00aa" => readDataBuffer <= x"000" & drs4_0r.readoutMode;
 						
-						when x"00b2" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.testMode;
+						when x"00b0" => readDataBuffer <= x"000" & ltm9007_14_0r.testMode;
+						when x"00b2" => readDataBuffer <= "00" & ltm9007_14_0r.testPattern;
+						when x"00b4" => readDataBuffer <= x"000" & "00" & ltm9007_14_0r.bitslipFailed;
+						when x"00b6" => readDataBuffer <= x"00" & "0" & ltm9007_14_0r.bitslipPattern;
 						when x"00c0" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+0*14 downto 0+0*14);
 						when x"00c2" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+1*14 downto 0+1*14);
 						when x"00c4" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+2*14 downto 0+2*14);
@@ -302,6 +351,27 @@ g0: if moduleEnabled /= 0 generate
 						when x"00cc" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+2*14 downto 0+2*14);
 						when x"00ce" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+3*14 downto 0+3*14);
 						
+						when x"00d0" => readDataBuffer <= x"0" & "00" & triggerLogic_0r.triggerSerdesDelay;
+						when x"00d4" => readDataBuffer <= x"00" & triggerLogic_0r.triggerMask;
+						when x"00d6" => readDataBuffer <= x"000" & "000" &  triggerLogic_0r.singleSeq;
+						when x"00d8" => readDataBuffer <= x"000" & "000" &  triggerLogic_0r.triggerGeneratorEnabled;
+						when x"00da" => readDataBuffer <= std_logic_vector(triggerLogic_0r.triggerGeneratorPeriod(15 downto 0));
+						when x"00dc" => readDataBuffer <= std_logic_vector(triggerLogic_0r.triggerGeneratorPeriod(31 downto 16));
+						
+						when x"00e0" => readDataBuffer <= x"00" & ltm9007_14_0r.offsetCorrectionRamWrite;
+						when x"00e2" => readDataBuffer <= "000000" & ltm9007_14_0r.offsetCorrectionRamAddress;
+						when x"00e4" => readDataBuffer <= actualOffsetCorrectionRamValue;
+						
+						when x"f000" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoEmptyA;
+						when x"f002" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoValidA;
+						when x"f004" => readDataBuffer <= x"00" & ltm9007_14_0r.fifoWordsA;
+						when x"f006" => readDataBuffer <= x"00" & ltm9007_14_0r.fifoWordsA2;
+						
+						when x"f0d0" => readDataBuffer <= x"00" & triggerLogic_0r.trigger.triggerSerdesDelayed;
+						when x"f0d2" => readDataBuffer <= x"00" & triggerLogic_0r.trigger.triggerSerdesNotDelayed;
+						when x"f0d4" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerDelayed;
+						when x"f0d6" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerNotDelayed;
+						
 --						when others  => readDataBuffer <= (others => '0');
 						when others  => readDataBuffer <= x"dead";
 					end case;
@@ -309,7 +379,35 @@ g0: if moduleEnabled /= 0 generate
 			end if;
 		end if;
 	end process P0;
-	
+
+--	P1:process (controlBus.clock)
+--	begin
+--		if rising_edge(controlBus.clock) then
+--			if (controlBus.reset = '1') then
+--				actualOffsetCorrectionRamValue <= x"8000";
+--			else
+--				if(ltm9007_14_0r.offsetCorrectionRamWrite(0) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(0);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(1) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(1);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(2) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(2);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(3) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(3);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(4) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(4);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(5) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(5);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(6) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(6);
+--				elsif(ltm9007_14_0r.offsetCorrectionRamWrite(7) = '1') then
+--					actualOffsetCorrectionRamValue <= x"00" & ltm9007_14_0r.offsetCorrectionRamData(7);
+--				else
+--					actualOffsetCorrectionRamValue <= x"8000";
+--				end if;
+--			end if;
+--		end if;
+--	end process P1;
 	
 end generate g0;
 end behavior;

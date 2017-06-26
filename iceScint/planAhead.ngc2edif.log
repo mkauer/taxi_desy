@@ -1,0 +1,57 @@
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop_cs.ngc ...
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/I_NO_D.U_ILA/U_RST/U_HALT_XFER/iDOUT_dly<2 : 0> on block ila_pro_0 is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/I_NO_D.U_ILA/U_RST/U_ARM_XFER/iDOUT_dly<4 : 0> on block ila_pro_0 is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus U0/U_ICON/iCORE_ID_SEL<15 : 0> on block
+   icon_pro is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus x14/differenceGpsToLocalClock<31 : 0> on
+   block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/stateAdc[4]_X_23_o_wide_mux_71_OUT<16 : 0> on block taxiTop is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x17/message<16 : 0> on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy<3 :
+   1> on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x3/_n1058<16 : 13> on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x3/drs4_0w_numberOfSamplesToRead[15]_GND_563_o_mux_262_OUT<15 : 4> on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14/Msub_GND_510_o_localClockSubSecondCounter[31]_sub_11_OUT<31:0>_lut<31 :
+   0> on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14/GND_510_o_localClockSubSecondCounter[31]_sub_11_OUT<31 : 0> on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_118_o_GND_118_o_mux_176_OUT<3 :
+   0> on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_120_o_GND_120_o_sub_36_OUT<15:0>_lut<15 : 0> on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/state1[3]_X_18_o_wide_mux_59_OUT<143
+   : 0> on block taxiTop is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn<143 : 0> on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop_cs.edif ...
+ngc2edif: Total memory usage is 101052 kilobytes
+

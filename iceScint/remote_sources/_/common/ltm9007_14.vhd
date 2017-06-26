@@ -48,10 +48,12 @@ entity ltm9007_14 is
 		mosi : out std_logic;
 		sclk : out std_logic;
 		
-		adcDataValid : in std_logic;
+		drs4_to_ltm9007_14 : in drs4_to_ltm9007_14_t;
+		--adcDataValid : in std_logic;
 
 		drs4Clocks : in drs4Clocks_t;
-		drs4Fifo : out drs4Fifo_t;
+		adcFifo : out adcFifo_t;
+		ltm9007_14_to_eventFifoSystem : out ltm9007_14_to_eventFifoSystem_t;
 		
 		adcClocks : in adcClocks_t;
 		
@@ -87,9 +89,10 @@ architecture Behavioral of ltm9007_14 is
 	signal enc : std_logic := '0';
 	signal reset : std_logic := '0';
 	
+	type stateAdcFifoData_t is (idle, skip, valid1, valid2);
+	signal stateAdcFifoData : stateAdcFifoData_t := idle;
 	type stateAdcFifo_t is (sync1, sync2, sample1, sample2);
-	signal stateAdcFifoA : stateAdcFifo_t := sync1;
-	signal stateAdcFifoB : stateAdcFifo_t := sync1;
+	signal stateAdcFifo : stateAdcFifo_t := sync1;
 
 	signal fifoWriteEnableA : std_logic := '0';
 	signal fifoWriteEnableB : std_logic := '0';
@@ -97,6 +100,11 @@ architecture Behavioral of ltm9007_14 is
 	signal fifoReadEnableB : std_logic := '0';
 	signal fifoResetA : std_logic := '0';
 	signal fifoResetB : std_logic := '0';
+	
+	signal fifoEmptyA : std_logic := '0';
+	signal fifoEmptyB : std_logic := '0';
+	signal fifoValidA : std_logic := '0';
+	signal fifoValidB : std_logic := '0';
 
 	signal eventFifoOverflowA : std_logic := '0';
 	signal eventFifoOverflowB : std_logic := '0';
@@ -138,13 +146,58 @@ architecture Behavioral of ltm9007_14 is
 	constant MSG_write_softReset : std_logic_vector(15 downto 0) := "0" & "0000000" & x"80";
 	constant MSG_write_formatAndPower : std_logic_vector(15 downto 0) := "0" & "0000001" & x"00"; -- "20" for 2'compliment
 	constant MSG_write_outputMode : std_logic_vector(15 downto 0) := "0" & "0000010" & x"85"; -- "85" 3.0mA + X
-	constant MSG_write_testPatternOffHight : std_logic_vector(15 downto 0) := "0" & "0000011" & "00000011";
-	--constant MSG_write_testPatternOnHight : std_logic_vector(15 downto 0) := "0" & "0000011" & "10000011";
+	constant MSG_write_testPatternOffHigh : std_logic_vector(15 downto 0) := "0" & "0000011" & "00000000";
+	constant MSG_write_testPatternOffLow : std_logic_vector(15 downto 0) := "0" & "0000011" & "00000000";
+	--constant MSG_write_testPatternOnHigh : std_logic_vector(15 downto 0) := "0" & "0000011" & "10000011";
 	--constant MSG_write_testPatternLow : std_logic_vector(15 downto 0) := "0" & "0000100" & "11001101";
-	constant MSG_write_testPatternOnHight : std_logic_vector(15 downto 0) := "0" & "0000011" & "10010101";
-	constant MSG_write_testPatternLow : std_logic_vector(15 downto 0) := "0" & "0000100" & "01010101";
-	type stateAdc_t is (idle,init1,init2,init3,init4,init5,init6,init7,init8,init9,init10,init11);
-	signal stateAdc : stateAdc_t := idle;
+	constant MSG_write_testPattern1High : std_logic_vector(15 downto 0) := "0" & "0000011" & "10010101";
+	constant MSG_write_testPattern1Low : std_logic_vector(15 downto 0) := "0" & "0000100" & "01010101";
+	constant MSG_write_testPattern2High : std_logic_vector(15 downto 0) := "0" & "0000011" & "10000000";
+	constant MSG_write_testPattern2Low : std_logic_vector(15 downto 0) := "0" & "0000100" & "00000001";
+	constant MSG_write_testPattern3High : std_logic_vector(15 downto 0) := "0" & "0000011" & "10111111";
+	constant MSG_write_testPattern3Low : std_logic_vector(15 downto 0) := "0" & "0000100" & "11111111";
+	constant MSG_write_testPattern4High : std_logic_vector(15 downto 0) := "0" & "0000011" & "10000000";
+	constant MSG_write_testPattern4Low : std_logic_vector(15 downto 0) := "0" & "0000100" & "00000000";
+	constant MSG_write_testPatternBitslipHigh : std_logic_vector(15 downto 0) := "0" & "0000011" & "10101001";
+	constant MSG_write_testPatternBitslipLow : std_logic_vector(15 downto 0) := "0" & "0000100" & "11010011";
+	constant MSG_write_testPatternXHigh : std_logic_vector(9 downto 0) := "0" & "0000011" & "10";
+	constant MSG_write_testPatternXLow : std_logic_vector(7 downto 0) := "0" & "0000100";
+	type stateAdc_t is (idle,init1,init2,init3,init4,init5,init6,init7,init8,init9,init10,init11,init12,init13,init14,init15,init16,init17);
+	signal stateAdc : stateAdc_t := init1;
+	
+	signal bitslipStart : std_logic := '0';
+	signal bitslipStart2 : std_logic := '0';
+	signal bitslipFailed : std_logic_vector(1 downto 0) := (others=>'0');
+	signal bitslipPattern : std_logic_vector(6 downto 0);
+	signal bitslipPatternOverride :  std_logic := '0';
+	signal bitslipDone : std_logic_vector(1 downto 0) := (others=>'0');
+	signal bitslipDoneSync1 : std_logic_vector(4 downto 0);
+	signal bitslipDoneSync2 : std_logic_vector(4 downto 0);
+	signal bitslipDoneSyncLatched1 : std_logic := '0';
+	signal bitslipDoneSyncLatched2 : std_logic := '0';
+	signal bitslipDoneSync : std_logic := '0';
+	signal timeoutBitslip : unsigned(15 downto 0) := x"ffff";
+	
+	signal adcDataValid : std_logic := '0';
+	signal adcDataSkipCounter : integer range 0 to 31 := 0;
+	signal adcDataValidCounter : unsigned(15 downto 0) := (others=>'0');
+	signal adcDataStart_old : std_logic := '0';
+	
+	signal numberOfSamplesToRead1 : std_logic_vector(15 downto 0);
+	signal numberOfSamplesToRead2 : std_logic_vector(15 downto 0);
+	signal numberOfSamplesToRead3 : std_logic_vector(15 downto 0);
+	signal adcDataFifoCounter : unsigned(15 downto 0) := (others=>'0');
+	
+	signal offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
+	signal offsetCorrectionRamData : data8x8Bit_t;
+	
+	type stateFifoRead_t is (idle,read1,read2,done);
+	signal stateFifoRead : stateFifoRead_t := idle;
+	
+	signal adcDataStartSync : std_logic_vector(3 downto 0);
+	signal adcDataStartLatched : std_logic := '0';
+	signal roiBufferReadyLatched : std_logic := '0';
+	signal adcDataStart : std_logic := '0';
 	
 begin
 	
@@ -154,6 +207,21 @@ begin
 	adcDataGroupB_n <= adcDataA_n(7) & adcDataA_n(5) & adcDataA_n(3) & adcDataA_n(1);
 	
 	reset <= registerWrite.reset;
+	bitslipPattern <= registerWrite.bitslipPattern when (bitslipPatternOverride = '0') else "1100101";
+	bitslipStart <= registerWrite.bitslipStart or bitslipStart2;
+	registerRead.bitslipFailed <= bitslipFailed; --(0) or bitslipFailed(1);
+	registerRead.bitslipPattern <= registerWrite.bitslipPattern;
+	
+	registerRead.testMode <= registerWrite.testMode;
+	registerRead.testPattern <= registerWrite.testPattern;
+	
+	registerRead.offsetCorrectionRamAddress <= registerWrite.offsetCorrectionRamAddress;
+	registerRead.offsetCorrectionRamWrite <= registerWrite.offsetCorrectionRamWrite;
+	
+	ltm9007_14_to_eventFifoSystem.roiBuffer <= drs4_to_ltm9007_14.roiBuffer;
+	ltm9007_14_to_eventFifoSystem.roiBufferReady <= drs4_to_ltm9007_14.roiBufferReady;
+
+	sclk <= sclk_i;
 
 	--x100: entity work.serdes_1_to_n_clk_ddr_s8_diff generic map(7, false) port map(dataClockA_p, dataClockA_n, ioClockA_p, ioClockA_n, serdesStrobeA, serdesDivClockA);
 	--x101: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, ioClockA_p, ioClockA_n, serdesStrobeA, reset, serdesDivClockA, '0', dataOutGroupA, "00", open);
@@ -165,8 +233,8 @@ begin
 	--x105: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, ioClockB_p, ioClockB_n, adcClocks.serdesStrobe, reset, adcClocks.serdesDivClock, '0', dataOutGroupB, "00", open);
 	--x106: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,1,false,"PER_CHANL") port map('1', frameB_p, frameB_n, ioClockA_p, ioClockA_n, serdesStrobeA, reset, serdesDivClockA, '0', frameOutGroupB, "00", open);
 	
-	x6: entity work.serdesIn_1to7 generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, reset, adcClocks, '0', "00", dataOutGroupA, open);
-	x7: entity work.serdesIn_1to7 generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, reset, adcClocks, '0', "00", dataOutGroupB, open);
+	x6: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, reset, adcClocks, bitslipStart, bitslipDone(0), bitslipFailed(0), bitslipPattern, "00", dataOutGroupA, open);
+	x7: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, reset, adcClocks, bitslipStart, bitslipDone(1), bitslipFailed(1), bitslipPattern, "00", dataOutGroupB, open);
 
 	x107: OBUFDS port map(O => enc_p, OB => enc_n, I => enc);
 	
@@ -180,11 +248,11 @@ begin
 		dout => fifoOutA,
 		full => eventFifoFullA,
 		overflow => eventFifoOverflowA,
-		empty => open,
-		valid => open,
+		empty => fifoEmptyA,
+		valid => fifoValidA,
 		underflow => eventFifoUnderflowA,
 		rd_data_count => fifoWordsA(3 downto 0),
-		wr_data_count => open
+		wr_data_count => registerRead.fifoWordsA2(3 downto 0)
 	);
 	x109: entity work.drs4FrontEndFifo port map(
 		rst => fifoResetB,
@@ -196,22 +264,41 @@ begin
 		dout => fifoOutB,
 		full => eventFifoFullB,
 		overflow => eventFifoOverflowB,
-		empty => open,
-		valid => open,
+		empty => fifoEmptyB, --open,
+		valid => fifoValidB, --open,
 		underflow => eventFifoUnderflowB,
 		rd_data_count => fifoWordsB(3 downto 0),
 		wr_data_count => open
 	);
-	
+
 	fifoReadClock <= registerWrite.clock;
-	drs4Fifo.fifoOutA <= fifoOutA;
-	drs4Fifo.fifoOutB <= fifoOutB;
+	adcFifo.fifoOutA <= fifoOutA;
+	adcFifo.fifoOutB <= fifoOutB;
 	fifoWordsA(4) <= eventFifoFullA;
 	fifoWordsB(4) <= eventFifoFullB;
-	drs4Fifo.fifoWordsA <= fifoWordsA;
-	drs4Fifo.fifoWordsB <= fifoWordsB;
-	
-	registerRead.testMode <= registerWrite.testMode;
+	adcFifo.fifoWordsA <= fifoWordsA;
+	adcFifo.fifoWordsB <= fifoWordsB;
+	registerRead.fifoValidA <= fifoValidA;
+	registerRead.fifoEmptyA <= fifoEmptyA;
+
+	registerRead.fifoWordsA <= "000" & fifoWordsA;
+
+	g110: for i in 0 to 7 generate
+		x110: entity work.drs4OffsetCorrectionRam port map(
+			registerWrite.clock,
+			registerWrite.reset,
+			registerWrite.offsetCorrectionRamWrite(i downto i),
+			registerWrite.offsetCorrectionRamAddress,
+			registerWrite.offsetCorrectionRamData,
+			registerRead.offsetCorrectionRamData(i),
+			registerWrite.clock,
+			'0',
+			"0",
+			offsetCorrectionRamAddress,
+			x"00",
+			offsetCorrectionRamData(i)
+		);
+	end generate;
 
 	P0:process (registerWrite.clock)
 	begin
@@ -301,10 +388,23 @@ begin
 	begin
 		if rising_edge(registerWrite.clock) then
 			spiTransfer <= '0'; -- autoreset
+			bitslipStart2 <= '0'; -- autoreset	
 			if (registerWrite.reset = '1') then				
-				stateAdc <= idle;
+				stateAdc <= init1;
 				message <= (others=>'0');
+				bitslipDoneSync1 <= (others=>'0');
+				bitslipDoneSync2 <= (others=>'0');
+				bitslipDoneSync <= '0';
+				bitslipDoneSyncLatched1 <= '0';
+				bitslipDoneSyncLatched2 <= '0';
+				bitslipPatternOverride <= '0';
 			else
+				bitslipDoneSync1 <= bitslipDone(0) & bitslipDoneSync1(bitslipDoneSync1'length-1 downto 1);
+				bitslipDoneSync2 <= bitslipDone(1) & bitslipDoneSync2(bitslipDoneSync2'length-1 downto 1);
+				
+				bitslipDoneSyncLatched1 <= bitslipDoneSync1(0) or bitslipDoneSyncLatched1;
+				bitslipDoneSyncLatched2 <= bitslipDoneSync2(0) or bitslipDoneSyncLatched2;
+				bitslipDoneSync <= bitslipDoneSyncLatched1 and bitslipDoneSyncLatched2;
 
 				case stateAdc is
 					when idle =>
@@ -364,41 +464,107 @@ begin
 							stateAdc <= init8;
 							spiTransfer <= '0'; -- autoreset
 						end if;
-						
+					
 					when init8 =>
-						if(registerWrite.testMode = '1') then
-							message <= "0" & MSG_write_testPatternOnHight;
+						if(registerWrite.testMode = x"1") then
+							message <= "0" & MSG_write_testPatternXLow & registerWrite.testPattern(7 downto 0);
 						else
-							message <= "0" & MSG_write_testPatternOffHight;
+							--message <= "0" & MSG_write_testPatternOffLow;
+							message <= "0" & MSG_write_testPatternBitslipLow;
 						end if;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
 							stateAdc <= init9;
 							spiTransfer <= '0'; -- autoreset
 						end if;
-						
+
 					when init9 =>
-						if(registerWrite.testMode = '1') then
-							message <= "0" & MSG_write_testPatternOnHight;
+						if(registerWrite.testMode = x"1") then
+							message <= "1" & MSG_write_testPatternXLow & registerWrite.testPattern(7 downto 0);
 						else
-							message <= "0" & MSG_write_testPatternOffHight;
+							--message <= "1" & MSG_write_testPatternOffLow;
+							message <= "1" & MSG_write_testPatternBitslipLow;
 						end if;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
 							stateAdc <= init10;
 							spiTransfer <= '0'; -- autoreset
 						end if;
-						
+
 					when init10 =>
-						message <= "0" & MSG_write_testPatternLow;
+						if(registerWrite.testMode = x"1") then
+							message <= "0" & MSG_write_testPatternXHigh & registerWrite.testPattern(13 downto 8);
+						else
+							--message <= "0" & MSG_write_testPatternOffHigh;
+							message <= "0" & MSG_write_testPatternBitslipHigh;
+						end if;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
 							stateAdc <= init11;
 							spiTransfer <= '0'; -- autoreset
 						end if;
-
+						
 					when init11 =>
-						message <= "1" & MSG_write_testPatternLow;
+						if(registerWrite.testMode = x"1") then
+							message <= "1" & MSG_write_testPatternXHigh & registerWrite.testPattern(13 downto 8);
+						else
+							--message <= "1" & MSG_write_testPatternOffHigh;
+							message <= "1" & MSG_write_testPatternBitslipHigh;
+						end if;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateAdc <= init12;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+
+					when init12 =>
+						if(registerWrite.testMode = x"1") then
+							stateAdc <= idle;
+						else
+							stateAdc <= init13;
+							timeoutBitslip <= x"0000";
+						end if;
+					
+					when init13 =>
+						timeoutBitslip <= timeoutBitslip + 1;
+						if(timeoutBitslip = x"ffff") then
+							stateAdc <= init14;
+							timeoutBitslip <= x"0000";
+						end if;
+						if(timeoutBitslip > x"fff0") then
+							bitslipStart2 <= '1'; -- autoreset	
+						end if;
+					
+					when init14 =>
+						bitslipStart2 <= '1'; -- autoreset
+						bitslipDoneSync <= '0';
+						bitslipPatternOverride <= '1';
+						bitslipDoneSyncLatched1 <= '0';
+						bitslipDoneSyncLatched2 <= '0';
+						stateAdc <= init15;
+						
+					when init15 =>
+						timeoutBitslip <= timeoutBitslip + 1;
+						if(timeoutBitslip = x"ffff") then
+							stateAdc <= init13;
+							timeoutBitslip <= x"0000";
+						end if;
+						if(bitslipDoneSync = '1') then
+							bitslipPatternOverride <= '0';
+							stateAdc <= init16;
+							timeoutBitslip <= x"0000";
+						end if;
+
+					when init16 =>
+						message <= "0" & MSG_write_testPatternOffHigh;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateAdc <= init17;
+							spiTransfer <= '0'; -- autoreset
+						end if;
+						
+					when init17 =>
+						message <= "1" & MSG_write_testPatternOffHigh;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
 							stateAdc <= idle;
@@ -411,80 +577,121 @@ begin
 		end if;
 	end process P1;
 
-P10:process (adcClocks.serdesDivClock) -- ~66 MHz
+	P02:process (registerWrite.clock)
+	begin
+		if rising_edge(registerWrite.clock) then
+			adcDataStartSync <= drs4_to_ltm9007_14.adcDataStart_66 & adcDataStartSync(adcDataStartSync'length-1 downto 1);
+			if (registerWrite.reset = '1') then
+				adcDataStart <= '0';
+			else
+				if((adcDataStartSync(1) = '1') and (adcDataStartSync(0) = '0')) then
+					adcDataStart <= '1';
+				else
+					adcDataStart <= '0';
+				end if;
+			end if;
+		end if;
+	end process P02;
+
+P9:process (adcClocks.serdesDivClock) -- ~66 MHz
 begin
 	if rising_edge(adcClocks.serdesDivClock) then
-		fifoWriteEnableA <= '0'; -- autoreset
+		adcDataValid <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then -- ## sync?!
-			stateAdcFifoA <= sync1;
+			stateAdcFifoData <= idle;
+			adcDataStart_old <= '0';
+			numberOfSamplesToRead1 <= (others=>'0'); 
+			numberOfSamplesToRead2 <= (others=>'0'); 
 		else
-						
-			case stateAdcFifoA is				
-				when sync1 =>
-					-- set testbytes in adc ?!
-					-- find start of values ?!
-					-- use frame to pahseshift
-					fifoResetA <= '1';
-					stateAdcFifoA <= sync2;
+			adcDataStart_old <= drs4_to_ltm9007_14.adcDataStart_66;
+			numberOfSamplesToRead1 <= registerWrite.numberOfSamplesToRead; 
+			numberOfSamplesToRead2 <= numberOfSamplesToRead1; 
+			
+			case stateAdcFifoData is
+				when idle =>
+					adcDataSkipCounter <= 1;
+					if(adcDataStart_old = '0' and drs4_to_ltm9007_14.adcDataStart_66 = '1') then
+						stateAdcFifoData <= skip;
+					end if;
 					
-				when sync2 =>
-					-- timeout for fifo reset...
-					stateAdcFifoA <= sample1;
+				when skip =>
+					adcDataSkipCounter <= adcDataSkipCounter + 1;
+					if(adcDataSkipCounter >= 6) then
+						stateAdcFifoData <= valid1;
+						adcDataValidCounter <= unsigned(numberOfSamplesToRead2); 
+					end if;
+
+				when valid1 =>
+					adcDataValid <= '1'; -- autoreset
+					stateAdcFifoData <= valid2;
+					adcDataValidCounter <= adcDataValidCounter - 1;
 				
-				when sample1 =>
-					stateAdcFifoA <= sample2;
-					dataOutGroupA_buffer(14*4-1 downto 14*2) <= dataOutGroupA;	
-					
-				when sample2 =>
-					stateAdcFifoA <= sample1;
-					dataOutGroupA_buffer(14*2-1 downto 0) <= dataOutGroupA;
-					fifoWriteEnableA <= adcDataValid; -- autoreset		
-					
+				when valid2 =>
+					adcDataValid <= '1'; -- autoreset
+					--fifoWriteEnableA <= adcDataValid; -- autoreset		
+					--fifoWriteEnableB <= adcDataValid; -- autoreset		
+					stateAdcFifoData <= valid1;
+					if(adcDataValidCounter = 0) then
+						stateAdcFifoData <= idle;
+					end if;
+
 				when others => null;
 			end case;
 		end if;
 	end if;
-end process P10;
-P11:process (adcClocks.serdesDivClock) -- ~66 MHz
+end process P9;
+
+P10:process (adcClocks.serdesDivClock) -- ~66 MHz
 begin
 	if rising_edge(adcClocks.serdesDivClock) then
+		fifoWriteEnableA <= '0'; -- autoreset
 		fifoWriteEnableB <= '0'; -- autoreset
+		fifoResetA <= '0'; -- autoreset
+		fifoResetB <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then -- ## sync?!
-			stateAdcFifoB <= sync1;
+			stateAdcFifo <= sync1;
 		else
-						
-			case stateAdcFifoB is				
+			case stateAdcFifo is				
 				when sync1 =>
 					-- set testbytes in adc ?!
 					-- find start of values ?!
-					-- use frame to pahseshift
-					fifoResetB <= '1';
-					stateAdcFifoB <= sync2;
+					fifoResetA <= '1'; -- autoreset
+					fifoResetB <= '1'; -- autoreset
+					stateAdcFifo <= sync2;
 					
 				when sync2 =>
 					-- timeout for fifo reset...
-					stateAdcFifoB <= sample1;
+					stateAdcFifo <= sample1;
 				
 				when sample1 =>
-					stateAdcFifoB <= sample2;
-					dataOutGroupB_buffer(14*4-1 downto 14*2) <= dataOutGroupB;	
-					
+					stateAdcFifo <= sample2;
+					for i in 0 to 3 loop
+						dataOutGroupA_buffer(13+i*14 downto 7+i*14) <= reverse_vector(dataOutGroupA(6+i*7 downto 0+i*7));	
+						dataOutGroupB_buffer(13+i*14 downto 7+i*14) <= reverse_vector(dataOutGroupB(6+i*7 downto 0+i*7));	
+					end loop;
+
 				when sample2 =>
-					stateAdcFifoB <= sample1;
-					dataOutGroupB_buffer(14*2-1 downto 0) <= dataOutGroupB;
+					stateAdcFifo <= sample1;
+					for i in 0 to 3 loop
+						dataOutGroupA_buffer(6+i*14 downto 0+i*14) <= reverse_vector(dataOutGroupA(6+i*7 downto 0+i*7));
+						dataOutGroupB_buffer(6+i*14 downto 0+i*14) <= reverse_vector(dataOutGroupB(6+i*7 downto 0+i*7));
+					end loop;
+					fifoWriteEnableA <= adcDataValid; -- autoreset		
 					fifoWriteEnableB <= adcDataValid; -- autoreset		
 					
 				when others => null;
 			end case;
 		end if;
 	end if;
-end process P11;
+end process P10;
 
 P4:process (registerWrite.clock)
 begin
 	if rising_edge(registerWrite.clock) then
 		fifoReadEnableA <= '0'; -- autoreset
 		fifoReadEnableB <= '0'; -- autoreset
+		ltm9007_14_to_eventFifoSystem.newData <= '0'; -- autoreset
+		ltm9007_14_to_eventFifoSystem.samplingDone <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
 			eventFifoFullCounterA <= to_unsigned(0,eventFifoFullCounterA'length);
 			eventFifoOverflowCounterA <= to_unsigned(0,eventFifoOverflowCounterA'length);
@@ -492,8 +699,10 @@ begin
 			eventFifoOverflowA_old <= '0';
 			eventFifoUnderflowA_old <= '0';
 			eventFifoFullA_old <= '0';
+			stateFifoRead <= idle;
+			adcDataStartLatched <= '0';
+			roiBufferReadyLatched <= '0';
 		else
-		
 			eventFifoOverflowA_old <= eventFifoOverflowA;
 			eventFifoUnderflowA_old <= eventFifoUnderflowA;
 			eventFifoFullA_old <= eventFifoFullA;
@@ -510,13 +719,80 @@ begin
 				eventFifoFullCounterA <= eventFifoFullCounterA + 1;
 			end if;
 
-			if(fifoWordsA > "00111") then
-				fifoReadEnableA <= '1'; -- autoreset
-				fifoReadEnableB <= '1'; -- autoreset
-			end if;
+			--if(fifoWordsA > "11100") then
+			--	fifoReadEnableA <= '1'; -- autoreset
+			--	fifoReadEnableB <= '1'; -- autoreset
+			--	-- error++
+			--end if;
+			--
+			--if(drs4_to_ltm9007_14.drs4RoiValid = '1') then
+			--	fifoReadEnableA <= '1'; -- autoreset
+			--	fifoReadEnableB <= '1'; -- autoreset
+			--end if;
 
 			registerRead.fifoA <= fifoOutA;
 			registerRead.fifoB <= fifoOutB;
+
+			adcDataStartLatched <= adcDataStartLatched or adcDataStart;
+			roiBufferReadyLatched <= roiBufferReadyLatched or drs4_to_ltm9007_14.roiBufferReady;
+
+			case stateFifoRead is				
+				when idle =>
+					if((adcDataStartLatched = '1') and (roiBufferReadyLatched = '1')) then
+						stateFifoRead <= read1;
+						numberOfSamplesToRead3 <= registerWrite.numberOfSamplesToRead;
+						offsetCorrectionRamAddress <= drs4_to_ltm9007_14.roiBuffer;
+						adcDataFifoCounter <= (others=>'0');
+					end if;
+
+				when read1 =>
+					--if(fifoWordsA /= "00000") then
+					if(fifoEmptyA = '0') then
+						fifoReadEnableA <= '1'; -- autoreset
+						fifoReadEnableB <= '1'; -- autoreset
+						stateFifoRead <= read2;
+					end if;
+					
+					if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
+						stateFifoRead <= done;
+					end if;
+				
+				when read2 =>
+					l0: for i in 0 to 3 loop
+						ltm9007_14_to_eventFifoSystem.channel(i) <= "0" & std_logic_vector(resize(unsigned(fifoOutA(13+i*14 downto 0+i*14)),15) + resize(unsigned(offsetCorrectionRamData(i)),15));
+						ltm9007_14_to_eventFifoSystem.channel(i+4) <= "0" & std_logic_vector(resize(unsigned(fifoOutB(13+i*14 downto 0+i*14)),15) + resize(unsigned(offsetCorrectionRamData(i+4)),15));
+						--ltm9007_14_to_eventFifoSystem.channel(i) <= "00" & fifoOutA(13+i*14 downto 0+i*14);
+						--ltm9007_14_to_eventFifoSystem.channel(i+4) <= "00" & fifoOutB(13+i*14 downto 0+i*14);
+					end loop;
+					
+					--if((fifoValidA = '1') and (fifoValidB = '1')) then
+					if(fifoValidA = '1') then -- ## fifo B is allways the same?!
+						ltm9007_14_to_eventFifoSystem.newData <= '1'; -- autoreset
+						offsetCorrectionRamAddress <= std_logic_vector(unsigned(offsetCorrectionRamAddress) + 1);
+						adcDataFifoCounter <= adcDataFifoCounter + 1;
+					end if;
+
+
+					--if(fifoWordsA = "00000") then
+					if(fifoEmptyA = '1') then
+						stateFifoRead <= read1;
+					else
+						fifoReadEnableA <= '1'; -- autoreset
+						fifoReadEnableB <= '1'; -- autoreset
+					end if;
+					
+					if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
+						stateFifoRead <= done;
+					end if;
+					
+				when done =>
+					adcDataStartLatched <= '0';
+					roiBufferReadyLatched <= '0';
+					ltm9007_14_to_eventFifoSystem.samplingDone <= '1'; -- autoreset
+					stateFifoRead <= idle;
+					
+				when others => null;
+			end case;
 			
 		end if;
 	end if;

@@ -1,0 +1,149 @@
+
+****** PlanAhead v14.7 (64-bit)
+  **** Build 321239 by xbuild on Fri Sep 27 19:29:51 MDT 2013
+    ** Copyright 1986-1999, 2001-2013 Xilinx, Inc. All Rights Reserved.
+
+INFO: [Common 17-78] Attempting to get a license: PlanAhead
+INFO: [Common 17-290] Got license for PlanAhead
+INFO: [Device 21-36] Loading parts and site information from C:/Xilinx/14.7/ISE_DS/PlanAhead/data/parts/arch.xml
+Parsing RTL primitives file [C:/Xilinx/14.7/ISE_DS/PlanAhead/data/parts/xilinx/rtl/prims/rtl_prims.xml]
+Finished parsing RTL primitives file [C:/Xilinx/14.7/ISE_DS/PlanAhead/data/parts/xilinx/rtl/prims/rtl_prims.xml]
+start_gui
+INFO: [Common 17-81] Feature available: PartialReconfiguration
+source C:/Xilinx/projects/taxi_firmware/iceScint/pa.fromNetlist.tcl
+# create_project -name iceScint -dir "C:/Xilinx/projects/taxi_firmware/iceScint/planAhead_run_1" -part xc6slx45fgg484-3
+# set_property design_mode GateLvl [get_property srcset [current_run -impl]]
+# set_property edif_top_file "C:/Xilinx/projects/taxi_firmware/iceScint/taxiTop_cs.ngc" [ get_property srcset [ current_run ] ]
+# add_files -norecurse { {C:/Xilinx/projects/taxi_firmware/iceScint} {ipcore_dir} }
+# add_files [list {ipcore_dir/delayFifo.ncf}] -fileset [get_property constrset [current_run]]
+# add_files [list {ipcore_dir/drs4FrontEndFifo.ncf}] -fileset [get_property constrset [current_run]]
+# add_files [list {ipcore_dir/eventFifo.ncf}] -fileset [get_property constrset [current_run]]
+# add_files [list {ipcore_dir/testRam.ncf}] -fileset [get_property constrset [current_run]]
+# add_files [list {ipcore_dir/triggerLogicDelayFifo.ncf}] -fileset [get_property constrset [current_run]]
+# set_param project.pinAheadLayout  yes
+# set_property target_constrs_file "taxi.ucf" [current_fileset -constrset]
+Adding file 'C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf' to fileset 'constrs_1'
+# add_files [list {taxi.ucf}] -fileset [get_property constrset [current_run]]
+# link_design
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+Design is defaulting to project part: xc6slx45fgg484-3
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop_cs.ngc ...
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/I_NO_D.U_ILA/U_RST/U_HALT_XFER/iDOUT_dly<2 : 0> on block ila_pro_0 is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/I_NO_D.U_ILA/U_RST/U_ARM_XFER/iDOUT_dly<4 : 0> on block ila_pro_0 is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus U0/U_ICON/iCORE_ID_SEL<15 : 0> on block
+   icon_pro is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus x14/differenceGpsToLocalClock<31 : 0> on
+   block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/stateAdc[4]_X_23_o_wide_mux_71_OUT<16 : 0> on block taxiTop is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x17/message<16 : 0> on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy<3 :
+   1> on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x3/_n1058<16 : 13> on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x3/drs4_0w_numberOfSamplesToRead[15]_GND_563_o_mux_262_OUT<15 : 4> on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14/Msub_GND_510_o_localClockSubSecondCounter[31]_sub_11_OUT<31:0>_lut<31 :
+   0> on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14/GND_510_o_localClockSubSecondCounter[31]_sub_11_OUT<31 : 0> on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_118_o_GND_118_o_mux_176_OUT<3 :
+   0> on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_120_o_GND_120_o_sub_36_OUT<15:0>_lut<15 : 0> on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/state1[3]_X_18_o_wide_mux_59_OUT<143
+   : 0> on block taxiTop is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn<143 : 0> on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop_cs.edif ...
+ngc2edif: Total memory usage is 101052 kilobytes
+
+Parsing EDIF File [./planAhead_run_1/iceScint.data/cache/taxiTop_cs_ngc_zx.edif]
+Finished Parsing EDIF File [./planAhead_run_1/iceScint.data/cache/taxiTop_cs_ngc_zx.edif]
+INFO: [Netlist 29-17] Analyzing 25 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+Loading clock regions from C:/Xilinx/14.7/ISE_DS/PlanAhead/data\parts/xilinx/spartan6/spartan6lx/xc6slx45/ClockRegion.xml
+Loading clock buffers from C:/Xilinx/14.7/ISE_DS/PlanAhead/data\parts/xilinx/spartan6/spartan6lx/xc6slx45/ClockBuffers.xml
+Loading package pin functions from C:/Xilinx/14.7/ISE_DS/PlanAhead/data\parts/xilinx/spartan6/PinFunctions.xml...
+Loading package from C:/Xilinx/14.7/ISE_DS/PlanAhead/data\parts/xilinx/spartan6/spartan6lx/xc6slx45/fgg484/Package.xml
+Loading io standards from C:/Xilinx/14.7/ISE_DS/PlanAhead/data\./parts/xilinx/spartan6/IOStandards.xml
+Loading device configuration modes from C:/Xilinx/14.7/ISE_DS/PlanAhead/data\parts/xilinx/spartan6/ConfigModes.xml
+Loading list of drcs for the architecture : C:/Xilinx/14.7/ISE_DS/PlanAhead/data\./parts/xilinx/spartan6/drc.xml
+WARNING: [Timing 38-83] Timing library cell SRLC32E does not define port A[4] which is referred to in the netlist. The library cell will be ignored and the cell will be treated as a black box for timing purposes.
+WARNING: [Timing 38-83] Timing library cell SRLC32E does not define port A[3] which is referred to in the netlist. The library cell will be ignored and the cell will be treated as a black box for timing purposes.
+WARNING: [Timing 38-83] Timing library cell SRLC32E does not define port A[2] which is referred to in the netlist. The library cell will be ignored and the cell will be treated as a black box for timing purposes.
+WARNING: [Timing 38-83] Timing library cell SRLC32E does not define port A[1] which is referred to in the netlist. The library cell will be ignored and the cell will be treated as a black box for timing purposes.
+WARNING: [Timing 38-83] Timing library cell SRLC32E does not define port A[0] which is referred to in the netlist. The library cell will be ignored and the cell will be treated as a black box for timing purposes.
+Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/delayFifo.ncf]
+Finished Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/delayFifo.ncf]
+Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/drs4FrontEndFifo.ncf]
+Finished Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/drs4FrontEndFifo.ncf]
+Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/eventFifo.ncf]
+Finished Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/eventFifo.ncf]
+Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/triggerLogicDelayFifo.ncf]
+Finished Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/ipcore_dir/triggerLogicDelayFifo.ncf]
+Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/.Xil/PlanAhead-4760-ZNMOPS09/ngc2edif/taxiTop_cs.xncf]
+Finished Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/.Xil/PlanAhead-4760-ZNMOPS09/ngc2edif/taxiTop_cs.xncf]
+Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf]
+CRITICAL WARNING: [Constraints 18-5] Cannot loc terminal 'DRS4_DWRITE[1]' at site M18, Illegal shape placement [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:272]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'QOSC1_OUT' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:385]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'QOSC1_OUT' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:385]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:385]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'ADC_SDO_4' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:506]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:506]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'CBL_PLGDn<1>' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:510]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:510]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'CBL_PLGDn<2>' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:511]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:511]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'CBL_PLGDn<3>' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:512]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:512]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'EBI1_MCK' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:644]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:644]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'EBI1_MCK' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:644]
+INFO: [Constraints 18-62] Unknown constraint 'OPEN_DRAIN' specified; No check will be performed on this constraint [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:663]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'POW_ALERT' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:690]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:690]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'RS232_RXD' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:698]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:698]
+CRITICAL WARNING: [Constraints 18-11] Could not find net 'RS485_RXD' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:703]
+CRITICAL WARNING: [Constraints 18-10] Could not create constraint 'IOBDELAY' [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:703]
+Finished Parsing UCF File [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf]
+CRITICAL WARNING: [Constraints 18-329] No definition for group 'QOSC1_OUT', timing constraint is ignored [C:/Xilinx/projects/taxi_firmware/iceScint/taxi.ucf:386]
+INFO: [Designutils 20-20] Invalid constraints found, use command 'write_ucf -constraints invalid <file>' to save all the invalid constraints to a file
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 25 instances were transformed.
+  IOBUF => IOBUF (OBUFT, IBUF): 25 instances
+
+Phase 0 | Netlist Checksum: c8d4a035
+link_design: Time (s): elapsed = 00:00:15 . Memory (MB): peak = 650.633 ; gain = 224.270
+exit
+ERROR: [Common 17-39] 'stop_gui' failed due to earlier errors.
+INFO: [Common 17-206] Exiting PlanAhead at Fri Jun 16 13:27:59 2017...
+INFO: [Common 17-83] Releasing license: PlanAhead
