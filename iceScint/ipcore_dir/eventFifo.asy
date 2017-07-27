@@ -44,6 +44,6 @@ PINATTR PinName underflow
 PINATTR Polarity OUT
 LINE Wide 832 688 800 688
 PIN 832 688 RIGHT 36
-PINATTR PinName data_count[11:0]
+PINATTR PinName data_count[12:0]
 PINATTR Polarity OUT
 

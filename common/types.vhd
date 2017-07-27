@@ -13,6 +13,10 @@ use IEEE.numeric_std.all;
 
 package types is
 
+	constant numberOfChannels : integer := 8;
+	type data8x8Bit_t is array (0 to 7) of std_logic_vector(7 downto 0);
+	type data8x16Bit_t is array (0 to 7) of std_logic_vector(15 downto 0);
+
 	type smc_bus is record
 		clock : std_logic;
 		reset : std_logic;
@@ -46,6 +50,14 @@ package types is
 	function countZerosFromLeft8(patternIn : std_logic_vector) return unsigned;
 	function countZerosFromRight8(patternIn : std_logic_vector) return unsigned;
 	function getFistOneFromRight8(patternIn : std_logic_vector) return integer;
+	
+	--function fillZerosFromLeft8(patternIn : std_logic_vector) return std_logic_vector;
+	--function fillZerosFromRight8(patternIn : std_logic_vector) return std_logic_vector;
+	--function fillOnesFromLeft8(patternIn : std_logic_vector) return std_logic_vector;
+	--function fillOnesFromRight8(patternIn : std_logic_vector) return std_logic_vector;
+	function fillXFromY8(value : string; direction : string; patternIn : std_logic_vector) return std_logic_vector;
+	
+	function reverse_vector (a: in std_logic_vector) return std_logic_vector;
 	
 	type smc_registerMap is record
 		reg0 : std_logic_vector(15 downto 0);
@@ -81,7 +93,7 @@ package types is
 		newData : std_logic;
 	end record;
 	
-	type dsr4Timing_t is record
+	type drs4Timing_t is record
 		ch0 : std_logic_vector(15 downto 0);
 		ch1 : std_logic_vector(15 downto 0);
 		ch2 : std_logic_vector(15 downto 0);
@@ -94,20 +106,7 @@ package types is
 		timingDone : std_logic;
 	end record;
 	
-	type dsr4Sampling_t is record
-		ch0 : std_logic_vector(15 downto 0);
-		ch1 : std_logic_vector(15 downto 0);
-		ch2 : std_logic_vector(15 downto 0);
-		ch3 : std_logic_vector(15 downto 0);
-		ch4 : std_logic_vector(15 downto 0);
-		ch5 : std_logic_vector(15 downto 0);
-		ch6 : std_logic_vector(15 downto 0);
-		ch7 : std_logic_vector(15 downto 0);
-		newData : std_logic;
-		samplingDone : std_logic;
-	end record;
-	
-	type dsr4Charge_t is record
+	type drs4Charge_t is record
 		ch0 : std_logic_vector(15 downto 0);
 		ch1 : std_logic_vector(15 downto 0);
 		ch2 : std_logic_vector(15 downto 0);
@@ -118,20 +117,14 @@ package types is
 		ch7 : std_logic_vector(15 downto 0);
 		newData : std_logic;
 		chargeDone : std_logic;
-	end record;
-	
-	type drs4Fifo_t is record
-		fifoOutA : std_logic_vector(55 downto 0);
-		fifoWordsA : std_logic_vector(3 downto 0);
-		fifoOutB : std_logic_vector(55 downto 0);
-		fifoWordsB : std_logic_vector(3 downto 0);
 	end record;
 	
 	type drs4Clocks_t is record
+		drs4Clock_125MHz : std_logic;
 		drs4RefClock : std_logic;
-		drs4SamplingClock : std_logic;
-		AdcSamplingClock : std_logic;
-		chargeDone : std_logic;
+		adcSerdesDivClockPhase : std_logic;
+		--drs4SamplingClock : std_logic;
+		--AdcSamplingClock : std_logic;
 	end record;
 	
 	type triggerSerdesClocks_t is record
@@ -140,35 +133,39 @@ package types is
 		serdesStrobe : std_logic;
 	end record;
 		
-	type gpsTiming_t is record
-		week : std_logic_vector(15 downto 0);
-		quantizationError : std_logic_vector(31 downto 0);
-		timeOfWeekMilliSecond : std_logic_vector(31 downto 0);
-		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
-		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
-		newData : std_logic;
-	end record;
-	
-	
 	type eventFifoSystem_registerRead_t is record
 		dmaBuffer : std_logic_vector(15 downto 0);
 		eventFifoWordsDma : std_logic_vector(15 downto 0);
+		eventFifoWordsDmaAligned : std_logic_vector(15 downto 0);
+		eventFifoWordsDma32 : std_logic_vector(31 downto 0);
+		eventFifoWordsDmaSlice : std_logic_vector(3 downto 0);
 		eventFifoFullCounter : std_logic_vector(15 downto 0);
 		eventFifoOverflowCounter : std_logic_vector(15 downto 0);
 		eventFifoUnderflowCounter : std_logic_vector(15 downto 0);
 		eventFifoErrorCounter : std_logic_vector(15 downto 0);
 		eventFifoWords : std_logic_vector(15 downto 0);
 		eventFifoFlags : std_logic_vector(15 downto 0);
-		packetConfig : std_logic_vector(15 downto 0);
 		registerSamplesToRead : std_logic_vector(15 downto 0);
+		packetConfig : std_logic_vector(15 downto 0);
+		eventsPerIrq : std_logic_vector(15 downto 0);
+		enableIrq : std_logic;
+		irqStall : std_logic;
+		irqAtEventFifoWords : std_logic_vector(15 downto 0);
 	end record;
 	type eventFifoSystem_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
+		tick_ms : std_logic;
 		nextWord : std_logic;
 		eventFifoClear : std_logic;
-		packetConfig : std_logic_vector(15 downto 0);
+		clearEventCounter : std_logic;
 		registerSamplesToRead : std_logic_vector(15 downto 0);
+		packetConfig : std_logic_vector(15 downto 0);
+		eventsPerIrq : std_logic_vector(15 downto 0);
+		enableIrq : std_logic;
+		irqStall : std_logic;
+		irqAtEventFifoWords : std_logic_vector(15 downto 0);
+		forceIrq : std_logic;
 	end record;
 	
 	type triggerTimeToRisingEdge_registerRead_t is record
@@ -196,22 +193,6 @@ package types is
 		resetDelay : std_logic;
 	end record;
 	
-	type pixelRateCounter_registerRead_t is record
-		ch0 : std_logic_vector(15 downto 0);
-		ch1 : std_logic_vector(15 downto 0);
-		ch2 : std_logic_vector(15 downto 0);
-		ch3 : std_logic_vector(15 downto 0);
-		ch4 : std_logic_vector(15 downto 0);
-		ch5 : std_logic_vector(15 downto 0);
-		ch6 : std_logic_vector(15 downto 0);
-		ch7 : std_logic_vector(15 downto 0);
-	end record;
-	type pixelRateCounter_registerWrite_t is record
-		clock : std_logic;
-		reset : std_logic;
-		resetCounter : std_logic_vector(15 downto 0);
-	end record;	
-	
 	type dac_array_t is array (0 to 7) of std_logic_vector(7 downto 0);
 	type dac088s085_x3_registerRead_t is record
 		dacBusy : std_logic;
@@ -233,20 +214,7 @@ package types is
 		valuesChangedChip1 : std_logic_vector(7 downto 0);
 		valuesChangedChip2 : std_logic_vector(7 downto 0);
 	end record;
-	
-	type gpsTiming_registerRead_t is record
-		--unused : std_logic;
-		week : std_logic_vector(15 downto 0);
-		quantizationError : std_logic_vector(31 downto 0);
-		timeOfWeekMilliSecond : std_logic_vector(31 downto 0);
-		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
-		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
-	end record;
-	type gpsTiming_registerWrite_t is record
-		clock : std_logic;
-		reset : std_logic;
-	end record;
-	
+		
 	type ad56x1_registerRead_t is record
 		dacBusy : std_logic;
 		valueChip0 : std_logic_vector(11 downto 0);
@@ -261,16 +229,195 @@ package types is
 		valueChangedChip1 : std_logic;
 	end record;
 
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+
+	type gpsTiming_registerRead_t is record
+		week : std_logic_vector(15 downto 0);
+		quantizationError : std_logic_vector(31 downto 0);
+		timeOfWeekMilliSecond : std_logic_vector(31 downto 0);
+		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
+		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
+		tick_ms : std_logic;
+		counterPeriod : std_logic_vector(15 downto 0);
+	end record;
+	
+	type gpsTiming_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		counterPeriod : std_logic_vector(15 downto 0);
+	end record;
+	
+	type gpsTiming_t is record
+		week : std_logic_vector(15 downto 0);
+		quantizationError : std_logic_vector(31 downto 0);
+		timeOfWeekMilliSecond : std_logic_vector(31 downto 0);
+		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
+		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
+		newData : std_logic;
+		realTimeCounter: std_logic_vector(63 downto 0);
+		realTimeCounterLatched : std_logic_vector(63 downto 0);
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type pixelRateCounter_registerRead_t is record
+		channel : data8x16Bit_t;
+		channelLatched : data8x16Bit_t;
+		counterPeriod : std_logic_vector(15 downto 0);
+	end record;
+	
+	type pixelRateCounter_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		tick_ms : std_logic;
+		counterPeriod : std_logic_vector(15 downto 0);
+		resetCounter : std_logic_vector(15 downto 0);
+	end record;
+	
+	type pixelRateCounter_t is record
+		newData : std_logic;
+		counterPeriod : std_logic_vector(15 downto 0);
+		channelLatched : data8x16Bit_t;
+	end record;
+	
+-------------------------------------------------------------------------------
+	
+	type drs4_to_ltm9007_14_t is record
+		adcDataStart_66 : std_logic;
+		--drs4RoiValid : std_logic;
+		roiBuffer : std_logic_vector(9 downto 0);
+		roiBufferReady : std_logic;
+	end record;
+
 	type drs4_registerRead_t is record
 		regionOfInterest : std_logic_vector(9 downto 0);
+		numberOfSamplesToRead : std_logic_vector(15 downto 0);
+		sampleMode : std_logic_vector(3 downto 0);
+		readoutMode : std_logic_vector(3 downto 0);
 	end record;
 	type drs4_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
-		stoftTrigger : std_logic;
 		resetStates : std_logic;
+		numberOfSamplesToRead : std_logic_vector(15 downto 0);
+		sampleMode : std_logic_vector(3 downto 0);
+		readoutMode : std_logic_vector(3 downto 0);
+		offsetCorrectionRamData : std_logic_vector(15 downto 0);
 	end record;
-		
+
+-------------------------------------------------------------------------------
+	
+	type ltm9007_14_to_eventFifoSystem_t is record
+		channel : data8x16Bit_t;	
+		newData : std_logic;
+		samplingDone : std_logic;
+		roiBuffer : std_logic_vector(9 downto 0);
+		roiBufferReady : std_logic;
+	end record;
+
+	type adcClocks_t is record
+		serdesDivClock : std_logic;
+		serdesDivClockPhase : std_logic;
+		serdesIoClock : std_logic;
+		serdesStrobe : std_logic;
+	end record;
+	type adcFifo_t is record
+		fifoOutA : std_logic_vector(55 downto 0);
+		fifoWordsA : std_logic_vector(4 downto 0);
+		fifoOutB : std_logic_vector(55 downto 0);
+		fifoWordsB : std_logic_vector(4 downto 0);
+		channel : data8x16Bit_t;
+	end record;
+	
+	type ltm9007_14_registerRead_t is record
+		fifoA : std_logic_vector(4*14-1 downto 0);
+		fifoB : std_logic_vector(4*14-1 downto 0);
+		testMode : std_logic_vector(3 downto 0);
+		testPattern : std_logic_vector(13 downto 0);
+		bitslipPattern : std_logic_vector(6 downto 0);
+		bitslipFailed : std_logic_vector(1 downto 0);
+		offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
+		offsetCorrectionRamData : data8x8Bit_t;
+		offsetCorrectionRamWrite : std_logic_vector(7 downto 0);
+		fifoEmptyA : std_logic;
+		fifoValidA : std_logic;
+		fifoWordsA : std_logic_vector(7 downto 0);
+		fifoWordsA2 : std_logic_vector(7 downto 0);
+	end record;
+	type ltm9007_14_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		init : std_logic;
+		testMode : std_logic_vector(3 downto 0);
+		testPattern : std_logic_vector(13 downto 0);
+		bitslipPattern : std_logic_vector(6 downto 0);
+		numberOfSamplesToRead : std_logic_vector(15 downto 0);
+		bitslipStart : std_logic;
+		offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
+		offsetCorrectionRamData : std_logic_vector(7 downto 0);
+		offsetCorrectionRamWrite : std_logic_vector(7 downto 0);
+	end record;
+
+-------------------------------------------------------------------------------
+	type triggerLogic_t is record
+		triggerSerdesDelayed : std_logic_vector(7 downto 0);
+		triggerSerdesNotDelayed : std_logic_vector(7 downto 0);
+		triggerDelayed : std_logic;
+		triggerNotDelayed : std_logic;
+		softTrigger : std_logic;
+	end record;
+	
+	type triggerLogic_registerRead_t is record
+		triggerSerdesDelay : std_logic_vector(9 downto 0);
+		triggerMask : std_logic_vector(7 downto 0);
+		singleSeq : std_logic;
+		trigger : triggerLogic_t; -- debug
+		triggerGeneratorEnabled : std_logic;
+		triggerGeneratorPeriod : unsigned(31 downto 0);
+	end record;
+	type triggerLogic_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		triggerSerdesDelayInit : std_logic;
+		triggerSerdesDelay : std_logic_vector(9 downto 0);
+		triggerMask : std_logic_vector(7 downto 0);
+		softTrigger : std_logic;
+		singleSeq : std_logic;
+		triggerGeneratorEnabled : std_logic;
+		triggerGeneratorPeriod : unsigned(31 downto 0);
+	end record;
+-------------------------------------------------------------------------------
+	type iceTad_registerRead_t is record
+		powerOn : std_logic_vector(7 downto 0);
+	end record;
+	type iceTad_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		powerOn : std_logic_vector(7 downto 0);
+		testRs485 : std_logic;
+		testRs485Data : std_logic;
+		testRs485Tristate : std_logic;
+		testRs485Enable : std_logic;
+	end record;
+-------------------------------------------------------------------------------
+	type panelPower_registerRead_t is record
+		dummy : std_logic;
+	end record;
+	type panelPower_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		init : std_logic;
+		enable : std_logic;
+	end record;
+-------------------------------------------------------------------------------
+	type clockConfig_debug_t is record
+		drs4RefClockPeriod : std_logic_vector(7 downto 0);
+	end record;
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
 end types;
 
 package body types is
@@ -419,6 +566,116 @@ package body types is
 		return temp;
 	end;
 
+	function fillXFromY8(value : string; direction : string; patternIn : std_logic_vector) return std_logic_vector is
+		variable temp : std_logic_vector(patternIn'range);
+		variable v : std_logic;
+		variable nv : std_logic;
+	begin
+		if(value = "ONES") then
+			v := '1';	
+			nv := '0';	
+			if(direction = "FROM_RIGHT") then
+				if(std_match(patternIn, "-------1")) then
+					temp := (others=>v);
+				elsif(std_match(patternIn, "------10")) then
+					temp := (0=>nv,others=>v);
+				elsif(std_match(patternIn, "-----100")) then
+					temp := (0|1=>nv,others=>v);
+				elsif(std_match(patternIn, "----1000")) then
+					temp := (0|1|2=>nv,others=>v);
+				elsif(std_match(patternIn, "---10000")) then
+					temp := (0|1|2|3=>nv,others=>v);
+				elsif(std_match(patternIn, "--100000")) then
+					temp := (0|1|2|3|4=>nv,others=>v);
+				elsif(std_match(patternIn, "-1000000")) then
+					temp := (0|1|2|3|4|5=>nv,others=>v);
+				elsif(std_match(patternIn, "10000000")) then
+					temp := (0|1|2|3|4|5|6=>nv,others=>v);
+				elsif(std_match(patternIn, "00000000")) then
+					temp := (others=>nv);
+				else
+					temp := (others=>nv); -- illegal
+				end if;
+			elsif(direction = "FROM_LEFT") then
+				if(std_match(patternIn, "1-------")) then
+					temp := (others=>v);
+				elsif(std_match(patternIn, "01------")) then
+					temp := (7=>nv,others=>v);
+				elsif(std_match(patternIn, "001-----")) then
+					temp := (6|7=>nv,others=>v);
+				elsif(std_match(patternIn, "0001----")) then
+					temp := (5|6|7=>nv,others=>v);
+				elsif(std_match(patternIn, "00001---")) then
+					temp := (4|5|6|7=>nv,others=>v);
+				elsif(std_match(patternIn, "000001--")) then
+					temp := (3|4|5|6|7=>nv,others=>v);
+				elsif(std_match(patternIn, "0000001-")) then
+					temp := (2|3|4|5|6|7=>nv,others=>v);
+				elsif(std_match(patternIn, "00000001")) then
+					temp := (1|2|3|4|5|6|7=>nv,others=>v);
+				elsif(std_match(patternIn, "00000000")) then
+					temp := (others=>nv);
+				else
+					temp := (others=>nv); -- illegal
+				end if;
+			else
+				temp := (others=>'0'); -- illegal
+			end if;
+		elsif(value = "ZEROS") then
+			if(direction = "FROM_RIGHT") then
+				if(std_match(patternIn, "-------0")) then
+					temp := "00000000";
+				elsif(std_match(patternIn, "------01")) then
+					temp := "00000001";
+				elsif(std_match(patternIn, "-----011")) then
+					temp := "00000011";
+				elsif(std_match(patternIn, "----0111")) then
+					temp := "00000111";
+				elsif(std_match(patternIn, "---01111")) then
+					temp := "00001111";
+				elsif(std_match(patternIn, "--011111")) then
+					temp := "00011111";
+				elsif(std_match(patternIn, "-0111111")) then
+					temp := "00111111";
+				elsif(std_match(patternIn, "01111111")) then
+					temp := "01111111";
+				elsif(std_match(patternIn, "11111111")) then
+					temp := "11111111";
+				else
+					temp := "11111111"; -- illegal
+				end if;
+			elsif(direction = "FROM_LEFT") then
+				if(std_match(patternIn, "0-------")) then
+					temp := "00000000";
+				elsif(std_match(patternIn, "10------")) then
+					temp := "10000000";
+				elsif(std_match(patternIn, "110-----")) then
+					temp := "11000000";
+				elsif(std_match(patternIn, "1110----")) then
+					temp := "11100000";
+				elsif(std_match(patternIn, "11110---")) then
+					temp := "11110000";
+				elsif(std_match(patternIn, "111110--")) then
+					temp := "11111000";
+				elsif(std_match(patternIn, "1111110-")) then
+					temp := "11111100";
+				elsif(std_match(patternIn, "11111110")) then
+					temp := "11111110";
+				elsif(std_match(patternIn, "11111111")) then
+					temp := "11111111";
+				else
+					temp := "11111111";
+				end if;
+			else
+				temp := (others=>'1'); -- illegal
+			end if;
+		else
+			temp := (others=>'0'); -- illegal
+		end if;
+
+		return temp;
+	end;
+
 	function smc_vectorToRegisterMap(inputVector : std_logic_vector) return smc_registerMap is
 		variable temp : smc_registerMap;
 	begin
@@ -463,7 +720,16 @@ package body types is
 		temp(15*16+15 downto 15*16+0) := inputRegister.reg15;
 		return temp;
 	end;
-	
+
+	function reverse_vector (a: in std_logic_vector) return std_logic_vector is
+		variable result: std_logic_vector(a'RANGE);
+		alias aa: std_logic_vector(a'REVERSE_RANGE) is a;
+	begin
+		for i in aa'RANGE loop
+			result(i) := aa(i);
+		end loop;
+		return result;
+	end;
 ---- Example 1
 --  function <function_name>  (signal <signal_name> : in <type_declaration>  ) return <type_declaration> is
 --    variable <variable_name>     : <type_declaration>;

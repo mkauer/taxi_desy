@@ -15,15 +15,15 @@
   <version xil_pn:ise_version="14.7" xil_pn:schema_version="2"/>
 
   <files>
-    <file xil_pn:name="remote_sources/_/common/types.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/types.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="124"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="1"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/smcBusCollector.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/smcBusCollector.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="125"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="13"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/smcBusEntry.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/smcBusEntry.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="126"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="12"/>
     </file>
@@ -31,38 +31,34 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="127"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/taxiTop.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/taxiTop.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="141"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="26"/>
     </file>
     <file xil_pn:name="taxi.ucf" xil_pn:type="FILE_UCF">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/serdesIn_1to8.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/serdesIn_1to8.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="184"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="15"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="14"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/clockConfig.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/clockConfig.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="186"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="22"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="24"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/phase_detector.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/phase_detector.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="187"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="2"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/serdesOut_8to1.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/serdesOut_8to1.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="189"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="14"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/triggerLogic.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/triggerLogic.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="191"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="10"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/pixelRateCounter.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="192"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="16"/>
-    </file>
-    <file xil_pn:name="remote_sources/_/common/triggerTimeToRisingEdge.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/triggerTimeToRisingEdge.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="193"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="9"/>
     </file>
@@ -70,10 +66,10 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="194"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="4"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/eventFifoSystem.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="19"/>
+    <file xil_pn:name="../common/eventFifoSystem.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="Implementation" xil_pn:seqID="21"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/triggerDataDelay.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/triggerDataDelay.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="178"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="11"/>
     </file>
@@ -81,35 +77,31 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="179"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="7"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/dac088s085_x3.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/dac088s085_x3.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="39"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="21"/>
-    </file>
-    <file xil_pn:name="remote_sources/_/common/gpsTiming.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="92"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="18"/>
-    </file>
-    <file xil_pn:name="remote_sources/_/common/ad56x1.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="94"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="23"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/getPositiveStrobe.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/ad56x1.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="94"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="25"/>
+    </file>
+    <file xil_pn:name="../common/getPositiveStrobe.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="95"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/drs4.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/drs4.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="95"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="20"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="22"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/ltm9007_14.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/ltm9007_14.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="96"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="17"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="18"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/serdes_1_to_n_clk_ddr_s8_diff.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/serdes_1_to_n_clk_ddr_s8_diff.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="97"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/serdes_1_to_n_data_ddr_s8_diff.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/serdes_1_to_n_data_ddr_s8_diff.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="99"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
@@ -117,13 +109,13 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="100"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="6"/>
     </file>
-    <file xil_pn:name="remote_sources/_/common/testDataGenerator.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../common/testDataGenerator.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="106"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../common/registerInterface_iceScint.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="104"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="24"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="15"/>
     </file>
     <file xil_pn:name="../common/serdesIn_1to7.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="107"/>
@@ -146,7 +138,23 @@
     </file>
     <file xil_pn:name="../common/iceTad.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="129"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="25"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="19"/>
+    </file>
+    <file xil_pn:name="../common/panelPower.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="130"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="17"/>
+    </file>
+    <file xil_pn:name="../common/pixelRateCounter.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="132"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="16"/>
+    </file>
+    <file xil_pn:name="../common/gpsTiming.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="133"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="20"/>
+    </file>
+    <file xil_pn:name="../common/test.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="134"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="ipcore_dir/testRam.xise" xil_pn:type="FILE_COREGENISE">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -189,7 +197,7 @@
     <property xil_pn:name="Analysis Effort Level" xil_pn:value="Standard" xil_pn:valueState="default"/>
     <property xil_pn:name="Asynchronous To Synchronous" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Auto Implementation Compile Order" xil_pn:value="true" xil_pn:valueState="default"/>
-    <property xil_pn:name="Auto Implementation Top" xil_pn:value="true" xil_pn:valueState="default"/>
+    <property xil_pn:name="Auto Implementation Top" xil_pn:value="false" xil_pn:valueState="non-default"/>
     <property xil_pn:name="Automatic BRAM Packing" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Automatically Insert glbl Module in the Netlist" xil_pn:value="true" xil_pn:valueState="default"/>
     <property xil_pn:name="Automatically Run Generate Target PROM/ACE File" xil_pn:value="false" xil_pn:valueState="default"/>
@@ -295,7 +303,7 @@
     <property xil_pn:name="Ignore User Timing Constraints Par" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Ignore Version Check" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Implementation Top" xil_pn:value="Architecture|taxiTop|behaviour" xil_pn:valueState="non-default"/>
-    <property xil_pn:name="Implementation Top File" xil_pn:value="remote_sources/_/common/taxiTop.vhd" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Implementation Top File" xil_pn:value="../common/taxiTop.vhd" xil_pn:valueState="non-default"/>
     <property xil_pn:name="Implementation Top Instance Path" xil_pn:value="/taxiTop" xil_pn:valueState="non-default"/>
     <property xil_pn:name="Include 'uselib Directive in Verilog File" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Include SIMPRIM Models in Verilog File" xil_pn:value="false" xil_pn:valueState="default"/>
@@ -496,6 +504,7 @@
 
   <bindings>
     <binding xil_pn:location="/taxiTop" xil_pn:name="taxi.ucf"/>
+    <binding xil_pn:location="/taxiTop" xil_pn:name="scope_drs4_adc_trigger.cdc"/>
   </bindings>
 
   <libraries/>

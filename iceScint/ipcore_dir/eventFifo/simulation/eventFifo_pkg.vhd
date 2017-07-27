@@ -198,7 +198,7 @@ PACKAGE eventFifo_pkg IS
  COMPONENT eventFifo_exdes IS
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(12-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(13-1 DOWNTO 0);
            RST                       : IN  std_logic;
            OVERFLOW                  : OUT std_logic;
            UNDERFLOW                 : OUT std_logic;

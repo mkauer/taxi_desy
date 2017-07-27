@@ -31,8 +31,8 @@ use work.types.all;
 entity triggerDataDelay is
 	port
 	(
-		triggerPixelIn : in triggerSerdes_t;
-		triggerPixelOut : out triggerSerdes_t; 
+		triggerPixelIn : in std_logic_vector(8*8-1 downto 0);
+		triggerPixelOut : out std_logic_vector(8*8-1 downto 0);
 		registerRead : out triggerDataDelay_registerRead_t;
 		registerWrite : in triggerDataDelay_registerWrite_t
 	);
@@ -49,18 +49,16 @@ architecture behavioral of triggerDataDelay is
 	
 begin
 	
-	g0: for i in 0 to 2 generate 
-		delay: entity work.delayFifo port map(
-			clk => registerWrite.clock,
-			srst => fifoReset,
-			din => triggerPixelIn(i),
-			wr_en => fifoWriteRequest,
-			rd_en => fifoReadRequest,
-			dout => triggerPixelOut(i),
-			full => open,
-			empty => open
-			);
-	end generate;
+	delay: entity work.delayFifo port map(
+		clk => registerWrite.clock,
+		srst => fifoReset,
+		din => triggerPixelIn,
+		wr_en => fifoWriteRequest,
+		rd_en => fifoReadRequest,
+		dout => triggerPixelOut,
+		full => open,
+		empty => open
+		);
 
 	P0:process (registerWrite.clock)
 	begin

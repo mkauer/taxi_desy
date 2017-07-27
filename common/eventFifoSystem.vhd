@@ -29,12 +29,13 @@ use work.types.all;
 
 entity eventFifoSystem is
 	port(
-		newEvent : in std_logic;
+		trigger : in triggerLogic_t;
 		pps : in std_logic;
+		irq2arm : out std_logic;
 		triggerTiming : in triggerTiming_t;
-		dsr4Timing : in dsr4Timing_t;
-		dsr4Sampling : in dsr4Sampling_t;
-		dsr4Charge : in dsr4Charge_t;
+		drs4Timing : in drs4Timing_t;
+		drs4Sampling : in ltm9007_14_to_eventFifoSystem_t;
+		drs4Charge : in drs4Charge_t;
 		gpsTiming : in gpsTiming_t;
 		registerRead : out eventFifoSystem_registerRead_t;
 		registerWrite : in eventFifoSystem_registerWrite_t	
@@ -60,10 +61,13 @@ architecture behavioral of eventFifoSystem is
 	
 	signal dmaBuffer : std_logic_vector(15 downto 0) := (others=>'0');
 	signal eventFifoWordsDma : std_logic_vector(15 downto 0) := (others=>'0');
+	signal eventFifoWordsDmaAligned : std_logic_vector(15 downto 0) := (others=>'0');
+	signal eventFifoWordsDmaSlice : std_logic_vector(3 downto 0) := (others=>'0');
+	signal eventFifoWordsDma32 : std_logic_vector(31 downto 0) := (others=>'0');
 --	signal dmaLookAheadIsIdle : std_logic := '0';
 	signal s : integer range 0 to 63 := 0;
 	
-	type state1_t is (wait0, idle, writeSecondInfo, writeHeader, writeDebug, writeTriggerTiming, writeDsr4Sampling, writeDsr4Charge, writeDsr4Timing,testDataHeader,testData);
+	type state1_t is (wait0, idle, writeSecondInfo, writeHeader, writeDebug, writeTriggerTiming, writeDrs4Sampling, writeDrs4Charge, writeDrs4Timing,testDataHeader,testData,waitForRoiData);
 	signal state1 : state1_t := idle;
 	
 	type state7_t is (wait0, wait1, idle, read0, read1, read2, read3);
@@ -71,7 +75,8 @@ architecture behavioral of eventFifoSystem is
 	
 	signal eventFifoErrorCounter : unsigned(15 downto 0) := (others=>'0');
 	--constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(1024,16);
-	constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(4096,16);
+	--constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(4096,16);
+	constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(8192,16);
 	
 	signal eventCount : unsigned(32 downto 0) := (others=>'0');
 	signal counterSecounds : unsigned(32 downto 0) := (others=>'0'); -- move
@@ -97,19 +102,19 @@ architecture behavioral of eventFifoSystem is
 	constant DATATYPE_TESTDATA_COUNTEREVENTFIFOHEADER : std_logic_vector(5 downto 0) := x"b" & "00";
 	constant DATATYPE_TESTDATA_COUNTER : std_logic_vector(5 downto 0) := x"c" & "00";
 	
+	signal dataTypeCounter : unsigned(9 downto 0) := (others=>'0');
+	
 	signal nextWord : std_logic := '0';
 	signal packetConfig : std_logic_vector(15 downto 0);
 --	alias writeDsr4TimingToFifo_bit : std_logic is packetConfig(0);
-	alias writeDsr4TimingToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(0 downto 0);
---	alias writeDsr4ChargeToFifo_bit : std_logic is packetConfig(1);
-	alias writeDsr4ChargeToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(1 downto 1);
---	alias writeDsr4SamplingToFifo_bit : std_logic is packetConfig(2);
-	alias writeDsr4SamplingToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(2 downto 2);
---	alias writeDebugToFifo_bit : std_logic is packetConfig(3);
+	alias writeDrs4TimingToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(0 downto 0);
+	alias writeDrs4ChargeToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(1 downto 1);
+	alias writeDrs4SamplingToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(2 downto 2);
 	alias writeDebugToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(3 downto 3);
+	alias writeTriggerTimingToFifo_bit_v : std_logic_vector(0 downto 0) is packetConfig(4 downto 4);
 	alias testDataEventFifoStatic_bit : std_logic is packetConfig(8);
 	alias testDataEventFifoCounter_bit : std_logic is packetConfig(9);
-	alias testDataFrondEndFifo_bit : std_logic is packetConfig(10);
+	--alias testDataFrondEndFifo_bit : std_logic is packetConfig(10);
 	
 	signal registerSamplesToRead : std_logic_vector(15 downto 0) := x"0000";
 	signal registerDeviceId : std_logic_vector(15 downto 0) := x"a5a5"; -- ## dummy
@@ -119,6 +124,22 @@ architecture behavioral of eventFifoSystem is
 	signal testDataCounter : unsigned(12 downto 0) := (others=>'0'); --  range 0 to 2**16-1 := 0;
 	signal fifoTestDataEnabled : std_logic := '0';
 	signal newEvent_old : std_logic := '0';
+	signal newEvent : std_logic := '0';
+	
+	signal eventsPerIRQcounter : unsigned(15 downto 0) := (others=>'0');
+	signal irqCounter : integer range 0 to 65500 := 0;
+	signal irqTimeoutCounter : integer range 0 to 8100 := 0;
+	signal irqRequest : std_logic := '0';
+	signal irqRequest_eventsPerCount : std_logic := '0';
+	signal irqRequest_eventFifoWords : std_logic := '0';
+	signal irqRequest_timeout : std_logic := '0';
+	signal irqRequest_eventsPerCount_old : std_logic := '0';
+	signal irqRequest_eventFifoWords_old : std_logic := '0';
+	signal irqRequest_timeout_old : std_logic := '0';
+	signal increaseEventCounter : std_logic := '0';
+	
+	type stateIrq_t is (idle, irqBlock);
+	signal stateIrq : stateIrq_t := idle;
 	
 begin
 
@@ -134,21 +155,31 @@ begin
 		overflow => eventFifoOverflow,
 		empty => eventFifoEmpty,
 		underflow => eventFifoUnderflow,
-		data_count => eventFifoWords(11 downto 0)
+		data_count => eventFifoWords(12 downto 0)
 	);
 	
-	eventFifoWords(12) <= eventFifoFull; -- and not(eventFifoClearBuffer); -- ## has side effecs after fifoClear
+	eventFifoWords(13) <= eventFifoFull; -- and not(eventFifoClearBuffer); -- ## has side effecs after fifoClear
 	
 	registerRead.dmaBuffer <= dmaBuffer;
 	registerRead.eventFifoWordsDma <= eventFifoWordsDma;
+	registerRead.eventFifoWordsDmaAligned <= eventFifoWordsDmaAligned;
+	registerRead.eventFifoWordsDmaSlice <= eventFifoWordsDmaSlice;
+	registerRead.eventFifoWordsDma32 <= eventFifoWordsDma32;
 	nextWord <= registerWrite.nextWord;
 	
 	packetConfig <= registerWrite.packetConfig;
 	registerRead.packetConfig <= registerWrite.packetConfig;
+	registerRead.eventsPerIrq <= registerWrite.eventsPerIrq;
+	registerRead.irqAtEventFifoWords <= registerWrite.irqAtEventFifoWords;
+	registerRead.eventsPerIrq <= registerWrite.eventsPerIrq;
+	registerRead.enableIrq <= registerWrite.enableIrq;
+	registerRead.irqStall <= registerWrite.irqStall;
 	registerRead.eventFifoErrorCounter <= std_logic_vector(eventFifoErrorCounter);
 	
 	registerSamplesToRead <= registerWrite.registerSamplesToRead;
 	registerRead.registerSamplesToRead <= registerWrite.registerSamplesToRead;
+			
+	newEvent <= trigger.triggerNotDelayed or trigger.softTrigger;
 	
 P1:process (registerWrite.clock)
 	constant HEADER_LENGTH : integer := 1;
@@ -156,10 +187,11 @@ P1:process (registerWrite.clock)
 	constant TXT_LENGTH : integer := 1;
 	constant SLOT_WIDTH : integer := 16;
 	variable tempLength : unsigned(15 downto 0);
+	variable nextState : state1_t := idle;
 begin
 	if rising_edge(registerWrite.clock) then
 		eventFifoWriteRequest <= '0'; -- autoreset
-	
+		increaseEventCounter <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
 			eventFifoClear <= '1';
 			--eventFifoClearBuffer <= '1';
@@ -167,7 +199,6 @@ begin
 			state1 <= idle;
 			eventLength <= to_unsigned(0,eventLength'length);
 			eventFifoErrorCounter <= to_unsigned(0,eventFifoErrorCounter'length);
-			eventCount <= (others=>'0');
 		else
 			newEvent_old <= newEvent;
 			eventFifoClear <= registerWrite.eventFifoClear;
@@ -175,17 +206,19 @@ begin
 			
 			case state1 is
 				when wait0 =>
+					nextState := idle;
 					if(newEvent = '0') then
-						state1 <= idle;
+						state1 <= nextState;
 					end if;
 					
 				when idle =>
-					if((newEvent = '1') and (newEvent_old = '0')) then
-						state1 <= writeHeader;
-						tempLength := to_unsigned(0,tempLength'length) + HEADER_LENGTH + unsigned(writeDebugToFifo_bit_v) + unsigned(writeDsr4SamplingToFifo_bit_v) + unsigned(writeDsr4ChargeToFifo_bit_v) + unsigned(writeDsr4TimingToFifo_bit_v); -- ## is this efficient?!
+					nextState := waitForRoiData;
+					if((newEvent = '1') and (newEvent_old = '0')) then -- has to be latched...
+						state1 <= nextState;
+						tempLength := to_unsigned(0,tempLength'length) + HEADER_LENGTH + unsigned(writeDebugToFifo_bit_v) + unsigned(writeDrs4SamplingToFifo_bit_v) + unsigned(writeDrs4ChargeToFifo_bit_v) + unsigned(writeDrs4TimingToFifo_bit_v) + unsigned(writeTriggerTimingToFifo_bit_v); -- ## is this efficient?!
 						eventLength <= tempLength;
 						
-						if(writeDsr4SamplingToFifo_bit_v = "1") then
+						if(writeDrs4SamplingToFifo_bit_v = "1") then
 							eventLength <= unsigned(registerSamplesToRead) + tempLength;
 						end if;
 						if(testDataEventFifoCounter_bit = '1') then
@@ -198,47 +231,12 @@ begin
 					--	end if;
 					end if;
 					if(pps = '1') then
-						state1 <= writeSecondInfo;
+						state1 <= writeSecondInfo; -- has to be latched...
 					end if;
+					dataTypeCounter <= (others=>'0');
 				
-				when testDataHeader =>
-					eventFifoIn <= (others=>'0');
-					eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
-					eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventCount(31 downto 16));
-					eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventCount(15 downto 0));
-					eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "010";
-					eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "011";
-					eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "100";
-					eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "101";
-					eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "110";
-					eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "111";
-					testDataCounter <= testDataCounter + 1;
-					testDataWords <= testDataWords + 1;
-					eventFifoWriteRequest <= '1'; -- autoreset
-					eventCount <= eventCount + 1;
-					state1 <= testData;
-
-				when testData =>
-					if(testDataWords < unsigned(registerSamplesToRead))then
-						eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
-						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "000";
-						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "001";
-						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "010";
-						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "011";
-						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "100";
-						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "101";
-						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "110";
-						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "111";
-						testDataCounter <= testDataCounter + 1;
-						testDataWords <= testDataWords + 1;
-						eventFifoWriteRequest <= '1'; -- autoreset
-					else
-						state1 <= idle;
-					end if;
-
-
 				when writeSecondInfo =>
+					nextState := idle;
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax)) then
 						eventFifoIn <= (others=>'0');
 						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DATAPERSECOND & "00" & x"00";
@@ -254,10 +252,15 @@ begin
 					else
 						eventFifoErrorCounter <= eventFifoErrorCounter + 1;
 					end if;
-					state1 <= idle;
+					state1 <= nextState;
 					
+				when waitForRoiData =>
+					if(drs4Sampling.roiBufferReady = '1') then
+						state1 <= writeHeader;
+					end if;
+
 				when writeHeader =>
-					eventCount <= eventCount + 1;
+					increaseEventCounter <= '1'; -- autoreset
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax - eventLength)) then
 						eventFifoIn <= (others=>'0');
 						--eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_HEADER & "00" & x"00";
@@ -268,7 +271,7 @@ begin
 						--eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(realTimeCounterSecounds(15 downto 0));
 						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(realTimeCounterSubSecounds(31 downto 16)); -- not 1ns but ~1.05263ns per tick
 						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(realTimeCounterSubSecounds(15 downto 0));
-						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= registerDeviceId; -- ## can be moved
+						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= "000000" & drs4Sampling.roiBuffer;
 							
 						state1 <= writeDebug;
 						
@@ -290,68 +293,142 @@ begin
 					end if;
 				
 				when writeDebug =>
-					eventFifoIn <= (others=>'0');
-					eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DEBUG & "00" & x"00";
-					eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventFifoFullCounter);
-					eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventFifoOverflowCounter);
-					eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(eventFifoUnderflowCounter);
-					eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(eventFifoErrorCounter); 
-					--eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= x"0000"; -- 
-					--eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= x"0000"; -- 
-					--eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= x"0000"; -- 
-					--eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= x"0000"; -- some masks...
-					eventFifoWriteRequest <= '1'; -- autoreset
-					state1 <= writeTriggerTiming;
+					nextState := writeTriggerTiming;
+					if(writeDebugToFifo_bit_v = "1") then
+						eventFifoIn <= (others=>'0');
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DEBUG & "00" & x"00";
+						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventFifoFullCounter);
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventFifoOverflowCounter);
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(eventFifoUnderflowCounter);
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(eventFifoErrorCounter); 
+						--eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= x"0000"; -- 
+						--eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= x"0000"; -- 
+						--eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= x"0000"; -- 
+						--eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= x"0000"; -- some masks...
+						eventFifoWriteRequest <= '1'; -- autoreset
+					end if;
+					state1 <= nextState;
 					
 				when writeTriggerTiming =>
-					if(triggerTiming.newData = '1') then
-						eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TRIGGERTIMING & "00" & x"00";
-						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= triggerTiming.ch0;
-						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= triggerTiming.ch1;
-						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= triggerTiming.ch2;
-						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= triggerTiming.ch3;
-						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= triggerTiming.ch4;
-						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= triggerTiming.ch5;
-						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= triggerTiming.ch6;
-						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= triggerTiming.ch7;
-						eventFifoWriteRequest <= '1'; -- autoreset
-						state1 <= writeDsr4Sampling;
+					nextState := writeDrs4Sampling;
+					if(writeTriggerTimingToFifo_bit_v = "1") then
+						if(triggerTiming.newData = '1') then
+							eventFifoIn <= (others=>'0');
+							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TRIGGERTIMING & "00" & x"00";
+							eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= triggerTiming.ch0;
+							eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= triggerTiming.ch1;
+							eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= triggerTiming.ch2;
+							eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= triggerTiming.ch3;
+							eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= triggerTiming.ch4;
+							eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= triggerTiming.ch5;
+							eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= triggerTiming.ch6;
+							eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= triggerTiming.ch7;
+							eventFifoWriteRequest <= '1'; -- autoreset
+							state1 <= nextState;
+						end if;
+					else	
+						state1 <= nextState;
 					end if;
 				
-				when writeDsr4Sampling =>
-					if(dsr4Sampling.newData = '1') then
-						eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4SAMPLING & "00" & x"00";
-						-- ## not implemented...
-						eventFifoWriteRequest <= '1'; -- autoreset
+				when writeDrs4Sampling =>
+					nextState := writeDrs4Charge;
+					if(writeDrs4SamplingToFifo_bit_v = "1") then
+						if(drs4Sampling.newData = '1') then 
+							eventFifoIn <= (others=>'0');
+							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4SAMPLING & std_logic_vector(dataTypeCounter);
+							eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= drs4Sampling.channel(0);
+							eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= drs4Sampling.channel(1);
+							eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= drs4Sampling.channel(2);
+							eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= drs4Sampling.channel(3);
+							eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= drs4Sampling.channel(4);
+							eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= drs4Sampling.channel(5);
+							eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= drs4Sampling.channel(6);
+							eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= drs4Sampling.channel(7);
+							eventFifoWriteRequest <= '1'; -- autoreset
+							dataTypeCounter <= dataTypeCounter + 1;
+						end if;
+
+						if(drs4Sampling.samplingDone = '1') then
+							state1 <= nextState;
+							dataTypeCounter <= (others=>'0');
+						end if;
+					else
+						state1 <= nextState;
+					end if;
+					
+				when writeDrs4Charge =>
+					nextState := writeDrs4Timing;
+					if(writeDrs4ChargeToFifo_bit_v = "1") then
+						if(drs4Charge.newData = '1') then
+							eventFifoIn <= (others=>'0');
+							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4CHARGE & "00" & x"00";
+							-- ## not implemented...
+							eventFifoWriteRequest <= '1'; -- autoreset
+						end if;
+					
+						if(drs4Charge.chargeDone = '1') then
+							state1 <= nextState;
+						end if;
+					else
+						state1 <= nextState;
+					end if;
+					
+				when writeDrs4Timing =>
+					nextState := idle;
+					if(writeDrs4TimingToFifo_bit_v = "1") then
+						if(drs4Timing.newData = '1') then
+							eventFifoIn <= (others=>'0');
+							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4TIMING & "00" & x"00";
+							-- ## not implemented...
+							eventFifoWriteRequest <= '1'; -- autoreset
+						end if;
+						
+						if(drs4Timing.timingDone = '1') then
+							state1 <= nextState;
+						end if;
+					else
+						state1 <= nextState;
 					end if;
 
-					if(dsr4Sampling.samplingDone = '1') then
-						state1 <= writeDsr4Charge;
-					end if;
-					
-				when writeDsr4Charge =>
-					if(dsr4Charge.newData = '1') then
+				----------------
+				when testDataHeader =>
+					increaseEventCounter <= '1'; -- autoreset
+					if(unsigned(eventFifoWords) < (eventFifoWordsMax - eventLength)) then
 						eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4CHARGE & "00" & x"00";
-						-- ## not implemented...
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
+						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventCount(31 downto 16));
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventCount(15 downto 0));
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(eventLength);
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "011";
+						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "100";
+						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "101";
+						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "110";
+						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "111";
+						testDataCounter <= testDataCounter + 1;
+						testDataWords <= testDataWords + 1;
 						eventFifoWriteRequest <= '1'; -- autoreset
+						state1 <= testData;
+					else
+						state1 <= idle;
+						eventFifoErrorCounter <= eventFifoErrorCounter + 1;
 					end if;
-					
-					if(dsr4Charge.chargeDone = '1') then
-						state1 <= writeDsr4Timing;
-					end if;
-					
-				when writeDsr4Timing =>
-					if(dsr4Timing.newData = '1') then
+
+				when testData =>
+					if(testDataWords < unsigned(registerSamplesToRead))then
 						eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4TIMING & "00" & x"00";
-						-- ## not implemented...
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
+						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "000";
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "001";
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "010";
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "011";
+						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "100";
+						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "101";
+						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "110";
+						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "111";
+						testDataCounter <= testDataCounter + 1;
+						testDataWords <= testDataWords + 1;
 						eventFifoWriteRequest <= '1'; -- autoreset
-					end if;
-					
-					if(dsr4Timing.timingDone = '1') then
+					else
 						state1 <= idle;
 					end if;
 				
@@ -363,10 +440,13 @@ begin
 	end if;
 end process P1;
 
+--WeventFifoWordsDma32 <= (unsigned(eventFifoWordsDma) * 9) + eventFifoWordsDmaSlice;
 
 -- ## todo: implement a 16Bit counting fifoWordCount to look like a real 16Bit per word fifo....
 P2:process (registerWrite.clock)
 	variable lookAheadWord : std_logic := '0';
+	constant eventFifoWordWidth_c : std_logic_vector(3 downto 0) := x"9";
+	variable temp : unsigned(31 downto 0);
 begin
 	if rising_edge(registerWrite.clock) then
 		eventFifoReadRequest <= '0'; -- autoreset
@@ -374,10 +454,21 @@ begin
 			state7 <= wait0;
 			dmaBuffer <= x"0000";
 			lookAheadWord := '0';
-			eventFifoWordsDma <= x"0000";
+			eventFifoWordsDma <= (others=>'0');
+			eventFifoWordsDmaAligned <= (others=>'0');
+			eventFifoWordsDmaSlice <= (others=>'0');
+			eventFifoWordsDma32 <= (others=>'0');
 --			dmaLookAheadIsIdle <= '1';
 			s <= 0;
-		else		
+		else
+			if(registerWrite.eventFifoClear = '1') then
+				eventFifoWordsDma <= (others=>'0');
+				eventFifoWordsDmaAligned <= (others=>'0');
+				eventFifoWordsDmaSlice <= (others=>'0');
+				eventFifoWordsDma32 <= (others=>'0');
+				state7 <= wait0;
+			end if;
+
 			case state7 is
 				when wait0 =>
 					state7 <= wait1;
@@ -389,9 +480,11 @@ begin
 					if (eventFifoWords /= x"0000") then
 						state7 <= read0;
 						eventFifoReadRequest <= '1'; -- autoreset
+						eventFifoWordsDmaSlice <= eventFifoWordWidth_c;
 					else
 						dmaBuffer <= x"0000";
 						lookAheadWord := '0'; -- ## ?!?!?!?!?! variable?
+						eventFifoWordsDmaSlice <= (others=>'0');
 					end if;
 					
 				when read0 =>
@@ -406,6 +499,7 @@ begin
 					
 				when read2 =>
 					if (nextWord = '1') then
+						eventFifoWordsDmaSlice <= std_logic_vector(unsigned(eventFifoWordsDmaSlice) - 1);
 						dmaBuffer <= eventFifoOut(s*16+16-1 downto 16*s);
 						s <= s + 1;
 						state7 <= read3;
@@ -418,8 +512,10 @@ begin
 							if (eventFifoWords /= x"0000") then
 								state7 <= read0;
 								eventFifoReadRequest <= '1'; -- autoreset
+								eventFifoWordsDmaSlice <= eventFifoWordWidth_c;
 							else
 								state7 <= idle;
+								eventFifoWordsDmaSlice <= (others=>'0');
 							end if;
 						end if;
 					end if;
@@ -428,12 +524,13 @@ begin
 			end case;
 			
 			if (lookAheadWord = '1') then
-				eventFifoWordsDma <= std_logic_vector(unsigned(eventFifoWords) + 1);
-				--dmaLookAheadIsIdle <= '0';
+				eventFifoWordsDmaAligned <= std_logic_vector(unsigned(eventFifoWords) + 1);
 			else
-				eventFifoWordsDma <= eventFifoWords;
-				--dmaLookAheadIsIdle <= '1';
+				eventFifoWordsDmaAligned <= eventFifoWords;
 			end if;
+
+			eventFifoWordsDma <= eventFifoWords;
+			eventFifoWordsDma32 <= std_logic_vector((x"00" & unsigned(eventFifoWords) & x"00") + unsigned(eventFifoWords) +  unsigned(eventFifoWordsDmaSlice));
 			
 --			if(registerResetFifos(1) = '1') then
 --				s <= 0;
@@ -503,5 +600,106 @@ begin
 		end if;
 	end if;
 end process P4;
+
+
+-- irq generation
+Reset_p:process (registerWrite.clock)
+begin
+	if rising_edge(registerWrite.clock) then
+		irq2arm <= '0'; -- autoreset
+		if (registerWrite.reset = '1') then
+			eventsPerIRQcounter <= (others=>'0');
+			irqCounter <= 0;
+			stateIrq <= idle;
+			eventCount <= (others=>'0');
+			irqTimeoutCounter <= 1000; -- register?!
+			irqRequest <= '0';
+			irqRequest_eventsPerCount <= '0';
+			irqRequest_eventFifoWords <= '0';
+			irqRequest_timeout <= '0';
+			irqRequest_eventsPerCount_old <= '0';
+			irqRequest_eventFifoWords_old <= '0';
+			irqRequest_timeout_old <= '0'; 
+		else
+			case stateIrq is -- max irq rate is 2kHz now (500us dead time after irq)
+				when idle =>
+					if((irqRequest = '1') and (registerWrite.irqStall = '0')) then -- irqStall can be used to reduce the irq rate during unfinished dma transfers
+						irqRequest <= '0';
+						irq2arm <= '1'; -- autoreset
+						stateIrq <= irqBlock;
+						irqCounter <= 0;
+					end if;
+				
+				when irqBlock =>
+					irqCounter <= irqCounter + 1;
+					if (irqCounter >= 62500) then
+						stateIrq <= idle;
+					end if;
+			end case;
+							
+			if (increaseEventCounter = '1') then 
+				eventCount <= eventCount + 1;
+				if (unsigned(registerWrite.eventsPerIrq) /= to_unsigned(0,registerWrite.eventsPerIrq'length)) then
+					eventsPerIRQcounter <= eventsPerIRQcounter + 1;
+				end if;
+			end if;
+			
+			irqRequest_eventsPerCount_old <= irqRequest_eventsPerCount;
+			irqRequest_eventFifoWords_old <= irqRequest_eventFifoWords;
+			irqRequest_timeout_old <= irqRequest_timeout;
+
+			if(registerWrite.forceIrq = '1') then
+				irqRequest <= '1';
+			end if;
+			if((irqRequest_eventsPerCount = '1') and (irqRequest_eventsPerCount_old = '0')) then
+				irqRequest <= '1';
+			end if;
+			if((irqRequest_eventFifoWords = '1') and (irqRequest_eventFifoWords_old = '0')) then
+				irqRequest <= '1';
+			end if;
+			if((irqRequest_timeout = '1') and (irqRequest_timeout_old = '0')) then
+				irqRequest <= '1';
+			end if;
+
+			if(registerWrite.enableIrq = '1') then
+				if (registerWrite.eventsPerIrq /= (registerWrite.eventsPerIrq'range=>'0')) then
+					if (eventsPerIRQcounter >= unsigned(registerWrite.eventsPerIrq)) then
+						irqRequest_eventsPerCount <= '1';
+						eventsPerIRQcounter <= (others=>'0');
+					else
+						irqRequest_eventsPerCount <= '0';
+					end if;
+				end if;		
+				
+				if (registerWrite.irqAtEventFifoWords /= (registerWrite.irqAtEventFifoWords'range=>'0')) then
+					if (unsigned(eventFifoWords) >= unsigned(registerWrite.irqAtEventFifoWords)) then
+						irqRequest_eventFifoWords <= '1';
+					else
+						irqRequest_eventFifoWords <= '0';
+					end if;
+				end if;
+				
+				if (eventFifoWords /= (eventFifoWords'range=>'0')) then
+					if ((irqTimeoutCounter /= 0) and (registerWrite.tick_ms = '1')) then
+						irqTimeoutCounter <= irqTimeoutCounter - 1;
+					end if;
+					if (irqTimeoutCounter = 1) then
+						irqTimeoutCounter <= 0;
+						irqRequest_timeout <= '1';
+					else
+						irqRequest_timeout <= '0';
+					end if;
+				else
+					irqTimeoutCounter <= 1000; -- 1000 = 1sec timeout
+				end if;
+			end if;
+			
+			--if ((clearEventCounter = '1') or (resetEventCount_bit = '1')) then
+			if (registerWrite.clearEventCounter = '1') then
+				eventCount <= (others=>'0');
+			end if;
+		end if;
+	end if;
+end process Reset_p;
 
 end behavioral;

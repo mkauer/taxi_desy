@@ -85,7 +85,7 @@ entity serdesIn_1to8 is
 	generic (
 		S			: integer := 8 ;				-- Parameter to set the serdes factor 1..8
 		D 			: integer := 8 ;				-- Set the number of inputs and outputs
-		DIFF_TERM		: boolean := false ;				-- Enable or disable internal differential termination
+		DIFF_TERM		: boolean := true ;				-- Enable or disable internal differential termination
 		DATA_STRIPING 		: string := "PER_CHANL") ;			-- Used to determine method for mapping input parallel word to output serial words
 	port 	(
 		use_phase_detector	:  in std_logic ;				-- Set generation of phase detector logic
@@ -304,7 +304,5 @@ end behavioral;
 
 
 ------------------------------------------------------------------------------------------------------------
-
-
 
 

@@ -95,7 +95,7 @@ ARCHITECTURE simulation_arch OF eventFifo_synth IS
 
     -- FIFO interface signal declarations
     SIGNAL clk_i	                  :   STD_LOGIC;
-    SIGNAL data_count                     :   STD_LOGIC_VECTOR(12-1 DOWNTO 0);
+    SIGNAL data_count                     :   STD_LOGIC_VECTOR(13-1 DOWNTO 0);
     SIGNAL rst	                          :   STD_LOGIC;
     SIGNAL overflow                       :   STD_LOGIC;
     SIGNAL underflow                      :   STD_LOGIC;
@@ -222,8 +222,8 @@ ARCHITECTURE simulation_arch OF eventFifo_synth IS
               C_APPLICATION_TYPE  => 0,
 	      C_DOUT_WIDTH        => 144,
 	      C_DIN_WIDTH         => 144,
-	      C_WR_PNTR_WIDTH     => 12,
-    	      C_RD_PNTR_WIDTH     => 12,
+	      C_WR_PNTR_WIDTH     => 13,
+    	      C_RD_PNTR_WIDTH     => 13,
  	      C_CH_TYPE           => 0,
               FREEZEON_ERROR      => FREEZEON_ERROR,
 	      TB_SEED             => TB_SEED, 

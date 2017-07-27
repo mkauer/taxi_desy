@@ -74,7 +74,7 @@ use unisim.vcomponents.all;
 entity eventFifo_exdes is
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(12-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(13-1 DOWNTO 0);
            RST                       : IN  std_logic;
            OVERFLOW                  : OUT std_logic;
            UNDERFLOW                 : OUT std_logic;
@@ -98,7 +98,7 @@ architecture xilinx of eventFifo_exdes is
   component eventFifo is
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(12-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(13-1 DOWNTO 0);
            RST                       : IN  std_logic;
            OVERFLOW                  : OUT std_logic;
            UNDERFLOW                 : OUT std_logic;

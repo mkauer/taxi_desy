@@ -42,25 +42,28 @@ end iceTad;
 
 architecture Behavioral of iceTad is
 	
-	signal dfdf : std_logic_vector(7 downto 0) := (others=>'0');
-	type stateDelay_t is (init1, init2, run);
-	signal stateDelay : stateDelay_t := init1;
-	signal delayCounter : integer range 0 to 2047 := 0;
+	--type stateDelay_t is (init1, init2, run);
+	--signal stateDelay : stateDelay_t := init1;
+	signal dummyCounter : integer range 0 to 130000 := 0;
+	signal dummyData : std_logic_vector(7 downto 0) := x"55"; --(others=>'0');
 	
 begin
 
 	registerRead.powerOn <= registerWrite.powerOn;
 	
 	nP24VOn <= (others=>'0');
-	rs485DataOut <= (others=>'0');
-	rs485DataTristate <= (others=>'1');
-	rs485DataEnable <= (others=>'0');
+	rs485DataOut <= dummyData;
+	--rs485DataOut <= (others=>'0');
+	--rs485DataTristate <= (others=>'1');
+	--rs485DataEnable <= (others=>'0');
 
 	P1:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
 			if (registerWrite.reset = '1') then
 				nP24VOnTristate <= (others=>'1');
+				dummyCounter <= 0;
+				dummyData <= x"55"; -- (others=>'0');
 			else
 				q:for i in 0 to registerWrite.powerOn'length-1 loop
 					if(registerWrite.powerOn(i) = '1') then
@@ -69,6 +72,24 @@ begin
 						nP24VOnTristate(i) <= '1';
 					end if;
 				end loop;
+				
+				-- rs485 test
+
+				if(registerWrite.testRs485 = '1') then
+					dummyCounter <= dummyCounter + 1;
+					if(dummyCounter >= 125000) then
+						dummyData <= not dummyData;
+						dummyCounter <= 0;
+					end if;
+					rs485DataTristate <= (others=>'0');
+					rs485DataEnable <= (others=>'1');
+				else
+					dummyCounter <= 0;
+					dummyData <= (others=>registerWrite.testRs485Data);
+					rs485DataTristate <= (others=> '1'); --registerWrite.testRs485Tristate);
+					rs485DataEnable <= (others=> '0'); --registerWrite.testRs485Enable);
+				end if;
+
 			end if;
 		end if;
 	end process P1;
