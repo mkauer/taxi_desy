@@ -86,7 +86,7 @@ architecture behavior of registerInterface_iceScint is
 	signal valuesChangedChip2Temp : std_logic_vector(7 downto 0) := (others => '0');
 	
 	signal numberOfSamplesToRead : std_logic_vector(15 downto 0) := (others => '0');
-	signal actualOffsetCorrectionRamValue : std_logic_vector(7 downto 0) := (others => '0');
+	signal actualOffsetCorrectionRamValue : std_logic_vector(15 downto 0) := (others => '0');
 
 	signal eventFifoWordsDmaSlice_latched : std_logic_vector(3 downto 0) := (others => '0');
 	
@@ -108,6 +108,7 @@ g0: if moduleEnabled /= 0 generate
 	triggerDataDelay_0w.reset <= controlBus.reset;
 	pixelRateCounter_0w.clock <= controlBus.clock;
 	pixelRateCounter_0w.reset <= controlBus.reset;
+	pixelRateCounter_0w.tick_ms <= gpsTiming_0r.tick_ms;
 	dac088s085_x3_0w.clock <= controlBus.clock;
 	dac088s085_x3_0w.reset <= controlBus.reset;
 	gpsTiming_0w.clock <= controlBus.clock;
@@ -125,7 +126,6 @@ g0: if moduleEnabled /= 0 generate
 	panelPower_0w.clock <= controlBus.clock;
 	panelPower_0w.reset <= controlBus.reset;
 	
-	pixelRateCounter_0w.tick_ms <= gpsTiming_0r.tick_ms;
 	
 	dac088s085_x3_0w.valuesChangedChip0 <= valuesChangedChip0Temp;
 	dac088s085_x3_0w.valuesChangedChip1 <= valuesChangedChip1Temp;
@@ -157,9 +157,10 @@ g0: if moduleEnabled /= 0 generate
 			triggerLogic_0w.triggerSerdesDelayInit <= '0'; --autoreset
 			triggerLogic_0w.softTrigger <= '0'; --autoreset
 			panelPower_0w.init <= '0'; -- autoreset
-			ltm9007_14_0w.offsetCorrectionRamWrite <= (others=>'0');
+			ltm9007_14_0w.offsetCorrectionRamWrite <= (others=>'0'); -- autoreset
 			eventFifoSystem_0w.forceIrq <= '0'; -- autoreset
 			eventFifoSystem_0w.clearEventCounter <= '0'; -- autoreset
+			iceTad_0w.rs485TxStart <= (others=>'0'); -- autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
@@ -204,6 +205,7 @@ g0: if moduleEnabled /= 0 generate
 				--dac088s085_x3_0w.valuesChip2(6) <= x"80";
 				clockConfig_debug_0w.drs4RefClockPeriod <= x"7f";
 				eventFifoWordsDmaSlice_latched <= (others=>'0');
+				pixelRateCounter_0w.counterPeriod <= x"0001"; -- 1 sec
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
@@ -288,15 +290,22 @@ g0: if moduleEnabled /= 0 generate
 						when x"00e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(7 downto 0); -- autoreset 
 						--when x"00e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(2 downto 0); 
 						when x"00e2" => ltm9007_14_0w.offsetCorrectionRamAddress <= dataBusIn(9 downto 0); 
-						when x"00e4" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
+						when x"00e4" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(15 downto 0); 
+						when x"00e6" => ltm9007_14_0w.baselineStart <= dataBusIn(9 downto 0); 
+						when x"00e8" => ltm9007_14_0w.baselineEnd <= dataBusIn(9 downto 0); 
 						
 						when x"00f0" => iceTad_0w.powerOn <= dataBusIn(7 downto 0); 
 						when x"00f2" => panelPower_0w.init <= '1'; -- autoreset 
 						when x"00f4" => panelPower_0w.enable <= dataBusIn(0); 
-						when x"00f6" => iceTad_0w.testRs485 <= dataBusIn(0); 
-						when x"00f8" => iceTad_0w.testRs485Data <= dataBusIn(0); 
-						when x"00fa" => iceTad_0w.testRs485Tristate <= dataBusIn(0); 
-						when x"00fc" => iceTad_0w.testRs485Enable <= dataBusIn(0); 
+						when x"0300" => iceTad_0w.rs485Data(0) <= dataBusIn(7 downto 0); 
+						when x"0302" => iceTad_0w.rs485Data(1) <= dataBusIn(7 downto 0); 
+						when x"0304" => iceTad_0w.rs485Data(2) <= dataBusIn(7 downto 0); 
+						when x"0306" => iceTad_0w.rs485Data(3) <= dataBusIn(7 downto 0); 
+						when x"0308" => iceTad_0w.rs485Data(4) <= dataBusIn(7 downto 0); 
+						when x"030a" => iceTad_0w.rs485Data(5) <= dataBusIn(7 downto 0); 
+						when x"030c" => iceTad_0w.rs485Data(6) <= dataBusIn(7 downto 0); 
+						when x"030e" => iceTad_0w.rs485Data(7) <= dataBusIn(7 downto 0); 
+						when x"0310" => iceTad_0w.rs485TxStart <= dataBusIn(7 downto 0); -- autoreset 
 						
 						--when x"1000" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
 						--when x"1800" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
@@ -421,9 +430,22 @@ g0: if moduleEnabled /= 0 generate
 						
 						when x"00e0" => readDataBuffer <= x"00" & ltm9007_14_0r.offsetCorrectionRamWrite;
 						when x"00e2" => readDataBuffer <= "000000" & ltm9007_14_0r.offsetCorrectionRamAddress;
-						when x"00e4" => readDataBuffer <= x"00" & actualOffsetCorrectionRamValue;
+						--when x"00e4" => readDataBuffer <= x"00" & actualOffsetCorrectionRamValue;
+						when x"00e4" => readDataBuffer <= ltm9007_14_0r.offsetCorrectionRamData(0);
+						when x"00e6" => readDataBuffer <= "000000" & ltm9007_14_0r.baselineStart;
+						when x"00e8" => readDataBuffer <= "000000" & ltm9007_14_0r.baselineEnd;
 						
 						when x"00f0" => readDataBuffer <= x"00" & iceTad_0r.powerOn;
+						when x"0300" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(0);
+						when x"0302" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(1);
+						when x"0304" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(2);
+						when x"0306" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(3);
+						when x"0308" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(4);
+						when x"030a" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(5);
+						when x"030c" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(6);
+						when x"030e" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(7);
+						when x"0310" => readDataBuffer <= x"00" & iceTad_0r.rs485TxBusy;
+						when x"0312" => readDataBuffer <= x"00" & iceTad_0r.rs485RxBusy;
 						
 						when x"f000" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoEmptyA;
 						when x"f002" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoValidA;
@@ -451,7 +473,7 @@ g0: if moduleEnabled /= 0 generate
 		ltm9007_14_0r.offsetCorrectionRamData(5) when ltm9007_14_0r.offsetCorrectionRamWrite(5) = '1' else 
 		ltm9007_14_0r.offsetCorrectionRamData(6) when ltm9007_14_0r.offsetCorrectionRamWrite(6) = '1' else 
 		ltm9007_14_0r.offsetCorrectionRamData(7) when ltm9007_14_0r.offsetCorrectionRamWrite(7) = '1' else
-		x"ed";
+		x"d00f";
 
 --	P1:process (controlBus.clock)
 --	begin

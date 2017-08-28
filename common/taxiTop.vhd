@@ -174,8 +174,9 @@ entity taxiTop is
 		TEMPERATURE    : out std_logic;    -- 2.5V CMOS, inout , one wire temp. sensor
 
 	  -- test signals, NOT AVAILABLE for XC6SLX100FGG484-2 !!! 
-		LVDS_IO_P    : out std_logic_vector(5 downto 0); -- LVDS bidir. test port 
-		LVDS_IO_N    : out std_logic_vector(5 downto 0)  -- LVDS bidir. test port       
+		LVDS_IO_P    : out std_logic_vector(4 downto 0); -- LVDS bidir. test port 
+		LVDS_IO_N    : out std_logic_vector(5 downto 0);  -- LVDS bidir. test port       
+		LVDS_IN_P    : in std_logic_vector(5 downto 5) -- LVDS bidir. test port 
 	);  
 end taxiTop; 
 
@@ -249,9 +250,8 @@ architecture behaviour of taxiTop is
 
 	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
 	signal triggerTiming : triggerTiming_t;
-	signal drs4Timing : drs4Timing_t := (newData => '0', timingDone => '1', others => (others=>'0'));
-	signal drs4Sampling : ltm9007_14_to_eventFifoSystem_t := (newData => '0', samplingDone => '1', channel=> (others => (others=>'0')), roiBufferReady => '0', roiBuffer => (others=>'0'));
-	signal drs4Charge : drs4Charge_t := (newData => '0', chargeDone => '1', others => (others=>'0'));
+	signal drs4Timing : drs4Timing_t := (newData => '0', timingDone => '0', others=>(others=>'0'));
+	signal drs4Data : ltm9007_14_to_eventFifoSystem_t := (newData => '0', samplingDone => '0', channel => (others=>(others=>'0')), roiBufferReady => '0', roiBuffer => (others=>'0'), charge => (others=>(others=>'0')), chargeDone => '0', baseline => (others=>(others=>'0')), baselineDone => '0');
 	signal gpsTiming : gpsTiming_t := (newData => '0', others => (others=>'0'));
 	signal drs4Clocks : drs4Clocks_t := (others=>'0');
 	signal adcFifo : adcFifo_t := (channel=>(others=>(others=>'0')) ,others=>(others=>'0'));
@@ -305,6 +305,7 @@ architecture behaviour of taxiTop is
 	
 	signal nPanelPowerOn : std_logic := '0'; --_vector(2 downto 0) := (others=>'0');
 	signal irq2arm : std_logic := '0';
+	signal whiteRabbitPpsIregbIn : std_logic := '0';
 	
 begin
 
@@ -371,7 +372,9 @@ begin
 	i12: OBUFDS port map(O => LVDS_IO_P(2), OB => LVDS_IO_N(2), I => lvdsDebugOut(2));
 	i13: OBUFDS port map(O => LVDS_IO_P(3), OB => LVDS_IO_N(3), I => lvdsDebugOut(3));
 	i14: OBUFDS port map(O => LVDS_IO_P(4), OB => LVDS_IO_N(4), I => lvdsDebugOut(4));
-	i15: OBUFDS port map(O => LVDS_IO_P(5), OB => LVDS_IO_N(5), I => lvdsDebugOut(5));
+	--i15: OBUFDS port map(O => LVDS_IO_P(5), OB => LVDS_IO_N(5), I => lvdsDebugOut(5));
+	i15a: IBUF port map(I => LVDS_IN_P(5), O => whiteRabbitPpsIregbIn);
+	i15b: OBUF port map(O => LVDS_IO_N(5), I => whiteRabbitPpsIregbIn);
 
 	i16: IBUF port map(I => EBI1_NWE, O => ebiNotWrite);
 	i17: IBUF port map(I => EBI1_NCS2, O => ebiNotChipSelect);
@@ -467,7 +470,7 @@ begin
 
 	x12: entity work.pixelRateCounter port map(discriminatorSerdes, pixelRates, pixelRateCounter_0r, pixelRateCounter_0w);
 
-	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Timing,drs4Sampling,drs4Charge,gpsTiming,eventFifoSystem_0r,eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Timing,drs4Data,gpsTiming,eventFifoSystem_0r,eventFifoSystem_0w);
 
 	drs4Denable(1) <= drs4Denable(0);
 	drs4Dwrite(1) <= drs4Dwrite(0);
@@ -499,7 +502,7 @@ begin
 		ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1),
 		ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1),
 		adcNcsA(0), adcNcsB(0), adcSdi, adcSck,
-		drs4_to_ltm9007_14, drs4Clocks, adcFifo, drs4Sampling, adcClocks,
+		drs4_to_ltm9007_14, drs4Clocks, adcFifo, drs4Data, adcClocks,
 		ltm9007_14_0r, ltm9007_14_0w);
 
 	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_0r, dac088s085_x3_0w);

@@ -8,7 +8,7 @@ PINATTR PinName addra[9:0]
 PINATTR Polarity IN
 LINE Wide 0 112 32 112
 PIN 0 112 LEFT 36
-PINATTR PinName dina[7:0]
+PINATTR PinName dina[15:0]
 PINATTR Polarity IN
 LINE Wide 0 208 32 208
 PIN 0 208 LEFT 36
@@ -28,7 +28,7 @@ PINATTR PinName addrb[9:0]
 PINATTR Polarity IN
 LINE Wide 0 464 32 464
 PIN 0 464 LEFT 36
-PINATTR PinName dinb[7:0]
+PINATTR PinName dinb[15:0]
 PINATTR Polarity IN
 LINE Wide 0 560 32 560
 PIN 0 560 LEFT 36
@@ -44,10 +44,10 @@ PINATTR PinName clkb
 PINATTR Polarity IN
 LINE Wide 576 80 544 80
 PIN 576 80 RIGHT 36
-PINATTR PinName douta[7:0]
+PINATTR PinName douta[15:0]
 PINATTR Polarity OUT
 LINE Wide 576 368 544 368
 PIN 576 368 RIGHT 36
-PINATTR PinName doutb[7:0]
+PINATTR PinName doutb[15:0]
 PINATTR Polarity OUT
 

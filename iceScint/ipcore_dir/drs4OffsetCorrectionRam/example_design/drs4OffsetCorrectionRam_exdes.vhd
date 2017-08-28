@@ -93,9 +93,9 @@ ENTITY drs4OffsetCorrectionRam_exdes IS
     WEA            : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
     ADDRA          : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
   
-    DINA           : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+    DINA           : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
   
-    DOUTA          : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+    DOUTA          : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
   
     CLKA       : IN STD_LOGIC;
 
@@ -106,8 +106,8 @@ ENTITY drs4OffsetCorrectionRam_exdes IS
     WEB            : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
     ADDRB          : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
   
-    DINB           : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    DOUTB          : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+    DINB           : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    DOUTB          : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
     CLKB           : IN STD_LOGIC
 
   );
@@ -132,9 +132,9 @@ ARCHITECTURE xilinx OF drs4OffsetCorrectionRam_exdes IS
     WEA        : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
     ADDRA      : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
   
-    DINA       : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+    DINA       : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
   
-    DOUTA      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+    DOUTA      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
 
   
     CLKA       : IN STD_LOGIC;
@@ -146,8 +146,8 @@ ARCHITECTURE xilinx OF drs4OffsetCorrectionRam_exdes IS
     WEB        : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
     ADDRB      : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
   
-    DINB       : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    DOUTB      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+    DINB       : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    DOUTB      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
     CLKB       : IN STD_LOGIC
 
 

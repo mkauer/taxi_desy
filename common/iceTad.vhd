@@ -28,42 +28,68 @@ use work.types.all;
 --use UNISIM.VComponents.all;
 
 entity iceTad is
-port(
-	nP24VOn : out std_logic_vector(7 downto 0);
-	nP24VOnTristate : out std_logic_vector(7 downto 0);
-	rs485DataIn : in std_logic_vector(7 downto 0);
-	rs485DataOut : out std_logic_vector(7 downto 0);
-	rs485DataTristate : out std_logic_vector(7 downto 0);
-	rs485DataEnable : out std_logic_vector(7 downto 0);
-	registerRead : out iceTad_registerRead_t;
-	registerWrite : in iceTad_registerWrite_t	
+	generic(
+		numberOfUarts : integer := 8
+	);
+	port(
+		nP24VOn : out std_logic_vector(7 downto 0);
+		nP24VOnTristate : out std_logic_vector(7 downto 0);
+		rs485In : in std_logic_vector(7 downto 0);
+		rs485Out : out std_logic_vector(7 downto 0);
+		rs485DataTristate : out std_logic_vector(7 downto 0);
+		rs485DataEnable : out std_logic_vector(7 downto 0);
+		registerRead : out iceTad_registerRead_t;
+		registerWrite : in iceTad_registerWrite_t	
 	);
 end iceTad;
 
 architecture Behavioral of iceTad is
-	
-	--type stateDelay_t is (init1, init2, run);
-	--signal stateDelay : stateDelay_t := init1;
-	signal dummyCounter : integer range 0 to 130000 := 0;
-	signal dummyData : std_logic_vector(7 downto 0) := x"55"; --(others=>'0');
-	
+
+	signal rs485DataIn_intern : std_logic_vector(numberOfUarts-1 downto 0);
+	signal rs485DataEnable_intern : std_logic_vector(numberOfUarts-1 downto 0);
+	signal txBusy : std_logic_vector(7 downto 0) := (others=>'0');
+	signal rxBusy : std_logic_vector(7 downto 0) := (others=>'0');
+
 begin
 
 	registerRead.powerOn <= registerWrite.powerOn;
-	
+
 	nP24VOn <= (others=>'0');
-	rs485DataOut <= dummyData;
-	--rs485DataOut <= (others=>'0');
-	--rs485DataTristate <= (others=>'1');
-	--rs485DataEnable <= (others=>'0');
+	registerRead.rs485RxBusy <= rxBusy;
+	registerRead.rs485TxBusy <= txBusy;
+
+	g1: for i in 0 to numberOfUarts-1 generate
+		rs485DataIn_intern(i) <= rs485In(i) and not(rs485DataEnable_intern(i));
+		x0: entity work.uart_RxTx_V2
+		generic map(
+			Quarz_Taktfrequenz => 118750000,
+			Baudrate => 9600
+		)
+		port map(
+			CLK => registerWrite.clock,
+			RXD => rs485DataIn_intern(i),
+			TXD => rs485Out(i),
+			RX_Data => registerRead.rs485Data(i),
+			TX_Data => registerWrite.rs485Data(i),
+			RX_Busy => rxBusy(i),
+			TX_Busy => txBusy(i),
+			TX_Start => registerWrite.rs485TxStart(i)
+		);
+		
+		rs485DataTristate(i) <= not(txBusy(i));
+		rs485DataEnable(i) <= txBusy(i);
+	end generate;
+
+	g2: if(numberOfUarts < 8) generate
+		rs485DataTristate(7 downto numberOfUarts) <= (others=>'1');
+		rs485DataEnable(7 downto numberOfUarts) <= (others=>'0');
+	end generate;
 
 	P1:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
 			if (registerWrite.reset = '1') then
 				nP24VOnTristate <= (others=>'1');
-				dummyCounter <= 0;
-				dummyData <= x"55"; -- (others=>'0');
 			else
 				q:for i in 0 to registerWrite.powerOn'length-1 loop
 					if(registerWrite.powerOn(i) = '1') then
@@ -72,23 +98,8 @@ begin
 						nP24VOnTristate(i) <= '1';
 					end if;
 				end loop;
-				
-				-- rs485 test
 
-				if(registerWrite.testRs485 = '1') then
-					dummyCounter <= dummyCounter + 1;
-					if(dummyCounter >= 125000) then
-						dummyData <= not dummyData;
-						dummyCounter <= 0;
-					end if;
-					rs485DataTristate <= (others=>'0');
-					rs485DataEnable <= (others=>'1');
-				else
-					dummyCounter <= 0;
-					dummyData <= (others=>registerWrite.testRs485Data);
-					rs485DataTristate <= (others=> '1'); --registerWrite.testRs485Tristate);
-					rs485DataEnable <= (others=> '0'); --registerWrite.testRs485Enable);
-				end if;
+				-- rs485 fifo goes here...
 
 			end if;
 		end if;

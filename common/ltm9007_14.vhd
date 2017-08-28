@@ -189,7 +189,7 @@ architecture Behavioral of ltm9007_14 is
 	signal adcDataFifoCounter : unsigned(15 downto 0) := (others=>'0');
 	
 	signal offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
-	signal offsetCorrectionRamData : data8x8Bit_t;
+	signal offsetCorrectionRamData : data8x16Bit_t;
 	
 	type stateFifoRead_t is (idle,read1,read2,done);
 	signal stateFifoRead : stateFifoRead_t := idle;
@@ -198,6 +198,11 @@ architecture Behavioral of ltm9007_14 is
 	signal adcDataStartLatched : std_logic := '0';
 	signal roiBufferReadyLatched : std_logic := '0';
 	signal adcDataStart : std_logic := '0';
+	
+	signal chargeBuffer : data8x24Bit_t;
+	signal baselineBuffer : data8x24Bit_t;
+	signal baselineStart : std_logic_vector(9 downto 0);
+	signal baselineEnd : std_logic_vector(9 downto 0);
 	
 begin
 	
@@ -280,6 +285,8 @@ begin
 	adcFifo.fifoWordsB <= fifoWordsB;
 	registerRead.fifoValidA <= fifoValidA;
 	registerRead.fifoEmptyA <= fifoEmptyA;
+	registerRead.baselineStart <= registerWrite.baselineStart;
+	registerRead.baselineEnd <= registerWrite.baselineEnd;
 
 	registerRead.fifoWordsA <= "000" & fifoWordsA;
 
@@ -295,7 +302,7 @@ begin
 			'0',
 			"0",
 			offsetCorrectionRamAddress,
-			x"00",
+			x"0000",
 			offsetCorrectionRamData(i)
 		);
 	end generate;
@@ -686,12 +693,15 @@ begin
 end process P10;
 
 P4:process (registerWrite.clock)
+	variable sampleBuffer : data8x16Bit_t; 
 begin
 	if rising_edge(registerWrite.clock) then
 		fifoReadEnableA <= '0'; -- autoreset
 		fifoReadEnableB <= '0'; -- autoreset
 		ltm9007_14_to_eventFifoSystem.newData <= '0'; -- autoreset
 		ltm9007_14_to_eventFifoSystem.samplingDone <= '0'; -- autoreset
+		ltm9007_14_to_eventFifoSystem.chargeDone <= '0'; -- autoreset
+		ltm9007_14_to_eventFifoSystem.baselineDone <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
 			eventFifoFullCounterA <= to_unsigned(0,eventFifoFullCounterA'length);
 			eventFifoOverflowCounterA <= to_unsigned(0,eventFifoOverflowCounterA'length);
@@ -730,6 +740,10 @@ begin
 			--	fifoReadEnableB <= '1'; -- autoreset
 			--end if;
 
+			--debugA <= fifoReadEnableA;
+			--debugB <= debugA;
+			--debugC <= debugB;
+
 			registerRead.fifoA <= fifoOutA;
 			registerRead.fifoB <= fifoOutB;
 
@@ -743,6 +757,10 @@ begin
 						numberOfSamplesToRead3 <= registerWrite.numberOfSamplesToRead;
 						offsetCorrectionRamAddress <= drs4_to_ltm9007_14.roiBuffer;
 						adcDataFifoCounter <= (others=>'0');
+						chargeBuffer <= (others=>(others=>'0'));
+						baselineBuffer <= (others=>(others=>'0'));
+						baselineStart <= registerWrite.baselineStart;
+						baselineEnd <= registerWrite.baselineEnd;
 					end if;
 
 				when read1 =>
@@ -756,40 +774,46 @@ begin
 					if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
 						stateFifoRead <= done;
 					end if;
-				
-				when read2 =>
-					l0: for i in 0 to 3 loop
-						ltm9007_14_to_eventFifoSystem.channel(i) <= "0" & std_logic_vector(resize(unsigned(fifoOutA(13+i*14 downto 0+i*14)),15) + resize(unsigned(offsetCorrectionRamData(i)),15));
-						ltm9007_14_to_eventFifoSystem.channel(i+4) <= "0" & std_logic_vector(resize(unsigned(fifoOutB(13+i*14 downto 0+i*14)),15) + resize(unsigned(offsetCorrectionRamData(i+4)),15));
-						--ltm9007_14_to_eventFifoSystem.channel(i) <= "00" & fifoOutA(13+i*14 downto 0+i*14);
-						--ltm9007_14_to_eventFifoSystem.channel(i+4) <= "00" & fifoOutB(13+i*14 downto 0+i*14);
-					end loop;
 					
-					--if((fifoValidA = '1') and (fifoValidB = '1')) then
-					if(fifoValidA = '1') then -- ## fifo B is allways the same?!
+					if(adcDataFifoCounter > unsigned(baselineEnd)) then
+						ltm9007_14_to_eventFifoSystem.baseline <= baselineBuffer;
+						ltm9007_14_to_eventFifoSystem.baselineDone <= '1'; -- autoreset
+					end if;	
+			
+				when read2 =>
+					if(fifoValidA = '1') then -- ## fifo B is allways the same...
+						l0: for i in 0 to 3 loop
+							sampleBuffer(i) := std_logic_vector(resize(unsigned(fifoOutA(13+i*14 downto 0+i*14)),16) + resize(unsigned(offsetCorrectionRamData(i)),16));
+							sampleBuffer(i+4) := std_logic_vector(resize(unsigned(fifoOutB(13+i*14 downto 0+i*14)),16) + resize(unsigned(offsetCorrectionRamData(i+4)),16));
+						end loop;
+						l1: for i in 0 to 7 loop							
+							ltm9007_14_to_eventFifoSystem.channel(i) <= sampleBuffer(i);
+							chargeBuffer(i) <= std_logic_vector(unsigned(chargeBuffer(i)) + unsigned(sampleBuffer(i)));
+						end loop;
+
+						if((adcDataFifoCounter >= unsigned(baselineStart)) and (adcDataFifoCounter <= unsigned(baselineEnd))) then
+							l2: for i in 0 to 7 loop							
+								baselineBuffer(i) <= std_logic_vector(unsigned(baselineBuffer(i)) + unsigned(sampleBuffer(i)));
+							end loop;
+						end if;
+					
 						ltm9007_14_to_eventFifoSystem.newData <= '1'; -- autoreset
 						offsetCorrectionRamAddress <= std_logic_vector(unsigned(offsetCorrectionRamAddress) + 1);
 						adcDataFifoCounter <= adcDataFifoCounter + 1;
-					end if;
-
-
-					--if(fifoWordsA = "00000") then
-					if(fifoEmptyA = '1') then
 						stateFifoRead <= read1;
-					else
-						fifoReadEnableA <= '1'; -- autoreset
-						fifoReadEnableB <= '1'; -- autoreset
 					end if;
-					
-					if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
-						stateFifoRead <= done;
-					end if;
+
+					--if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
+					--	stateFifoRead <= done;
+					--end if;
 					
 				when done =>
+					stateFifoRead <= idle;
 					adcDataStartLatched <= '0';
 					roiBufferReadyLatched <= '0';
 					ltm9007_14_to_eventFifoSystem.samplingDone <= '1'; -- autoreset
-					stateFifoRead <= idle;
+					ltm9007_14_to_eventFifoSystem.charge <= chargeBuffer;
+					ltm9007_14_to_eventFifoSystem.chargeDone <= '1'; -- autoreset
 					
 				when others => null;
 			end case;

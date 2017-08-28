@@ -16,6 +16,8 @@ package types is
 	constant numberOfChannels : integer := 8;
 	type data8x8Bit_t is array (0 to 7) of std_logic_vector(7 downto 0);
 	type data8x16Bit_t is array (0 to 7) of std_logic_vector(15 downto 0);
+	type data8x24Bit_t is array (0 to 7) of std_logic_vector(23 downto 0);
+	type data8x32Bit_t is array (0 to 7) of std_logic_vector(31 downto 0);
 
 	type smc_bus is record
 		clock : std_logic;
@@ -315,6 +317,10 @@ package types is
 		samplingDone : std_logic;
 		roiBuffer : std_logic_vector(9 downto 0);
 		roiBufferReady : std_logic;
+		charge : data8x24Bit_t;
+		chargeDone : std_logic;
+		baseline : data8x24Bit_t;
+		baselineDone : std_logic;
 	end record;
 
 	type adcClocks_t is record
@@ -339,12 +345,14 @@ package types is
 		bitslipPattern : std_logic_vector(6 downto 0);
 		bitslipFailed : std_logic_vector(1 downto 0);
 		offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
-		offsetCorrectionRamData : data8x8Bit_t;
+		offsetCorrectionRamData : data8x16Bit_t;
 		offsetCorrectionRamWrite : std_logic_vector(7 downto 0);
 		fifoEmptyA : std_logic;
 		fifoValidA : std_logic;
 		fifoWordsA : std_logic_vector(7 downto 0);
 		fifoWordsA2 : std_logic_vector(7 downto 0);
+		baselineStart : std_logic_vector(9 downto 0);
+		baselineEnd : std_logic_vector(9 downto 0);
 	end record;
 	type ltm9007_14_registerWrite_t is record
 		clock : std_logic;
@@ -356,8 +364,10 @@ package types is
 		numberOfSamplesToRead : std_logic_vector(15 downto 0);
 		bitslipStart : std_logic;
 		offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
-		offsetCorrectionRamData : std_logic_vector(7 downto 0);
+		offsetCorrectionRamData : std_logic_vector(15 downto 0);
 		offsetCorrectionRamWrite : std_logic_vector(7 downto 0);
+		baselineStart : std_logic_vector(9 downto 0);
+		baselineEnd : std_logic_vector(9 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -391,15 +401,16 @@ package types is
 -------------------------------------------------------------------------------
 	type iceTad_registerRead_t is record
 		powerOn : std_logic_vector(7 downto 0);
+		rs485Data : data8x8Bit_t;
+		rs485RxBusy : std_logic_vector(7 downto 0);
+		rs485TxBusy : std_logic_vector(7 downto 0);
 	end record;
 	type iceTad_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
 		powerOn : std_logic_vector(7 downto 0);
-		testRs485 : std_logic;
-		testRs485Data : std_logic;
-		testRs485Tristate : std_logic;
-		testRs485Enable : std_logic;
+		rs485Data : data8x8Bit_t;
+		rs485TxStart : std_logic_vector(7 downto 0);
 	end record;
 -------------------------------------------------------------------------------
 	type panelPower_registerRead_t is record

@@ -243,25 +243,23 @@ begin
 						inhibitAdc <= '0';
 						roiBuffer_66 <= (others=>'0');
 						if (sendFullReadoutSync_66(0) = '1') then
-							bitCounter2 <= 0;
 							bitCounter2Max <= bitCounter; -- ## sync?!
 							stateSpi2 <= syncFull; 
 						elsif (sendRoiReadoutSync_66(0) = '1') then
-							bitCounter2 <= 0;
 							bitCounter2Max <= bitCounter; -- ## sync?!
 							stateSpi2 <= syncRoi; 
-							roiCounter <= 0;
 						elsif (sendRoiReadout2Sync_66(0) = '1') then
-							bitCounter2 <= 0;
 							inhibitAdc <= '1';
 							bitCounter2Max <= bitCounter; -- ## sync?!
 							stateSpi2 <= syncRoi; 
-							roiCounter <= 0;
 						end if;
 
 					when syncFull => -- sync
 						if (sclkPhase = '0') then
 							stateSpi2 <= full;
+							--stateSpi2 <= roiSrclk; -- might be the same...
+							roiCounter <= 0;
+							bitCounter2 <= 0;
 						end if;
 
 					when full =>
@@ -277,10 +275,22 @@ begin
 							stateSpi2 <= adcBacklash; 
 							bitCounter2 <= 0;
 						end if;
+						if (sclkPhase = '0') then						
+							if(roiCounter <= 11) then
+								roiCounter <= roiCounter + 1;
+							end if;
+							
+							if(roiCounter = 11) then
+								roiBufferLatched_66 <= "00"&x"00";
+								roiBufferReady_66 <= '1' and not(inhibitAdc); -- autoreset
+							end if;
+						end if;
 
 					when syncRoi => -- sync
 						if (sclkPhase = '0') then
 							stateSpi2 <= roiRsload;
+							roiCounter <= 0;
+							bitCounter2 <= 0;
 						end if;
 
 					when roiRsload =>
@@ -306,17 +316,17 @@ begin
 						
 						-- sample roi
 						if (sclkPhase = '0') then -- sclkEdgeRising but miso has lag
-							if(roiCounter < 10) then
+							if(roiCounter < 11) then -- and (roiCounter > 0)
 								roiBuffer_66 <= roiBuffer_66(roiBuffer_66'length-2 downto 0) & misoSync;
 							end if;
 							
-							if(roiCounter <= 10) then
+							if(roiCounter <= 11) then
 								roiCounter <= roiCounter + 1;
 							end if;
 							
-							if(roiCounter = 10) then
+							if(roiCounter = 11) then
 								roiBufferLatched_66 <= roiBuffer_66;
-								roiBufferReady_66 <= '1'; -- autoreset
+								roiBufferReady_66 <= '1' and not(inhibitAdc); -- autoreset
 							end if;
 						end if;	
 					

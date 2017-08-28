@@ -30,7 +30,8 @@ use work.types.all;
 entity gpsTiming is
 	generic(
 		ticksPerBit : integer := 12370; --12370 => 9600baud@118.75MHz
-		bitTimeSamlePoint : integer := 6000
+		bitTimeSamlePoint : integer := 6000;
+		globalClockRate : integer := 118750
 	);
 	port(
 		gpsPps : in std_logic;
@@ -77,12 +78,19 @@ architecture behavioral of gpsTiming is
 	signal tick_ms : std_logic := '0';
 	signal newData : std_logic := '0';
 	
-	signal counter_ms : integer range 0 to 2**17-1 := 0;
+	signal counter_clock : integer range 0 to 2**17-1 := 0;
+	signal counter_ms : unsigned(15 downto 0) := (others=>'0');
+	signal counter_halfSec : unsigned(16 downto 0) := (others=>'0');
 	signal counter1 : integer range 0 to 2**7-1 := 0;
 	signal counter2 : integer range 0 to 2**16-1 := 0;
 	
 	signal bitCounter : integer range 0 to 15 := 0;
 	signal byteCounter : integer range 0 to 31 := 0;
+	
+	signal realTimeCounter : unsigned(63 downto 0) := (others=>'0');
+	signal realTimeCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
+	
+	signal ppsCounter : unsigned(15 downto 0) := (others=>'0');
 	
 begin
 
@@ -92,16 +100,22 @@ gpsTiming.quantizationError <= qErr;
 gpsTiming.timeOfWeekMilliSecond <= towMS;
 gpsTiming.timeOfWeekSubMilliSecond <= towSubMS;
 gpsTiming.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClock, 16));
+gpsTiming.realTimeCounterLatched <= realTimeCounterLatched;
+gpsTiming.realTimeCounter <= std_logic_vector(realTimeCounter);
 
 registerRead.week <= week;
 registerRead.quantizationError <= qErr;
 registerRead.timeOfWeekMilliSecond <= towMS;
 registerRead.timeOfWeekSubMilliSecond <= towSubMS;
 registerRead.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClock, 16));
+registerRead.tick_ms <= tick_ms;
 
-gpsTx <= '0';
+registerRead.counterPeriod <= registerWrite.counterPeriod;
+
+gpsTx <= '1';
 gpsIrq <= '0';
 gpsNotReset <= '1';
+
 
 P0:process (registerWrite.clock)
 begin
@@ -110,29 +124,42 @@ begin
 		newData <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
 			localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
-			counter_ms <= 1;
+			counter_clock <= 1;
+			counter_ms <= (others=>'0');
+			counter_halfSec <= "0"&x"0001";
 			state2 <= sync;
+			realTimeCounter <= (others=>'0');
+			realTimeCounterLatched <= (others=>'0');
+			ppsCounter <= x"0001";
 		else
 			gpsPps_now <= gpsPps; -- ## not in sync....
 			gpsPps_old <= gpsPps_now; 
 			
 			gpsRx_now <= gpsRx;
-			rx <= gpsRx_now;	
+			rx <= gpsRx_now;
+
+			realTimeCounter <= realTimeCounter + 1;
 			
 			if((gpsPps_old = '0') and (gpsPps_now = '1')) then
 				cycleCountLatched <= std_logic_vector(localClockSubSecondCounter);
 				localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
 				differenceGpsToLocalClock <= to_signed(118750000,differenceGpsToLocalClock'length) - localClockSubSecondCounter;
+				realTimeCounterLatched <= std_logic_vector(realTimeCounter);
 			else
 				localClockSubSecondCounter <= localClockSubSecondCounter + 1;
 			end if;
 			
-			counter_ms <= counter_ms + 1;
-			if(counter_ms = 118750) then
-				counter_ms <= 1;
+			counter_clock <= counter_clock + 1;
+			if(counter_clock = globalClockRate) then
+				counter_clock <= 1;
 				tick_ms <= '1'; -- autoreset
+				counter_ms <= counter_ms + 1;
 			end if;
-			
+			if(counter_ms >= x"01f3") then
+				counter_ms <= (others=>'0');
+				counter_halfSec <= counter_halfSec + 1;
+			end if;
+
 			case state2 is				
 				when sync =>
 					if(rx = '1') then
@@ -202,7 +229,15 @@ begin
 						if(byteCounter = 24) then
 							byteCounter <= 0;
 							PacketTimTp <= rxBuffer;
-							newData <= '1'; -- autoreset
+							--newData <= '1'; -- autoreset
+							--if(ppsCounter >= unsigned(registerWrite.counterPeriod)) then
+							if((counter_halfSec(16 downto 1) >= unsigned(registerWrite.counterPeriod)) or (ppsCounter >= unsigned(registerWrite.counterPeriod))) then
+								ppsCounter <= x"0001";
+								counter_halfSec <= "0"&x"0001";
+								newData <= '1'; -- autoreset
+							else
+								ppsCounter <= ppsCounter + 1;
+							end if;
 						end if;
 					end if;			
 					
