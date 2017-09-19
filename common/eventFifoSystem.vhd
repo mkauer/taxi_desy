@@ -36,7 +36,9 @@ entity eventFifoSystem is
 		triggerTiming : in triggerTiming_t;
 		drs4Timing : in drs4Timing_t;
 		drs4Data : in ltm9007_14_to_eventFifoSystem_t;
+		internalTiming : in internalTiming_t;
 		gpsTiming : in gpsTiming_t;
+		whiteRabbitTiming : in whiteRabbitTiming_t;
 		registerRead : out eventFifoSystem_registerRead_t;
 		registerWrite : in eventFifoSystem_registerWrite_t	
 		);
@@ -793,7 +795,7 @@ begin
 				end if;
 				
 				if (eventFifoWords /= (eventFifoWords'range=>'0')) then
-					if ((irqTimeoutCounter /= 0) and (registerWrite.tick_ms = '1')) then
+					if ((irqTimeoutCounter /= 0) and (internalTiming.tick_ms = '1')) then
 						irqTimeoutCounter <= irqTimeoutCounter - 1;
 					end if;
 					if (irqTimeoutCounter = 1) then

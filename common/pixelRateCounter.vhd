@@ -37,6 +37,7 @@ entity pixelRateCounter is
 		triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
 		--triggerPixelIn : in triggerSerdes_t;
 		pixelRateCounter : out pixelRateCounter_t;
+		internalTiming : in internalTiming_t;
 		registerRead : out pixelRateCounter_registerRead_t;
 		registerWrite : in pixelRateCounter_registerWrite_t
 	);
@@ -70,7 +71,7 @@ begin
 			else
 				pixel_old <= pixel;
 
-				if(registerWrite.tick_ms = '1') then
+				if(internalTiming.tick_ms = '1') then
 					counter_ms <= counter_ms + 1;
 				end if;
 				if(counter_ms >= x"03e7") then

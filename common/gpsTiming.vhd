@@ -30,8 +30,8 @@ use work.types.all;
 entity gpsTiming is
 	generic(
 		ticksPerBit : integer := 12370; --12370 => 9600baud@118.75MHz
-		bitTimeSamlePoint : integer := 6000;
-		globalClockRate : integer := 118750
+		bitTimeSamlePoint : integer := 6000
+		--globalClockRate : integer := 118750
 	);
 	port(
 		gpsPps : in std_logic;
@@ -40,6 +40,7 @@ entity gpsTiming is
 		gpsTx : out std_logic;
 		gpsIrq : out std_logic;
 		gpsNotReset : out std_logic;
+		internalTiming : in internalTiming_t;
 		gpsTiming : out gpsTiming_t;
 		registerRead : out gpsTiming_registerRead_t;
 		registerWrite : in gpsTiming_registerWrite_t	
@@ -78,7 +79,7 @@ architecture behavioral of gpsTiming is
 	signal tick_ms : std_logic := '0';
 	signal newData : std_logic := '0';
 	
-	signal counter_clock : integer range 0 to 2**17-1 := 0;
+	--signal counter_clock : integer range 0 to 2**17-1 := 0;
 	signal counter_ms : unsigned(15 downto 0) := (others=>'0');
 	signal counter_halfSec : unsigned(16 downto 0) := (others=>'0');
 	signal counter1 : integer range 0 to 2**7-1 := 0;
@@ -87,7 +88,8 @@ architecture behavioral of gpsTiming is
 	signal bitCounter : integer range 0 to 15 := 0;
 	signal byteCounter : integer range 0 to 31 := 0;
 	
-	signal realTimeCounter : unsigned(63 downto 0) := (others=>'0');
+	--signal realTimeCounter : unsigned(63 downto 0) := (others=>'0');
+	signal realTimeCounter : std_logic_vector(63 downto 0) := (others=>'0');
 	signal realTimeCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
 	
 	signal ppsCounter : unsigned(15 downto 0) := (others=>'0');
@@ -101,14 +103,17 @@ gpsTiming.timeOfWeekMilliSecond <= towMS;
 gpsTiming.timeOfWeekSubMilliSecond <= towSubMS;
 gpsTiming.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClock, 16));
 gpsTiming.realTimeCounterLatched <= realTimeCounterLatched;
-gpsTiming.realTimeCounter <= std_logic_vector(realTimeCounter);
+--gpsTiming.realTimeCounter <= std_logic_vector(realTimeCounter);
+
+tick_ms <= internalTiming.tick_ms;
+realTimeCounter <= internalTiming.realTimeCounter;
 
 registerRead.week <= week;
 registerRead.quantizationError <= qErr;
 registerRead.timeOfWeekMilliSecond <= towMS;
 registerRead.timeOfWeekSubMilliSecond <= towSubMS;
 registerRead.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClock, 16));
-registerRead.tick_ms <= tick_ms;
+--registerRead.tick_ms <= tick_ms;
 
 registerRead.counterPeriod <= registerWrite.counterPeriod;
 
@@ -120,15 +125,15 @@ gpsNotReset <= '1';
 P0:process (registerWrite.clock)
 begin
 	if rising_edge(registerWrite.clock) then
-		tick_ms <= '0'; -- autoreset
+		--tick_ms <= '0'; -- autoreset
 		newData <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
 			localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
-			counter_clock <= 1;
+			--counter_clock <= 1;
 			counter_ms <= (others=>'0');
 			counter_halfSec <= "0"&x"0001";
 			state2 <= sync;
-			realTimeCounter <= (others=>'0');
+			--realTimeCounter <= (others=>'0');
 			realTimeCounterLatched <= (others=>'0');
 			ppsCounter <= x"0001";
 		else
@@ -138,21 +143,24 @@ begin
 			gpsRx_now <= gpsRx;
 			rx <= gpsRx_now;
 
-			realTimeCounter <= realTimeCounter + 1;
+			--realTimeCounter <= realTimeCounter + 1;
 			
 			if((gpsPps_old = '0') and (gpsPps_now = '1')) then
 				cycleCountLatched <= std_logic_vector(localClockSubSecondCounter);
 				localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
 				differenceGpsToLocalClock <= to_signed(118750000,differenceGpsToLocalClock'length) - localClockSubSecondCounter;
-				realTimeCounterLatched <= std_logic_vector(realTimeCounter);
+				realTimeCounterLatched <= realTimeCounter;
 			else
 				localClockSubSecondCounter <= localClockSubSecondCounter + 1;
 			end if;
 			
-			counter_clock <= counter_clock + 1;
-			if(counter_clock = globalClockRate) then
-				counter_clock <= 1;
-				tick_ms <= '1'; -- autoreset
+			--counter_clock <= counter_clock + 1;
+			--if(counter_clock = globalClockRate) then
+			--	counter_clock <= 1;
+			--	tick_ms <= '1'; -- autoreset
+			--	counter_ms <= counter_ms + 1;
+			--end if;
+			if(tick_ms = '1') then
 				counter_ms <= counter_ms + 1;
 			end if;
 			if(counter_ms >= x"01f3") then
