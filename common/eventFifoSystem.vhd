@@ -34,7 +34,6 @@ entity eventFifoSystem is
 		pps : in std_logic;
 		irq2arm : out std_logic;
 		triggerTiming : in triggerTiming_t;
-		drs4Timing : in drs4Timing_t;
 		drs4Data : in ltm9007_14_to_eventFifoSystem_t;
 		internalTiming : in internalTiming_t;
 		gpsTiming : in gpsTiming_t;
@@ -166,6 +165,7 @@ begin
 	);
 	
 	eventFifoWords(13) <= eventFifoFull; -- and not(eventFifoClearBuffer); -- ## has side effecs after fifoClear
+	eventFifoWords(15 downto 14) <= "00";
 	
 	registerRead.dmaBuffer <= dmaBuffer;
 	registerRead.eventFifoWordsDma <= eventFifoWordsDma;
@@ -305,10 +305,10 @@ begin
 						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventCount(31 downto 16));
 						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventCount(15 downto 0));
 						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(eventLength);
-						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= gpsTiming.realTimeCounter(63 downto 48);
-						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= gpsTiming.realTimeCounter(47 downto 32);
-						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= gpsTiming.realTimeCounter(31 downto 16);
-						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= gpsTiming.realTimeCounter(15 downto 0);
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= drs4Data.realTimeCounter_latched(63 downto 48);
+						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= drs4Data.realTimeCounter_latched(47 downto 32);
+						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= drs4Data.realTimeCounter_latched(31 downto 16);
+						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= drs4Data.realTimeCounter_latched(15 downto 0);
 						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= "000000" & drs4Data.roiBuffer;
 							
 						state1 <= writeDebug;
@@ -353,14 +353,14 @@ begin
 						if(triggerTiming.newData = '1') then
 							eventFifoIn <= (others=>'0');
 							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TRIGGERTIMING & "00" & x"00";
-							eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= triggerTiming.ch0;
-							eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= triggerTiming.ch1;
-							eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= triggerTiming.ch2;
-							eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= triggerTiming.ch3;
-							eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= triggerTiming.ch4;
-							eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= triggerTiming.ch5;
-							eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= triggerTiming.ch6;
-							eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= triggerTiming.ch7;
+							eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= triggerTiming.channel(0);
+							eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= triggerTiming.channel(1);
+							eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= triggerTiming.channel(2);
+							eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= triggerTiming.channel(3);
+							eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= triggerTiming.channel(4);
+							eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= triggerTiming.channel(5);
+							eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= triggerTiming.channel(6);
+							eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= triggerTiming.channel(7);
 							eventFifoWriteRequest <= '1'; -- autoreset
 							state1 <= nextState;
 						end if;
@@ -483,7 +483,7 @@ begin
 				when writeDrs4Timing =>
 					nextState := idle;
 					if(writeDrs4TimingToFifo_bit = '1') then
-					--	if(drs4Timing.newData = '1') then
+					--	if(abc.drs4Timing.newData = '1') then
 							eventFifoIn <= (others=>'0');
 							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DSR4TIMING & "00" & x"00";
 							-- ## not implemented...
@@ -498,7 +498,7 @@ begin
 							eventFifoWriteRequest <= '1'; -- autoreset
 					--	end if;
 					--	
-					--	if(drs4Timing.timingDone = '1') then
+					--	if(abc.drs4Timing.timingDone = '1') then
 							state1 <= nextState;
 					--	end if;
 					else

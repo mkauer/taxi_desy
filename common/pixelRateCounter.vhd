@@ -28,10 +28,6 @@ use work.types.all;
 --use UNISIM.VComponents.all;
 
 entity pixelRateCounter is
---	generic 
---	(
---		numberOfChannels : integer := 16
---	);
 	port
 	(
 		triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);

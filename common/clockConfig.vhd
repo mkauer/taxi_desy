@@ -48,7 +48,7 @@ architecture Behavioral of clockConfig is
 	signal dcm1Clock0 : std_logic := '0';
 	signal dcm1Reset : std_logic := '0';
 	signal pllFeedBack1 : std_logic := '0';
-	signal pllReset1 : std_logic := '0';
+	--signal pllReset1 : std_logic := '0';
 	signal pllLocked1 : std_logic := '0';
 	signal discriminatorSerdesFastClock : std_logic := '0';
 	signal discriminatorSerdesSlowClock : std_logic := '0';
@@ -59,7 +59,7 @@ architecture Behavioral of clockConfig is
 	signal dcm3Clock0 : std_logic := '0';
 	signal dcm3Reset : std_logic := '0';
 	signal pllFeedBack3 : std_logic := '0';
-	signal pllReset3 : std_logic := '0';
+	--signal pllReset3 : std_logic := '0';
 	signal pllLocked3 : std_logic := '0';
 	signal adcSerdesFastClock : std_logic := '0';
 	signal adcSerdesSlowClock : std_logic := '0';
@@ -79,7 +79,7 @@ architecture Behavioral of clockConfig is
 	signal dcm2Locked : std_logic := '0';
 	signal dcm2Status : std_logic_vector(7 downto 0) := x"00";
 	signal dcm2Clock0 : std_logic := '0';
-	signal dcm2Reset : std_logic := '0';
+	--signal dcm2Reset : std_logic := '0';
 	signal dcm2FxClock : std_logic := '0';
 
 	--signal refClockCounter : integer range 0 to 255 := 0;
@@ -186,7 +186,7 @@ begin
         CLKOUT4             => open,
         CLKOUT5             => open,
         LOCKED              => pllLocked1,
-        RST                 => pllReset1,
+        RST                 => '0', --pllReset1,
         CLKFBIN             => pllFeedBack1,
         CLKIN               => clockDcm1ToPll
     );
@@ -314,7 +314,7 @@ DCM_SP_inst3 : DCM_SP
         CLKOUT4             => open,
         CLKOUT5             => open,
         LOCKED              => pllLocked3,
-        RST                 => pllReset3,
+        RST                 => '0', --pllReset3,
         CLKFBIN             => pllFeedBack3,
         CLKIN               => clockDcm3ToPll
     );
@@ -372,7 +372,7 @@ DCM_SP_inst3 : DCM_SP
       PSCLK => '0',       			-- 1-bit input: Phase shift clock input
       PSEN => '0',         		-- 1-bit input: Phase shift enable
       PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
-      RST => dcm2Reset        		-- 1-bit input: Active high reset input
+      RST => '0' --dcm2Reset        		-- 1-bit input: Active high reset input
    );
 
    	p3: process(dcm2FxClock)

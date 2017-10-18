@@ -11,9 +11,15 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.numeric_std.all;
 
+use work.types_platformSpecific.all;
+
 package types is
 
-	constant numberOfChannels : integer := 8;
+	constant numberOfChannels : integer;
+	type dataNumberOfChannelsX8Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(7 downto 0);
+	type dataNumberOfChannelsX16Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(15 downto 0);
+	type dataNumberOfChannelsX24Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(23 downto 0);
+	type dataNumberOfChannelsX32Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(31 downto 0);
 	type data8x8Bit_t is array (0 to 7) of std_logic_vector(7 downto 0);
 	type data8x16Bit_t is array (0 to 7) of std_logic_vector(15 downto 0);
 	type data8x24Bit_t is array (0 to 7) of std_logic_vector(23 downto 0);
@@ -25,13 +31,11 @@ package types is
 		chipSelect : std_logic;
 		address : std_logic_vector(23 downto 0);
 		read : std_logic;
-		--write : std_logic;
 		readStrobe : std_logic;
 		writeStrobe : std_logic;
 	end record;
 	function smc_vectorToBus(inputVector : std_logic_vector) return smc_bus;
 	function smc_busToVector(inputBus : smc_bus) return std_logic_vector;
---	function smc_replaceCs(inputBus : smc_bus; cs_new : std_logic) return smc_bus;
 	
 	type smc_asyncBus is record
 		chipSelect : std_logic;
@@ -61,66 +65,6 @@ package types is
 	
 	function reverse_vector (a: in std_logic_vector) return std_logic_vector;
 	
---	type smc_registerMap is record
---		reg0 : std_logic_vector(15 downto 0);
---		reg1 : std_logic_vector(15 downto 0);
---		reg2 : std_logic_vector(15 downto 0);
---		reg3 : std_logic_vector(15 downto 0);
---		reg4 : std_logic_vector(15 downto 0);
---		reg5 : std_logic_vector(15 downto 0);
---		reg6 : std_logic_vector(15 downto 0);
---		reg7 : std_logic_vector(15 downto 0);
---		reg8 : std_logic_vector(15 downto 0);
---		reg9 : std_logic_vector(15 downto 0);
---		reg10 : std_logic_vector(15 downto 0);
---		reg11 : std_logic_vector(15 downto 0);
---		reg12 : std_logic_vector(15 downto 0);
---		reg13 : std_logic_vector(15 downto 0);
---		reg14 : std_logic_vector(15 downto 0);
---		reg15 : std_logic_vector(15 downto 0);
---		eventFifoNextWord : std_logic;
---	end record;
---	function smc_vectorToRegisterMap(inputVector : std_logic_vector) return smc_registerMap;
---	function smc_RegisterMapToVector(inputRegister : smc_registerMap) return std_logic_vector;
-		
-	type triggerTiming_t is record
-		ch0 : std_logic_vector(15 downto 0);
-		ch1 : std_logic_vector(15 downto 0);
-		ch2 : std_logic_vector(15 downto 0);
-		ch3 : std_logic_vector(15 downto 0);
-		ch4 : std_logic_vector(15 downto 0);
-		ch5 : std_logic_vector(15 downto 0);
-		ch6 : std_logic_vector(15 downto 0);
-		ch7 : std_logic_vector(15 downto 0);
-		newData : std_logic;
-	end record;
-	
-	type drs4Timing_t is record
-		ch0 : std_logic_vector(15 downto 0);
-		ch1 : std_logic_vector(15 downto 0);
-		ch2 : std_logic_vector(15 downto 0);
-		ch3 : std_logic_vector(15 downto 0);
-		ch4 : std_logic_vector(15 downto 0);
-		ch5 : std_logic_vector(15 downto 0);
-		ch6 : std_logic_vector(15 downto 0);
-		ch7 : std_logic_vector(15 downto 0);
-		newData : std_logic;
-		timingDone : std_logic;
-	end record;
-	
-	type drs4Charge_t is record
-		ch0 : std_logic_vector(15 downto 0);
-		ch1 : std_logic_vector(15 downto 0);
-		ch2 : std_logic_vector(15 downto 0);
-		ch3 : std_logic_vector(15 downto 0);
-		ch4 : std_logic_vector(15 downto 0);
-		ch5 : std_logic_vector(15 downto 0);
-		ch6 : std_logic_vector(15 downto 0);
-		ch7 : std_logic_vector(15 downto 0);
-		newData : std_logic;
-		chargeDone : std_logic;
-	end record;
-	
 	type drs4Clocks_t is record
 		drs4Clock_125MHz : std_logic;
 		drs4RefClock : std_logic;
@@ -134,6 +78,15 @@ package types is
 		serdesIoClock : std_logic;
 		serdesStrobe : std_logic;
 	end record;
+
+-------------------------------------------------------------------------------
+	
+	type triggerTiming_t is record
+		channel : data8x16Bit_t;
+		newData : std_logic;
+	end record;
+	
+-------------------------------------------------------------------------------
 		
 	type eventFifoSystem_registerRead_t is record
 		dmaBuffer : std_logic_vector(15 downto 0);
@@ -169,16 +122,11 @@ package types is
 		irqAtEventFifoWords : std_logic_vector(15 downto 0);
 		forceIrq : std_logic;
 	end record;
-	
+
+-------------------------------------------------------------------------------
+
 	type triggerTimeToRisingEdge_registerRead_t is record
-		ch0 : std_logic_vector(15 downto 0);
-		ch1 : std_logic_vector(15 downto 0);
-		ch2 : std_logic_vector(15 downto 0);
-		ch3 : std_logic_vector(15 downto 0);
-		ch4 : std_logic_vector(15 downto 0);
-		ch5 : std_logic_vector(15 downto 0);
-		ch6 : std_logic_vector(15 downto 0);
-		ch7 : std_logic_vector(15 downto 0);
+		channel : data8x16Bit_t;
 	end record;
 	type triggerTimeToRisingEdge_registerWrite_t is record
 		clock : std_logic;
@@ -195,6 +143,8 @@ package types is
 		resetDelay : std_logic;
 	end record;
 	
+-------------------------------------------------------------------------------
+
 	type dac_array_t is array (0 to 7) of std_logic_vector(7 downto 0);
 	type dac088s085_x3_registerRead_t is record
 		dacBusy : std_logic;
@@ -217,6 +167,8 @@ package types is
 		valuesChangedChip2 : std_logic_vector(7 downto 0);
 	end record;
 		
+-------------------------------------------------------------------------------
+
 	type ad56x1_registerRead_t is record
 		dacBusy : std_logic;
 		valueChip0 : std_logic_vector(11 downto 0);
@@ -273,7 +225,7 @@ package types is
 		timeOfWeekSubMilliSecond : std_logic_vector(31 downto 0);
 		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
 		newData : std_logic;
-		realTimeCounter: std_logic_vector(63 downto 0);
+		--realTimeCounter: std_logic_vector(63 downto 0);
 		realTimeCounterLatched : std_logic_vector(63 downto 0);
 	end record;
 
@@ -299,8 +251,8 @@ package types is
 -------------------------------------------------------------------------------
 
 	type pixelRateCounter_registerRead_t is record
-		channel : data8x16Bit_t;
-		channelLatched : data8x16Bit_t;
+		channel : dataNumberOfChannelsX16Bit_t;
+		channelLatched : dataNumberOfChannelsX16Bit_t;
 		counterPeriod : std_logic_vector(15 downto 0);
 	end record;
 	
@@ -315,7 +267,7 @@ package types is
 	type pixelRateCounter_t is record
 		newData : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
-		channelLatched : data8x16Bit_t;
+		channelLatched : dataNumberOfChannelsX16Bit_t;
 	end record;
 	
 -------------------------------------------------------------------------------
@@ -325,6 +277,7 @@ package types is
 		--drs4RoiValid : std_logic;
 		roiBuffer : std_logic_vector(9 downto 0);
 		roiBufferReady : std_logic;
+		realTimeCounter_latched : std_logic_vector(63 downto 0);
 	end record;
 
 	type drs4_registerRead_t is record
@@ -346,6 +299,7 @@ package types is
 -------------------------------------------------------------------------------
 	
 	type ltm9007_14_to_eventFifoSystem_t is record
+		realTimeCounter_latched : std_logic_vector(63 downto 0);
 		channel : data8x16Bit_t;	
 		newData : std_logic;
 		samplingDone : std_logic;
@@ -355,6 +309,8 @@ package types is
 		chargeDone : std_logic;
 		baseline : data8x24Bit_t;
 		baselineDone : std_logic;
+	--	timing : data8x16Bit_t;
+	--	timingDone : std_logic;
 	end record;
 
 	type adcClocks_t is record
@@ -370,6 +326,8 @@ package types is
 		fifoWordsB : std_logic_vector(4 downto 0);
 		channel : data8x16Bit_t;
 	end record;
+
+-------------------------------------------------------------------------------
 	
 	type ltm9007_14_registerRead_t is record
 		fifoA : std_logic_vector(4*14-1 downto 0);
@@ -432,7 +390,9 @@ package types is
 		triggerGeneratorEnabled : std_logic;
 		triggerGeneratorPeriod : unsigned(31 downto 0);
 	end record;
+
 -------------------------------------------------------------------------------
+	
 	type iceTad_registerRead_t is record
 		powerOn : std_logic_vector(7 downto 0);
 		rs485Data : data8x8Bit_t;
@@ -446,7 +406,9 @@ package types is
 		rs485Data : data8x8Bit_t;
 		rs485TxStart : std_logic_vector(7 downto 0);
 	end record;
+
 -------------------------------------------------------------------------------
+
 	type panelPower_registerRead_t is record
 		dummy : std_logic;
 	end record;
@@ -456,16 +418,21 @@ package types is
 		init : std_logic;
 		enable : std_logic;
 	end record;
+
 -------------------------------------------------------------------------------
+
 	type clockConfig_debug_t is record
 		drs4RefClockPeriod : std_logic_vector(7 downto 0);
 	end record;
+
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 
 end types;
 
 package body types is
+
+	constant numberOfChannels : integer := numberOfChannels_platformSpecific;
 
 	function smc_vectorToBus(inputVector : std_logic_vector) return smc_bus is
 		variable temp : smc_bus;
@@ -721,51 +688,6 @@ package body types is
 		return temp;
 	end;
 
---	function smc_vectorToRegisterMap(inputVector : std_logic_vector) return smc_registerMap is
---		variable temp : smc_registerMap;
---	begin
---		temp.reg0 := inputVector(0*16+15 downto 0*16+0);
---		temp.reg1 := inputVector(1*16+15 downto 1*16+0);
---		temp.reg2 := inputVector(2*16+15 downto 2*16+0);
---		temp.reg3 := inputVector(3*16+15 downto 3*16+0);
---		temp.reg4 := inputVector(4*16+15 downto 4*16+0);
---		temp.reg5 := inputVector(5*16+15 downto 5*16+0);
---		temp.reg6 := inputVector(6*16+15 downto 6*16+0);
---		temp.reg7 := inputVector(7*16+15 downto 7*16+0);
---		temp.reg8 := inputVector(8*16+15 downto 8*16+0);
---		temp.reg9 := inputVector(9*16+15 downto 9*16+0);
---		temp.reg10 := inputVector(10*16+15 downto 10*16+0);
---		temp.reg11 := inputVector(11*16+15 downto 11*16+0);
---		temp.reg12 := inputVector(12*16+15 downto 12*16+0);
---		temp.reg13 := inputVector(13*16+15 downto 13*16+0);
---		temp.reg14 := inputVector(14*16+15 downto 14*16+0);
---		temp.reg15 := inputVector(15*16+15 downto 15*16+0);
---		
---		return temp;
---	end;
---	
---	function smc_RegisterMapToVector(inputRegister : smc_registerMap) return std_logic_vector is
---		variable temp : std_logic_vector(16*16-1 downto 0);
---	begin
---		temp(0*16+15 downto 0*16+0) := inputRegister.reg0;
---		temp(1*16+15 downto 1*16+0) := inputRegister.reg1;
---		temp(2*16+15 downto 2*16+0) := inputRegister.reg2;
---		temp(3*16+15 downto 3*16+0) := inputRegister.reg3;
---		temp(4*16+15 downto 4*16+0) := inputRegister.reg4;
---		temp(5*16+15 downto 5*16+0) := inputRegister.reg5;
---		temp(6*16+15 downto 6*16+0) := inputRegister.reg6;
---		temp(7*16+15 downto 7*16+0) := inputRegister.reg7;
---		temp(8*16+15 downto 8*16+0) := inputRegister.reg8;
---		temp(9*16+15 downto 9*16+0) := inputRegister.reg9;
---		temp(10*16+15 downto 10*16+0) := inputRegister.reg10;
---		temp(11*16+15 downto 11*16+0) := inputRegister.reg11;
---		temp(12*16+15 downto 12*16+0) := inputRegister.reg12;
---		temp(13*16+15 downto 13*16+0) := inputRegister.reg13;
---		temp(14*16+15 downto 14*16+0) := inputRegister.reg14;
---		temp(15*16+15 downto 15*16+0) := inputRegister.reg15;
---		return temp;
---	end;
-
 	function reverse_vector (a: in std_logic_vector) return std_logic_vector is
 		variable result: std_logic_vector(a'RANGE);
 		alias aa: std_logic_vector(a'REVERSE_RANGE) is a;
@@ -804,75 +726,3 @@ package body types is
 end types;
 
 
-
--------------------------------------------------------------------------------
-
-
-
---library IEEE;
---use IEEE.STD_LOGIC_1164.all;
---use IEEE.numeric_std.all;
---
---package registerTypeBase is
---	generic(type registerType)
---	
---	type smc_registerMap is record
---		reg0 : std_logic_vector(15 downto 0);
---		reg1 : std_logic_vector(15 downto 0);
---		reg2 : std_logic_vector(15 downto 0);
---		reg3 : std_logic_vector(15 downto 0);
---		reg4 : std_logic_vector(15 downto 0);
---	end record;
---	function smc_vectorToRegisterMap(inputVector : std_logic_vector) return smc_registerMap;
---	function smc_RegisterMapToVector(inputRegister : smc_registerMap) return std_logic_vector;
---	
---end registerTypeBase;
---
---package body registerTypeBase is
---
---	function smc_vectorToRegisterMap(inputVector : std_logic_vector) return smc_registerMap is
---		variable temp : smc_registerMap;
---	begin
---		inputVector.reg0 := temp(0*16+15 downto 0*16+0);
---		inputVector.reg1 := temp(1*16+15 downto 1*16+0);
---		inputVector.reg2 := temp(2*16+15 downto 2*16+0);
---		inputVector.reg3 := temp(3*16+15 downto 3*16+0);
---		inputVector.reg4 := temp(4*16+15 downto 4*16+0);
---		inputVector.reg5 := temp(5*16+15 downto 5*16+0);
---		inputVector.reg6 := temp(6*16+15 downto 6*16+0);
---		inputVector.reg7 := temp(7*16+15 downto 7*16+0);
---		inputVector.reg8 := temp(8*16+15 downto 8*16+0);
---		inputVector.reg9 := temp(9*16+15 downto 9*16+0);
---		inputVector.reg10 := temp(10*16+15 downto 10*16+0);
---		inputVector.reg11 := temp(11*16+15 downto 11*16+0);
---		inputVector.reg12 := temp(12*16+15 downto 12*16+0);
---		inputVector.reg13 := temp(13*16+15 downto 13*16+0);
---		inputVector.reg14 := temp(14*16+15 downto 14*16+0);
---		inputVector.reg15 := temp(15*16+15 downto 15*16+0);
---		
---		return temp;
---	end;
---	
---	function smc_RegisterMapToVector(inputRegister : smc_registerMap) return std_logic_vector is
---		variable temp : std_logic_vector(16*16-1 downto 0);
---	begin
---		temp(0*16+15 downto 0*16+0) := inputVector.reg0;
---		temp(1*16+15 downto 1*16+0) := inputVector.reg1;
---		temp(2*16+15 downto 2*16+0) := inputVector.reg2;
---		temp(3*16+15 downto 3*16+0) := inputVector.reg3;
---		temp(4*16+15 downto 4*16+0) := inputVector.reg4;
---		temp(5*16+15 downto 5*16+0) := inputVector.reg5;
---		temp(6*16+15 downto 6*16+0) := inputVector.reg6;
---		temp(7*16+15 downto 7*16+0) := inputVector.reg7;
---		temp(8*16+15 downto 8*16+0) := inputVector.reg8;
---		temp(9*16+15 downto 9*16+0) := inputVector.reg9;
---		temp(10*16+15 downto 10*16+0) := inputVector.reg10;
---		temp(11*16+15 downto 11*16+0) := inputVector.reg11;
---		temp(12*16+15 downto 12*16+0) := inputVector.reg12;
---		temp(13*16+15 downto 13*16+0) := inputVector.reg13;
---		temp(14*16+15 downto 14*16+0) := inputVector.reg14;
---		temp(15*16+15 downto 15*16+0) := inputVector.reg15;
---		return temp;
---	end;
---	 
---end registerTypeBase;

@@ -254,8 +254,7 @@ architecture behaviour of taxiTop is
 
 	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
 	signal triggerTiming : triggerTiming_t;
-	signal drs4Timing : drs4Timing_t := (newData => '0', timingDone => '0', others=>(others=>'0'));
-	signal drs4Data : ltm9007_14_to_eventFifoSystem_t := (newData => '0', samplingDone => '0', channel => (others=>(others=>'0')), roiBufferReady => '0', roiBuffer => (others=>'0'), charge => (others=>(others=>'0')), chargeDone => '0', baseline => (others=>(others=>'0')), baselineDone => '0');
+	signal drs4Data : ltm9007_14_to_eventFifoSystem_t; -- := (newData => '0', samplingDone => '0', channel => (others=>(others=>'0')), roiBufferReady => '0', roiBuffer => (others=>'0'), charge => (others=>(others=>'0')), chargeDone => '0', baseline => (others=>(others=>'0')), baselineDone => '0');
 	signal gpsTiming : gpsTiming_t := (newData => '0', others => (others=>'0'));
 	signal internalTiming : internalTiming_t := (tick_ms => '0', others => (others=>'0'));
 	signal whiteRabbitTiming : whiteRabbitTiming_t := (newData => '0', others => (others=>'0'));
@@ -263,7 +262,7 @@ architecture behaviour of taxiTop is
 	signal adcFifo : adcFifo_t := (channel=>(others=>(others=>'0')) ,others=>(others=>'0'));
 	signal adcClocks : adcClocks_t := (others=>'0');
 	signal trigger : triggerLogic_t := (triggerNotDelayed => '0', triggerDelayed => '0', softTrigger => '0', others=>(others=>'0'));
-	signal pixelRates : pixelRateCounter_t := (newData => '0', counterPeriod => (others=>'0') , channelLatched => (others=>(others=>'0')));
+	signal pixelRates : pixelRateCounter_t; -- := (newData => '0', counterPeriod => (others=>'0') , channelLatched => (others=>(others=>'0')));
 	signal clockConfig_debug : clockConfig_debug_t;
 
 	signal dacMosi : std_logic_vector(2 downto 0) := "000";
@@ -393,6 +392,7 @@ begin
 	g4: for i in 0 to 20 generate
 		k: IBUF port map(I => EBI1_ADDR(i), O => ebiAddress(i));
 	end generate;
+	ebiAddress(23 downto 21) <= "000";
 
 	g5: for i in 0 to 15 generate
 		k: IOBUF generic map(DRIVE => 2, IBUF_DELAY_VALUE => "0", IFD_DELAY_VALUE => "AUTO", IOSTANDARD => "DEFAULT", SLEW => "SLOW")
@@ -481,7 +481,7 @@ begin
 
 	x12: entity work.pixelRateCounter port map(discriminatorSerdes, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 
-	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Timing,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,eventFifoSystem_0r,eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,eventFifoSystem_0r,eventFifoSystem_0w);
 
 	drs4Denable(1) <= drs4Denable(0);
 	drs4Dwrite(1) <= drs4Dwrite(0);
@@ -504,7 +504,7 @@ begin
 	x14b: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, internalTiming, gpsTiming, gpsTiming_0r, gpsTiming_0w);
 	x14c: entity work.whiteRabbitTiming port map(whiteRabbitPpsIregbIn, whiteRabbitClockIn, internalTiming, whiteRabbitTiming, whiteRabbitTiming_0r, whiteRabbitTiming_0w);
 	
-	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), trigger, drs4Clocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), trigger, internalTiming, drs4Clocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
 	
 	--x7: entity work.serdesOut_8to1 generic map(4,1,"PER_CHANL","SINGLEENDED") port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, (drs4DwriteSerdes(0)(6),drs4DwriteSerdes(0)(4),drs4DwriteSerdes(0)(2),drs4DwriteSerdes(0)(0)), DRS4_DWRITE(1 to 1), open);
 	--x17: entity work.ltm9007_14 port map(ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1), ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1), ADC_DCOA_P(1), ADC_DCOA_N(1), ADC_DCOB_P(1), ADC_DCOB_N(1), adcNcsA(0), adcNcsB(0), adcSdi, adcSck, '1', drs4Clocks, adcFifo, ltm9007_14_0r, ltm9007_14_0w);

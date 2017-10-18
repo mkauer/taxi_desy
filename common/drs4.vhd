@@ -51,6 +51,7 @@ entity drs4 is
 		--stopDrs4 : in std_logic; -- should be truly async later on
 		--stopDrs4Serdes : in std_logic_vector(7 downto 0); -- should be truly async later on
 		trigger : in triggerLogic_t;
+		internalTiming : in internalTiming_t;
 		drs4Clocks : in drs4Clocks_t;
 		drs4_to_ltm9007_14 : out drs4_to_ltm9007_14_t;
 		
@@ -148,6 +149,8 @@ architecture Behavioral of drs4 is
 	signal dwrite_i : std_logic := '0';
 	signal stopDrs4 : std_logic := '0';
 	signal sumTrigger : std_logic := '0';
+
+	--signal realTimeCounter_latched : std_logic_vector(63 downto 0) := (others=>'0');
 	
 	
 begin
@@ -160,12 +163,14 @@ begin
 	--rsrload <= rsrload1 or (sclk2 and rsrload2Enabled); -- ## add fixed otput buffer for better timing
 	--srclk <= srclk1 or (sclk2 and sclk2Enabled); -- ## add fixed otput buffer for better timing
 
+	--drs4_to_ltm9007_14.realTimeCounter_latched <= realTimeCounter_latched;
+
 	stopDrs4 <= sumTrigger;
 	--sumTrigger <=  trigger.triggerNotDelayed or trigger.softTrigger;
 	sumTrigger <=  trigger.triggerDelayed or trigger.softTrigger;
 	dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) when sumTrigger = '0' else x"00";
 	dwrite <= dwrite_i when sumTrigger = '0' else '0';
-	
+
 	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) and not(fillXFromY8("ONES","FROM_RIGHT",trigger.triggerSerdesNotDelayed));
 	
 	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) and not(stopDrs4Serdes);
@@ -384,6 +389,9 @@ begin
 				inhibitSclk <= '0';
 				enableRsrload <= '0';
 				--drs4_to_ltm9007_14.roiBuffer <= (others=>'0');
+				configRegister <= "111";
+				writeShiftRegister <= "11111111";
+				writeConfigRegister <= "11111111";
 			else
 				spiTransfer_old <= spiTransfer;
 				spi2DoneSync <= spi2Done & spi2DoneSync(spi2DoneSync'length-1 downto 1);
@@ -585,7 +593,7 @@ begin
 			if (registerWrite.reset = '1') then
 				--denable <= '0';
 				--dwrite_i <= '0';
-				
+				drs4_to_ltm9007_14.realTimeCounter_latched <= (others => '0');
 				stateDrs4 <= init1;
 			else
 				stopDrs4_old <= stopDrs4;
@@ -704,6 +712,7 @@ begin
 								stateDrs4 <= readFull;
 							end if;
 							dwrite_i <= '0';
+							drs4_to_ltm9007_14.realTimeCounter_latched <= internalTiming.realTimeCounter;
 						end if;
 						
 					when debug =>

@@ -335,14 +335,14 @@ g0: if moduleEnabled /= 0 generate
 						when x"010c" => readDataBuffer <= x"000" & "000" &eventFifoSystem_0r.irqStall;
 						when x"010e" => readDataBuffer <= eventFifoSystem_0r.eventFifoErrorCounter;						
 						
-						when x"0010" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch0;
-						when x"0012" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch1;
-						when x"0014" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch2;
-						when x"0016" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch3;
-						when x"0018" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch4;
-						when x"001a" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch5;
-						when x"001c" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch6;
-						when x"001e" => readDataBuffer <= triggerTimeToRisingEdge_0r.ch7;
+						when x"0010" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(0);
+						when x"0012" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(1);
+						when x"0014" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(2);
+						when x"0016" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(3);
+						when x"0018" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(4);
+						when x"001a" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(5);
+						when x"001c" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(6);
+						when x"001e" => readDataBuffer <= triggerTimeToRisingEdge_0r.channel(7);
 						
 						when x"0020" => readDataBuffer <= eventFifoSystem_0r.dmaBuffer; eventFifoSystem_0w.nextWord <= '1'; -- autoreset
 						when x"0022" => readDataBuffer <= eventFifoSystem_0r.eventFifoWordsDma32(15 downto 0); -- has to be locked
