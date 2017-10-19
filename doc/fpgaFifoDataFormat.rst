@@ -17,15 +17,16 @@ The data of one event consist of several packets. The first packet will be a hea
 Header
 ~~~~~~
 
-+--------+---------------+---------------+--------------+-------------------+-------------------+-------------------+-----------------+----------+
-| Header | event counter | event counter | event length | real time counter | real time counter | real time counter | realtim counter | DRS4 ROI |
-| 0x1000 | [31..16]      | [15..0]       | [63..48]     | [63..48]          | [47..32]          | [31..16]          | [15..0]         | 2 Byte   |
-+--------+---------------+---------------+--------------+-------------------+-------------------+-------------------+-----------------+----------+
++--------+---------------+---------------+--------------+-------------------+-------------------+-------------------+-------------------+----------+
+| Header | event counter | event counter | event length | real time counter | real time counter | real time counter | real time counter | DRS4 ROI |
+| 0x1000 | [31..16]      | [15..0]       | [63..48]     | [63..48]          | [47..32]          | [31..16]          | [15..0]           | 2 Byte   |
++--------+---------------+---------------+--------------+-------------------+-------------------+-------------------+-------------------+----------+
 
 * Word 0: type 0x1000
 * Word 1..2: event counter (32 bit)
 * Word 3: event length in packets including the header
 * Word 4..7: real time counter (64 bit)
+* Word 8: DRS4 region of interest pointer
 
 DRS4 Sampling
 ~~~~~~~~~~~~~
@@ -38,7 +39,7 @@ If the number of samples to read is configured to 200 (which is 0xc8) than there
 +----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
 
 * Word 0: type 0x4000 .. 0x43ff
-* Word 1..7: one sample per channel
+* Word 1..8: one sample per channel
 
 DRS4 Charge
 ~~~~~~~~~~~
@@ -54,7 +55,7 @@ The DRS4 charge is the sum of all samples of one channel per event. The resultin
 +-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
 
 * Word : type 0x6000 .. 0x6001
-* Word 1..7: one part of the charge per channel
+* Word 1..8: one part of the charge per channel
 
 DRS4 Baseline
 ~~~~~~~~~~~~~
@@ -70,7 +71,7 @@ The DRS4 Baseline works similar to the charge. It is the sum of samples in a con
 +-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
 
 * Word 0: type 0x5000 .. 0x5001
-* Word 1..7: one part of the charge per channel
+* Word 1..8: one part of the charge per channel
 
 
 
