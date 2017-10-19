@@ -1,0 +1,113 @@
+#! /bin/sh
+#
+# monit         Monitor Unix systems
+#
+# Author:	Gianluca Giavitto,   <gianluca.giavitto@desy.de>
+#
+# chkconfig:    2345 97 03
+# description:  Monit is a utility for managing and monitoring processes,
+#               files, directories and filesystems on a Unix system. 
+# processname:  monit
+# pidfile:      /var/run/monit.pid
+# config:       /opt/hess1u/monitrc
+
+# Source hess1u library
+[ -f /opt/hess1u/setupenv.sourceme ] && . /opt/hess1u/setupenv.sourceme
+
+if [ -z "$HESS1U_ROOT" ] ;  then
+  echo "HESS1U_ROOT is not set, please set it in /etc/default/service-name" >&2
+  exit 1
+fi
+
+[ -f $MONIT ] || exit 0
+[ -f $MONITRC ] || exit 0
+[ -z $MONITPID ] && exit 0
+
+wait_create_pidfile() {
+    let TIMEOUT=15
+    [ -z $MONITTIMEOUT ] || let TIMEOUT=${MONITTIMEOUT}
+    while true; 
+    do 
+    if [ ! -e $MONITPID ];
+    then
+        if [ $TIMEOUT -gt 0 ]; then sleep 1; let TIMEOUT=${TIMEOUT}-1 ;
+        else break; fi 
+    else break;
+    fi
+    done
+    [ $TIMEOUT -gt 0 ] && return 0;
+    return 1
+}
+
+wait_remove_pidfile() {
+    let TIMEOUT=15
+    [ -z $MONITTIMEOUT ] || let TIMEOUT=${MONITTIMEOUT}
+    while true; 
+    do 
+    if [ -e $MONITPID ];
+    then
+        if [ $TIMEOUT -gt 0 ]; then sleep 1; let TIMEOUT=${TIMEOUT}-1 ;
+        else break; fi 
+    else break;
+    fi
+    done
+    [ $TIMEOUT -gt 0 ] && return 0;
+    return 1
+}
+
+RETVAL=0
+
+echo_return_value() {
+    if [ $RETVAL -eq 0 ]; then 
+        echo "OK"; return 0;
+    else
+        echo "FAILED"; exit 1
+    fi
+}
+
+# See how we were called.
+case "$1" in
+    start)
+        echo -n "Making monit log fifo: "
+        [ -e ${MONITLOG} ] && rm -f ${MONITLOG}
+        mkfifo ${MONITLOG}
+        RETVAL=$?
+        echo_return_value
+        echo -n "Starting monit: "
+        $MONIT -c $MONITRC > /dev/null 2>&1
+        RETVAL=$?
+        wait_create_pidfile
+        RETVAL=$?
+        echo_return_value
+        ;;
+    stop)
+        echo -n "Stopping all processes managed by monit: "
+        $MONIT -c $MONITRC stop all > /dev/null
+        RETVAL=$?
+        echo_return_value
+        echo -n "Stopping monit: "
+        $MONIT -c $MONITRC quit  > /dev/null
+        RETVAL=$?
+        wait_remove_pidfile
+        RETVAL=$?
+        echo_return_value
+        echo -n "Removing monit log fifo: "
+        [ -e ${MONITLOG} ] && rm -f ${MONITLOG}
+        RETVAL=$?
+        echo_return_value
+        ;;
+    restart)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+        status)
+        $MONIT -c $MONITRC status
+        RETVAL=$?
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit $RETVAL

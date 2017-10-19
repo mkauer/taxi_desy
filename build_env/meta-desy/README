@@ -1,0 +1,5 @@
+this layer depends on:
+
+uri: git://git.openembedded.org/openembedded-core
+branch: dylan
+revision: head

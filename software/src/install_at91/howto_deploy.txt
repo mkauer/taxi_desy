@@ -1,0 +1,36 @@
+How to deploy a TAXI build to a target system
+=============================================
+
+Preparations
+------------
+
+$ make rebuild_cache
+
+$ cp taxi_id_rsa ~/.ssh/
+$ chmod 600 ~/.ssh/taxi_id_rsa
+
+Add the following lines to your ~/.ssh/config:
+
+Host <host name alias ex.g. taxi>  
+    User root
+    Hostname <host ip address>
+    PasswordAuthentication no
+    PubkeyAuthentication yes
+    Compression yes
+    IdentitiesOnly yes
+    IdentityFile ~/.ssh/taxi_id_rsa
+
+
+$ cd <cmake build directory>
+
+$ source install_pubkey_on.sh <host_ip_address>
+
+Deploy build
+------------
+
+$ cd <cmake build directory>
+
+$ make package
+
+$ source install_tar_file.sh <tar file ex.g. taxi-0.1.1-Linux.tar.gz> <host_ip_address> 
+

@@ -1,0 +1,6 @@
+/fpgadrv.ko
+/fpgadrv.mod.c
+/fpgadrv.mod.o
+/fpgadrv.o
+/Module.symvers
+/modules.order

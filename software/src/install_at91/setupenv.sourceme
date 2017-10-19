@@ -1,0 +1,8 @@
+# path to installation
+export TAXI_ROOT=/opt/taxi
+
+# setup search path for executables
+export PATH=${TAXI_ROOT}/bin:${TAXI_ROOT}/scripts:${PATH}
+    
+# setup search path for dynamic librarys
+export LD_LIBRARY_PATH=${TAXI_ROOT}/lib

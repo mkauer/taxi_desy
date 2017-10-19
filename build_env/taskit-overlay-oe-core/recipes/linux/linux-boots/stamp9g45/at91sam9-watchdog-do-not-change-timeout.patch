@@ -1,0 +1,14 @@
+diff --git a/drivers/watchdog/at91sam9_wdt.c b/drivers/watchdog/at91sam9_wdt.c
+index eac2602..6c3d8eb 100644
+--- a/drivers/watchdog/at91sam9_wdt.c
++++ b/drivers/watchdog/at91sam9_wdt.c
+@@ -149,7 +149,8 @@ static int at91_wdt_settimeout(unsigned int timeout)
+ 		| AT91_WDT_WDDBGHLT	/* disabled in debug mode */
+ 		| AT91_WDT_WDD		/* restart at any time */
+ 		| (timeout & AT91_WDT_WDV);  /* timer value */
+-	at91_sys_write(AT91_WDT_MR, reg);
++	// do not change timeout to be able to use kexec
++	// at91_sys_write(AT91_WDT_MR, reg);
+ 
+ 	return 0;
+ }

@@ -1,0 +1,37 @@
+--- thrift-0.9.1/Makefile.am	2015-04-30 19:24:37.321376020 +0200
++++ thrift-0.9.1.patched/Makefile.am	2015-04-30 19:21:09.769753533 +0200
+@@ -19,13 +19,14 @@
+ 
+ ACLOCAL_AMFLAGS = -I ./aclocal
+ 
+-SUBDIRS = compiler/cpp lib tutorial
++#SUBDIRS = compiler/cpp lib tutorial
++SUBDIRS = compiler/cpp lib
+ 
+-if WITH_TESTS
+-SUBDIRS += test
+-endif
++#if WITH_TESTS
++#SUBDIRS += test
++#endif
+ 
+-SUBDIRS += tutorial
++#SUBDIRS += tutorial
+ 
+ dist-hook:
+ 	find $(distdir) -type f \( -iname ".DS_Store" -or -iname "._*" -or -iname ".gitignore" \) | xargs rm -rf
+--- thrift-0.9.1/lib/cpp/Makefile.am	2013-08-16 01:19:40.000000000 +0200
++++ thrift-0.9.1.patched/lib/cpp/Makefile.am	2015-04-30 19:21:59.208092793 +0200
+@@ -22,9 +22,9 @@
+ 
+ SUBDIRS = .
+ 
+-if WITH_TESTS
+-SUBDIRS += test
+-endif
++#if WITH_TESTS
++#SUBDIRS += test
++#endif
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ 

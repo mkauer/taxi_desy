@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 2.6)
+
+set(PERM755 OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+set(PERM600 OWNER_READ OWNER_WRITE )
+
+#install(DIRECTORY scripts DESTINATION .)
+install(DIRECTORY install DESTINATION .)
+install(DIRECTORY www DESTINATION .)
+
+install(FILES setupenv.sourceme DESTINATION .)
+
+file(COPY install_tar_file.sh DESTINATION ${CMAKE_BINARY_DIR} )
+file(COPY install_pubkey_on.sh DESTINATION ${CMAKE_BINARY_DIR} )
+file(COPY taxi_id_rsa.pub DESTINATION ${CMAKE_BINARY_DIR} )
+file(COPY taxi_id_rsa DESTINATION ${CMAKE_BINARY_DIR} )
+
+file(COPY howto_deploy.txt DESTINATION ${CMAKE_BINARY_DIR} )

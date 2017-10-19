@@ -1,0 +1,215 @@
+commit 90512a5c34b11a8ab0c34f74da54cb9a8b92b4a1
+Author: Christian Glindkamp <christian.glindkamp@taskit.de>
+Date:   Thu Mar 10 12:00:11 2011 +0100
+
+    Add support for Stamp9G45 evaluation board
+    
+    Signed-off-by: Christian Glindkamp <christian.glindkamp@taskit.de>
+
+diff --git a/arch/arm/mach-at91/Kconfig b/arch/arm/mach-at91/Kconfig
+index 2248467..d8fd5af 100644
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
+@@ -407,6 +407,13 @@ config MACH_AT91SAM9M10G45EK
+ 	  "ES" at the end of the name means that this board is an
+ 	  Engineering Sample.
+ 
++config MACH_STAMP9G45
++	bool "taskit Stamp9G45 CPU module"
++	help
++	  Select this if you are using taskit's Stamp9G45 CPU module on its
++	  evaluation board.
++	  <http://www.taskit.de/en/>
++
+ endif
+ 
+ # ----------------------------------------------------------
+diff --git a/arch/arm/mach-at91/Makefile b/arch/arm/mach-at91/Makefile
+index 9696623..f209e7a 100644
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
+@@ -73,6 +73,7 @@ obj-$(CONFIG_MACH_SNAPPER_9260)	+= board-snapper9260.o
+ 
+ # AT91SAM9G45 board-specific support
+ obj-$(CONFIG_MACH_AT91SAM9M10G45EK) += board-sam9m10g45ek.o
++obj-$(CONFIG_MACH_STAMP9G45)	+= board-stamp9g45.o
+ 
+ # AT91CAP9 board-specific support
+ obj-$(CONFIG_MACH_AT91CAP9ADK)	+= board-cap9adk.o
+diff --git a/arch/arm/mach-at91/board-stamp9g45.c b/arch/arm/mach-at91/board-stamp9g45.c
+new file mode 100644
+index 0000000..46076ca
+--- /dev/null
++++ b/arch/arm/mach-at91/board-stamp9g45.c
+@@ -0,0 +1,171 @@
++/*
++ *  Board-specific setup code for the Stamp9G45 + Evaluation Board
++ *
++ *  Copyright (C) 2011 Christian Glindkamp <christian.glindkamp@taskit.de>
++ *                     taskit GmbH
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/mm.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/w1-gpio.h>
++
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++#include <mach/board.h>
++#include <mach/gpio.h>
++
++#include "generic.h"
++
++
++void __init stamp9g45_init_early(void)
++{
++	/* Initialize processor: 12.000 MHz crystal */
++	at91sam9g45_initialize(12000000);
++
++	/* DGBU on ttyS0. (Rx & Tx only) */
++	at91_register_uart(0, 0, 0);
++
++	/* set serial console to ttyS0 (ie, DBGU) */
++	at91_set_serial_console(0);
++}
++
++static void __init stamp9g45evb_init_early(void)
++{
++	stamp9g45_init_early();
++
++	/* USART0 on ttyS1. (Rx, Tx, RTS, CTS) */
++	at91_register_uart(AT91SAM9G45_ID_US0, 1, ATMEL_UART_CTS | ATMEL_UART_RTS);
++	/* USART1 on ttyS2. (Rx, Tx, RTS, CTS) */
++	at91_register_uart(AT91SAM9G45_ID_US1, 2, ATMEL_UART_CTS | ATMEL_UART_RTS);
++}
++
++static void __init stamp9g45_init_irq(void)
++{
++	at91sam9g45_init_interrupts(NULL);
++}
++
++/*
++ * NAND
++ */
++static struct atmel_nand_data __initdata stamp9g45_nand_data = {
++	.ale		= 21,
++	.cle		= 22,
++	.rdy_pin	= AT91_PIN_PC8,
++	.enable_pin	= AT91_PIN_PC14,
++	.bus_width_16	= 0,
++};
++
++/*
++ * MCI (SD/MMC)
++ */
++static struct mci_platform_data __initdata stamp9g45_mci_data = {
++	.slot[0] = {
++		.bus_width	= 4,
++	},
++};
++
++/*
++ * Dallas 1-Wire
++ */
++static struct w1_gpio_platform_data stamp9g45_w1_gpio_pdata = {
++	.pin		= AT91_PIN_PA29,
++	.is_open_drain	= 1,
++};
++
++static struct platform_device stamp9g45_w1_device = {
++	.name			= "w1-gpio",
++	.id			= -1,
++	.dev.platform_data	= &stamp9g45_w1_gpio_pdata,
++};
++
++void stamp9g45_add_w1(void)
++{
++	at91_set_GPIO_periph(stamp9g45_w1_gpio_pdata.pin, 1);
++	at91_set_multi_drive(stamp9g45_w1_gpio_pdata.pin, 1);
++	platform_device_register(&stamp9g45_w1_device);
++}
++
++/*
++ * USB HS Host port (common to OHCI & EHCI)
++ */
++static struct at91_usbh_data __initdata stamp9g45evb_usbh_hs_data = {
++	.ports		= 2,
++};
++
++/*
++ * USB HS Device port
++ */
++static struct usba_platform_data __initdata stamp9g45evb_usba_udc_data = {
++	.vbus_pin	= AT91_PIN_PC9,
++};
++
++/*
++ * MACB Ethernet device
++ */
++static struct at91_eth_data __initdata stamp9g45evb_macb_data = {
++	.is_rmii	= 1,
++};
++
++/*
++ * LEDs
++ */
++static struct gpio_led stamp9g45evb_leds[] = {
++	{
++		.name			= "LED1",
++		.gpio			= AT91_PIN_PB20,
++		.active_low		= 1,
++		.default_trigger	= "mmc0",
++	}, {
++		.name			= "LED2",
++		.gpio			= AT91_PIN_PB21,
++		.active_low		= 1,
++		.default_trigger	= "nand-disk",
++	}, {
++		.name			= "LED3",
++		.gpio			= AT91_PIN_PB30,
++		.active_low		= 1,
++		.default_trigger	= "default-on",
++	}, {
++		.name			= "LED4",
++		.gpio			= AT91_PIN_PB31,
++		.active_low		= 1,
++		.default_trigger	= "heartbeat",
++	}
++};
++
++void __init stamp9g45_board_init(void)
++{
++	at91_add_device_serial();
++	at91_add_device_nand(&stamp9g45_nand_data);
++	at91_add_device_mci(1, &stamp9g45_mci_data);
++	stamp9g45_add_w1();
++}
++
++static void __init stamp9g45evb_board_init(void)
++{
++	stamp9g45_board_init();
++	at91_add_device_usbh_ohci(&stamp9g45evb_usbh_hs_data);
++	at91_add_device_usbh_ehci(&stamp9g45evb_usbh_hs_data);
++	at91_add_device_usba(&stamp9g45evb_usba_udc_data);
++	at91_add_device_mci(0, &stamp9g45_mci_data);
++	at91_add_device_eth(&stamp9g45evb_macb_data);
++	at91_add_device_i2c(0, NULL, 0);
++	at91_gpio_leds(stamp9g45evb_leds, ARRAY_SIZE(stamp9g45evb_leds));
++}
++
++MACHINE_START(STAMP9G45, "taskit Stamp9G45")
++	/* Maintainer: taskit GmbH */
++	.timer		= &at91sam926x_timer,
++	.map_io		= at91sam9g45_map_io,
++	.init_early	= stamp9g45evb_init_early,
++	.init_irq	= stamp9g45_init_irq,
++	.init_machine	= stamp9g45evb_board_init,
++MACHINE_END

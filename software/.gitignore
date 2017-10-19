@@ -1,0 +1,10 @@
+.*.ko.*
+*.cmd
+*.mod
+*.pyc
+*/.tmp_versions/*
+/.cproject
+/.autotools
+/.settings
+/tags
+/Debug/

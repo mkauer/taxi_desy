@@ -1,0 +1,68 @@
+RS485 Protocol Definition for Icescint General Purpose Board
+============================================================
+
+The protocol support two modes:
+ - textual console interface type (cli) for direct connection from a terminal
+ - framed binary data format for automated software communication
+
+RS485 Half Duplex Operation
+---------------------------
+The serial connection is a half duplex, master to slave connection using 
+  9600 baud,8bit,1stop bit.
+
+A strict request-reply communication is defined. 
+
+The master starts a communication by sending 1 ore more bytes and the slave 
+does answer in defined pattern.
+
+cli communication mode
+----------------------
+
+The clie communication toggles between "command line mode", where the user 
+enters a command, and "command response mode" where the slave answers with 
+the requested data. In cli mode everything is humand readable.
+
+command line mode:
+~~~~~~~~~~~~~~~~~~
+After each character transfered (key pressed in terminal), the slave sends 
+back the character that was received. That required the user to type commands
+in normal typing speed. Each character requires 20ms processing time, before 
+another character can be send.  
+
+command response mode:
+~~~~~~~~~~~~~~~~~~~~~~
+When the master sends a windows style line feed a.k.a "/r/n". The slave 
+enters into sending mode and can answer with multiple lines seperated by
+windows-style line feeds.
+      
+Binary packet mode a.k.a binary framed mode
+-------------------------------------------
+
+The binary payload is "framed" with a header sequence, size information 
+and a tailer:
+
+  [header sequence] [size] [data byte 1] [data byte 2] ... [data byte N] [tailer sequence]
+ 
+Binary mode is activated by sending the header of a binary frame followed 
+by the size, packet data and a packet tailer. The packet format is as follwing:
+
+  packet header 	2 bytes : 0xCA 0xFE
+  packet size   	1 byte  : xx
+  packet type   	1 byte  : xx
+  packet data   	xx bytes: [....]
+  packet checksum   1 byte  : xx
+  packet tailer 	2 bytes : 0xEF 0xAF
+   
+max allowed packet size is 264 bytes (including frame)
+
+Binary Packet Payload Format
+----------------------------
+
+The binary packet contains a payload that is binary. 
+
+The first byte in the payload defines the data type.
+
+The following data types are defined:
+
+  ( TBD )
+  

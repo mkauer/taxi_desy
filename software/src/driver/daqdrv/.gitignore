@@ -1,0 +1,5 @@
+/daqdrv.ko
+/daqdrv.mod.o
+/daqdrv.o
+/Module.symvers
+/modules.order

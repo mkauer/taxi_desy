@@ -1,0 +1,76 @@
+
+-------------------------------------------------
+Compile for x86 Architecture (no cross compiling)
+-------------------------------------------------
+
+Create a Directory for the build
+				mkdir build; cd build
+				
+Generate Makefiles (unix make):
+	Debug: 		cmake ${CMAKE_SOURCE_PATH} -DCMAKE_BUILD_TYPE:STRING=Debug
+	Release:	cmake ${CMAKE_SOURCE_PATH} -DCMAKE_BUILD_TYPE:STRING=Release
+
+Generate Makefiles (Eclipse CDT unix Make):	*Eclipse Makefile Project will be generated 
+	Debug: 		cmake ${CMAKE_SOURCE_PATH} -DCMAKE_BUILD_TYPE:STRING=Debug -G "Eclipse CDT4 - Unix Makefiles"
+	Release:	cmake ${CMAKE_SOURCE_PATH} -DCMAKE_BUILD_TYPE:STRING=Release -G "Eclipse CDT4 - Unix Makefiles"
+
+Start compilation:
+				make -j
+	
+Run Tests:
+				make test	
+	
+------------------------------
+Compile for AT91 Architecture
+------------------------------
+
+Setup the environment
+	source camera_software/common/install_x86/*.sourceme
+	
+Make and move to workspace
+	mkdir $TOOLCHAIN_USER/workspace
+	cd $TOOLCHAIN_USER/workspace
+
+Build projects
+	../hess1u/camera_software/createBuild.sh
+
+Start compilation:
+	make 
+				
+-------------------------------
+INSTALL Script Behaviour
+-------------------------------
+The "make install" does perform an installation into /opt/hess1u. 
+
+-------------------------------
+make package script behaviour
+-------------------------------
+for at91 architecture: 
+	"make package" will create a .tgz "tar ball" which can be installed into /opt/hess1u on the target
+	
+for x86 architecture:
+	"make package" will create a .tgz and a .rpm, which can be installed into /opt/hess1u on the camera pc
+	
+	to install the rpm:
+				
+		sudo rpm -i <rpmfile> --nodeps 
+		
+		note: "--nodeps" is needed to avoid the dependency check, which will fail in the current installation
+
+	to uninstall the rpm:
+				
+		sudo rpm -r <rpm package name>  
+				
+	to install from .tgz:
+	
+		tar xzf <tgz file>
+		
+		move content of the created folder to /  
+  
+	to initialize the environment you need to source /opt/hess1u/setupenv.sourceme
+	it will setup required library search paths to run the executables
+	
+	
+	
+	 
+  
