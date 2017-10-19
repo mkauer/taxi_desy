@@ -1,0 +1,17 @@
+#Fileversion
+#@FILE_VERSION=1.0.0
+#Defaulttokenvalue
+#@DEFAULT_TOKEN=ERROR
+#Explicittokenvalues
+#wait0=unreached\b
+idle=000\b
+#writesecondinfo=unreached\b
+writeheader=001\b
+writedebug=010\b
+#writetriggertiming=unreached\b
+writedsr4sampling=100\b
+writedsr4charge=101\b
+writedsr4timing=110\b
+#testdataheader=unreached\b
+testdata=011\b
+

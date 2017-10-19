@@ -1,0 +1,10 @@
+#-----------------------------------------------------------
+# PlanAhead v14.7 (64-bit)
+# Build 321239 by xbuild on Fri Sep 27 19:29:51 MDT 2013
+# Start of session at: Fri Jun 16 13:17:13 2017
+# Process ID: 4760
+# Log file: C:/Xilinx/projects/taxi_firmware/iceScint/planAhead_run_1/planAhead.log
+# Journal file: C:/Xilinx/projects/taxi_firmware/iceScint/planAhead_run_1/planAhead.jou
+#-----------------------------------------------------------
+start_gui
+source C:/Xilinx/projects/taxi_firmware/iceScint/pa.fromNetlist.tcl

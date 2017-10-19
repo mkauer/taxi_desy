@@ -1,0 +1,10 @@
+#Fileversion
+#@FILE_VERSION=1.0.0
+#Defaulttokenvalue
+#@DEFAULT_TOKEN=ERROR
+#Explicittokenvalues
+idle=00\b
+sample=01\b
+latch=11\b
+prepare=10\b
+
