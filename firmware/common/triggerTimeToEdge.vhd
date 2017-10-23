@@ -28,10 +28,6 @@ use work.types.all;
 --use UNISIM.VComponents.all;
 
 entity triggerTimeToEdge is
---	generic 
---	(
---		numberOfChannels : integer := 16
---	);
 	port
 	(
 		triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
@@ -40,7 +36,7 @@ entity triggerTimeToEdge is
 		--dataReady : out std_logic;
 		registerRead : out triggerTimeToEdge_registerRead_t;
 		registerWrite : in triggerTimeToEdge_registerWrite_t;
-		triggerTiming : out triggerTiming_t
+		triggerTiming : out triggerTimeToEdge_t
 	);
 end triggerTimeToEdge;
 
@@ -133,23 +129,6 @@ begin
 							triggerTiming.timeToRisingEdge(i) <= std_logic_vector(pixelConterRising(i));
 							triggerTiming.timeToFallingEdge(i) <= std_logic_vector(pixelConterFalling(i));
 						end loop;	
-				--		registerRead.ch0 <= std_logic_vector(pixelConterRising(0));
-				--		registerRead.ch1 <= std_logic_vector(pixelConterRising(1));
-				--		registerRead.ch2 <= std_logic_vector(pixelConterRising(2));
-				--		registerRead.ch3 <= std_logic_vector(pixelConterRising(3));
-				--		registerRead.ch4 <= std_logic_vector(pixelConterRising(4));
-				--		registerRead.ch5 <= std_logic_vector(pixelConterRising(5));
-				--		registerRead.ch6 <= std_logic_vector(pixelConterRising(6));
-				--		registerRead.ch7 <= std_logic_vector(pixelConterRising(7));
-					 
-				--		triggerTiming.ch0 <= std_logic_vector(pixelConterRising(0));
-				--		triggerTiming.ch1 <= std_logic_vector(pixelConterRising(1));
-				--		triggerTiming.ch2 <= std_logic_vector(pixelConterRising(2));
-				--		triggerTiming.ch3 <= std_logic_vector(pixelConterRising(3));
-				--		triggerTiming.ch4 <= std_logic_vector(pixelConterRising(4));
-				--		triggerTiming.ch5 <= std_logic_vector(pixelConterRising(5));
-				--		triggerTiming.ch6 <= std_logic_vector(pixelConterRising(6));
-				--		triggerTiming.ch7 <= std_logic_vector(pixelConterRising(7));
 					
 					when prepare =>
 						if(trigger = '0') then

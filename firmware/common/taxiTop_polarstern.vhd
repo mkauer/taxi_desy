@@ -246,8 +246,8 @@ architecture behaviour of taxiTop is
 	signal gpsTiming_0w : gpsTiming_registerWrite_t;
 	signal ad56x1_0r : ad56x1_registerRead_t;
 	signal ad56x1_0w : ad56x1_registerWrite_t;
-	signal triggerLogic_0r : triggerLogic_registerRead_t;
-	signal triggerLogic_0w : triggerLogic_registerWrite_t;
+	signal triggerLogic_0r : p_triggerLogic_registerRead_t;
+	signal triggerLogic_0w : p_triggerLogic_registerWrite_t;
 	
 	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
 	signal triggerTiming : triggerTiming_t;
@@ -443,7 +443,7 @@ begin
 --	x7a: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(7 downto 0), LVDS_IO_P(5 downto 5), LVDS_IO_N(5 downto 5));
 --	x7b: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(15 downto 8), LVDS_IO_P(0 downto 0), LVDS_IO_N(0 downto 0));
 	
-	x8: entity work.triggerLogic port map(discriminatorSerdes, trigger, triggerRateCounter_0, triggerLogic_0r, triggerLogic_0w);
+	x8: entity work.triggerLogic_polarstern port map(discriminatorSerdes, trigger, triggerRateCounter_0, triggerLogic_0r, triggerLogic_0w);
 	x9: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
 
 	x10: entity work.triggerTimeToEdge port map(discriminatorSerdesDelayed_all, trigger, triggerTimeToEdge_0r, triggerTimeToEdge_0w, triggerTiming);

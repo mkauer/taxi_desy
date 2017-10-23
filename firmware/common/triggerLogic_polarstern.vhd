@@ -22,30 +22,23 @@ use IEEE.STD_LOGIC_1164.ALL;
 use ieee.numeric_std.all;
 use work.types.all;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity triggerLogic is
---generic(
---	numberOfChannels : integer := 8
---	);
+entity triggerLogic_polarstern is
 port(
 	--triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
-	triggerPixelIn : in triggerSerdes_t;
+	triggerPixelIn : in p_triggerSerdes_t;
 	triggerOut : out std_logic;
-	triggerRateCounter : out triggerRateCounter_t;
-	registerRead : out triggerLogic_registerRead_t;
-	registerWrite : in triggerLogic_registerWrite_t
+	triggerRateCounter : out p_triggerRateCounter_t;
+	registerRead : out p_triggerLogic_registerRead_t;
+	registerWrite : in p_triggerLogic_registerWrite_t
 	);
-end triggerLogic;
+end triggerLogic_polarstern;
 
-architecture Behavioral of triggerLogic is
+architecture Behavioral of triggerLogic_polarstern is
 	
 	attribute keep : string; 
 

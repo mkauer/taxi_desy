@@ -64,6 +64,10 @@ package types is
 	function fillXFromY8(value : string; direction : string; patternIn : std_logic_vector) return std_logic_vector;
 	
 	function reverse_vector (a: in std_logic_vector) return std_logic_vector;
+
+	function findFallingEdgeFromRight9(patternIn : std_logic_vector) return unsigned;
+
+-------------------------------------------------------------------------------
 	
 	type drs4Clocks_t is record
 		drs4Clock_125MHz : std_logic;
@@ -82,7 +86,7 @@ package types is
 -------------------------------------------------------------------------------
 	
 	type triggerTiming_t is record
-		channel : data8x16Bit_t;
+		channel : dataNumberOfChannelsX16Bit_t;
 		newData : std_logic;
 	end record;
 	
@@ -126,7 +130,8 @@ package types is
 -------------------------------------------------------------------------------
 
 	type triggerTimeToRisingEdge_registerRead_t is record
-		channel : data8x16Bit_t;
+		--channel : data8x16Bit_t;
+		channel : dataNumberOfChannelsX16Bit_t;
 	end record;
 	type triggerTimeToRisingEdge_registerWrite_t is record
 		clock : std_logic;
@@ -141,6 +146,25 @@ package types is
 		reset : std_logic;
 		numberOfDelayCycles : std_logic_vector(15 downto 0);
 		resetDelay : std_logic;
+	end record;
+
+---------------------------------------------------------------------------
+	type triggerTimeToEdge_registerRead_t is record
+		timeToRisingEdge : dataNumberOfChannelsX16Bit_t;
+		timeToFallingEdge : dataNumberOfChannelsX16Bit_t;
+		maxSearchTime : std_logic_vector(11 downto 0);
+	end record;
+	
+	type triggerTimeToEdge_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		maxSearchTime : std_logic_vector(11 downto 0);
+	end record;
+
+	type triggerTimeToEdge_t is record
+		timeToRisingEdge : dataNumberOfChannelsX16Bit_t;
+		timeToFallingEdge : dataNumberOfChannelsX16Bit_t;
+		newData : std_logic;
 	end record;
 	
 -------------------------------------------------------------------------------
@@ -426,6 +450,35 @@ package types is
 	end record;
 
 -------------------------------------------------------------------------------
+-- polarstern
+-------------------------------------------------------------------------------
+
+	type p_triggerSerdes_t is array (0 to 2) of std_logic_vector(8*8-1 downto 0);
+
+	type p_triggerPathCounter_t is array (0 to 2) of std_logic_vector(15 downto 0);
+	
+	type p_triggerLogic_registerRead_t is record
+		mode : std_logic_vector(3 downto 0);
+		rateCounter : p_triggerPathCounter_t;
+		rateCounterLatched : p_triggerPathCounter_t;
+		rateCounterSectorLatched : dataNumberOfChannelsX16Bit_t;
+	end record;
+	
+	type p_triggerLogic_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		mode : std_logic_vector(3 downto 0);
+		tick_ms : std_logic;
+		counterPeriod : std_logic_vector(15 downto 0);
+		resetCounter : std_logic_vector(15 downto 0);
+	end record;
+
+	type p_triggerRateCounter_t is record
+		newData : std_logic;
+		rateCounterLatched : p_triggerPathCounter_t;
+		rateCounterSectorLatched : dataNumberOfChannelsX16Bit_t;
+	end record;
+
 -------------------------------------------------------------------------------
 
 end types;
@@ -697,6 +750,37 @@ package body types is
 		end loop;
 		return result;
 	end;
+
+	function findFallingEdgeFromRight9(patternIn : std_logic_vector) return unsigned is
+		variable temp : unsigned(3 downto 0) := "0000";
+	begin
+		if(std_match(patternIn, "-------01")) then
+			temp := "0000";
+		elsif(std_match(patternIn, "------01-")) then
+			temp := "0001";
+		elsif(std_match(patternIn, "-----01--")) then
+			temp := "0010";
+		elsif(std_match(patternIn, "----01---")) then
+			temp := "0011";
+		elsif(std_match(patternIn, "---01----")) then
+			temp := "0100";
+		elsif(std_match(patternIn, "--01-----")) then
+			temp := "0101";
+		elsif(std_match(patternIn, "-01------")) then
+			temp := "0110";
+		elsif(std_match(patternIn, "01-------")) then
+			temp := "0111";
+		--elsif(std_match(patternIn, "00000000")) then
+		--	temp := "1000";
+		--elsif(std_match(patternIn, "11111111")) then
+		--	temp := "1000";
+		else
+			temp := "1000";
+		end if;
+		return temp;
+	end;
+
+
 ---- Example 1
 --  function <function_name>  (signal <signal_name> : in <type_declaration>  ) return <type_declaration> is
 --    variable <variable_name>     : <type_declaration>;

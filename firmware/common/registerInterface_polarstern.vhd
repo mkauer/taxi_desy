@@ -64,8 +64,8 @@ entity registerInterface is
 		ad56x1_0w : out ad56x1_registerWrite_t;
 		--drs4_0r : in drs4_registerRead_t;
 		--drs4_0w : out drs4_registerWrite_t;
-		triggerLogic_0r : in triggerLogic_registerRead_t;
-		triggerLogic_0w : out triggerLogic_registerWrite_t
+		triggerLogic_0r : in p_triggerLogic_registerRead_t;
+		triggerLogic_0w : out p_triggerLogic_registerWrite_t
 	);
 end registerInterface;
 
