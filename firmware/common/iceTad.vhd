@@ -49,6 +49,14 @@ architecture Behavioral of iceTad is
 	signal rs485DataEnable_intern : std_logic_vector(numberOfUarts-1 downto 0);
 	signal txBusy : std_logic_vector(7 downto 0) := (others=>'0');
 	signal rxBusy : std_logic_vector(7 downto 0) := (others=>'0');
+	signal rxBusy_old : std_logic_vector(7 downto 0) := (others=>'0');
+	
+	signal fifo : std_logic := '0';
+	signal fifoIn : data8x8Bit_t := (others=>(others=>'0'));
+	--signal fifoOut : dataNumberOfChannelsX8Bit_t := (others=>(others=>'0'));
+	signal fifoReset : std_logic_vector(7 downto 0);
+	signal fifoRead : std_logic_vector(7 downto 0);
+	signal fifoWrite : std_logic_vector(7 downto 0);
 
 begin
 
@@ -69,7 +77,8 @@ begin
 			CLK => registerWrite.clock,
 			RXD => rs485DataIn_intern(i),
 			TXD => rs485Out(i),
-			RX_Data => registerRead.rs485Data(i),
+			--RX_Data => registerRead.rs485Data(i),
+			RX_Data => fifoIn(i),
 			TX_Data => registerWrite.rs485Data(i),
 			RX_Busy => rxBusy(i),
 			TX_Busy => txBusy(i),
@@ -78,6 +87,21 @@ begin
 		
 		rs485DataTristate(i) <= not(txBusy(i));
 		rs485DataEnable(i) <= txBusy(i);
+
+		x2: entity work.rs485fifo
+		port map(
+			clk => registerWrite.clock,
+			srst => fifoReset(i),
+			din => fifoIn(i),
+			wr_en => fifoWrite(i),
+			rd_en => registerWrite.rs485FifoRead(i),
+			dout => registerRead.rs485FifoData(i),
+			full => registerRead.rs485FifoFull(i),
+			empty => registerRead.rs485FifoEmpty(i),
+			data_count => registerRead.rs485FifoWords(i)(4 downto 0)
+		);
+	
+		registerRead.rs485FifoWords(i)(7 downto 5) <= (others=>'0');
 	end generate;
 
 	g2: if(numberOfUarts < 8) generate
@@ -104,6 +128,27 @@ begin
 			end if;
 		end if;
 	end process P1;
+
+	P2:process (registerWrite.clock)
+	begin
+		if rising_edge(registerWrite.clock) then
+			fifoWrite <= (others=>'0'); -- autoreset
+			fifoReset <= (others=>'0'); -- autoreset
+			if (registerWrite.reset = '1') then
+				rxBusy_old <= (others=>'0');
+				fifoReset <= (others=>'1'); -- autoreset
+			else
+				rxBusy_old <= rxBusy;
+
+				q:for i in 0 to fifoWrite'length-1 loop
+					if((rxBusy_old(i) = '1') and (rxBusy(i) = '0')) then
+						fifoWrite(i) <= '1'; -- autoreset
+					end if;
+				end loop;
+
+			end if;
+		end if;
+	end process P2;
 
 end Behavioral;
 
