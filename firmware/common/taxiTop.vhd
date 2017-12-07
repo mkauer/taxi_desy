@@ -13,6 +13,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.types.all;
+use work.types_platformSpecific.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -481,7 +482,7 @@ begin
 
 	x12: entity work.pixelRateCounter port map(discriminatorSerdes, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 
-	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,eventFifoSystem_0r,eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
 
 	drs4Denable(1) <= drs4Denable(0);
 	drs4Dwrite(1) <= drs4Dwrite(0);
@@ -500,7 +501,7 @@ begin
 	lvdsDebugOut(1) <= trigger.triggerDelayed;
 	lvdsDebugOut(2) <= trigger.triggerNotDelayed;
 
-	x14a: entity work.internalTiming generic map(118750) port map(internalTiming, internalTiming_0r, internalTiming_0w);
+	x14a: entity work.internalTiming generic map(globalClockRate_platformSpecific) port map(internalTiming, internalTiming_0r, internalTiming_0w);
 	x14b: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, internalTiming, gpsTiming, gpsTiming_0r, gpsTiming_0w);
 	x14c: entity work.whiteRabbitTiming port map(whiteRabbitPpsIregbIn, whiteRabbitClockIn, internalTiming, whiteRabbitTiming, whiteRabbitTiming_0r, whiteRabbitTiming_0w);
 	
@@ -515,7 +516,7 @@ begin
 		ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1),
 		ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1),
 		adcNcsA(0), adcNcsB(0), adcSdi, adcSck,
-		drs4_to_ltm9007_14, drs4Clocks, adcFifo, drs4Data, adcClocks,
+		drs4_to_ltm9007_14, drs4Data, adcClocks,
 		ltm9007_14_0r, ltm9007_14_0w);
 
 	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_0r, dac088s085_x3_0w);

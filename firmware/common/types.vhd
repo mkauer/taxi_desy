@@ -11,11 +11,12 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.numeric_std.all;
 
-use work.types_platformSpecific.all;
+--use work.types_platformSpecific.all;
 
 package types is
 
-	constant numberOfChannels : integer;
+	--constant numberOfChannels : integer := numberOfChannels_platformSpecific;
+	constant numberOfChannels : integer := 8;
 	type dataNumberOfChannelsX8Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(7 downto 0);
 	type dataNumberOfChannelsX16Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(15 downto 0);
 	type dataNumberOfChannelsX24Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(23 downto 0);
@@ -24,6 +25,7 @@ package types is
 	type data8x16Bit_t is array (0 to 7) of std_logic_vector(15 downto 0);
 	type data8x24Bit_t is array (0 to 7) of std_logic_vector(23 downto 0);
 	type data8x32Bit_t is array (0 to 7) of std_logic_vector(31 downto 0);
+	--subtype dataNumberOfChannels_t is std_logic_vector(numberOfChannels-1 downto 0);
 
 	type smc_bus is record
 		clock : std_logic;
@@ -292,6 +294,8 @@ package types is
 		newData : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
 		channelLatched : dataNumberOfChannelsX16Bit_t;
+		realTimeCounterLatched : std_logic_vector(63 downto 0);
+		realTimeDeltaCounterLatched : std_logic_vector(63 downto 0); -- more or less like counterPeriod 
 	end record;
 	
 -------------------------------------------------------------------------------
@@ -419,16 +423,23 @@ package types is
 	
 	type iceTad_registerRead_t is record
 		powerOn : std_logic_vector(7 downto 0);
-		rs485Data : data8x8Bit_t;
+		--rs485Data : data8x8Bit_t;
 		rs485RxBusy : std_logic_vector(7 downto 0);
 		rs485TxBusy : std_logic_vector(7 downto 0);
+		rs485FifoData : dataNumberOfChannelsX8Bit_t;
+		rs485FifoWords : dataNumberOfChannelsX8Bit_t;
+		--rs485FifoFull : dataNumberOfChannels_t;
+		rs485FifoFull : std_logic_vector(7 downto 0);
+		rs485FifoEmpty : std_logic_vector(7 downto 0);
 	end record;
 	type iceTad_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
 		powerOn : std_logic_vector(7 downto 0);
+		--rs485Data : dataNumberOfChannelsX8Bit_t;
 		rs485Data : data8x8Bit_t;
 		rs485TxStart : std_logic_vector(7 downto 0);
+		rs485FifoRead : std_logic_vector(7 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -485,7 +496,7 @@ end types;
 
 package body types is
 
-	constant numberOfChannels : integer := numberOfChannels_platformSpecific;
+	--constant numberOfChannels : integer := numberOfChannels_platformSpecific;
 
 	function smc_vectorToBus(inputVector : std_logic_vector) return smc_bus is
 		variable temp : smc_bus;

@@ -101,7 +101,7 @@ begin
 						end loop;
 						
 					when latch =>
-						pixelCounterLatched <= pixelCounter;
+						pixelCounterLatched <= pixelCounter; -- ## 'jemand' sollte mal den ort ueberdenken an dem gelatched wird
 						state1 <= prepare;
 						dataReady <= '1';
 						registerRead.channel(0) <= std_logic_vector(pixelCounter(0));

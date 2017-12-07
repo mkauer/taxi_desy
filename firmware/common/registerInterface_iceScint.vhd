@@ -170,6 +170,7 @@ g0: if moduleEnabled /= 0 generate
 			eventFifoSystem_0w.forceIrq <= '0'; -- autoreset
 			eventFifoSystem_0w.clearEventCounter <= '0'; -- autoreset
 			iceTad_0w.rs485TxStart <= (others=>'0'); -- autoreset
+			iceTad_0w.rs485FifoRead <= (others=>'0'); -- autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
@@ -215,6 +216,7 @@ g0: if moduleEnabled /= 0 generate
 				clockConfig_debug_0w.drs4RefClockPeriod <= x"7f";
 				eventFifoWordsDmaSlice_latched <= (others=>'0');
 				pixelRateCounter_0w.counterPeriod <= x"0001"; -- 1 sec
+				iceTad_0w.rs485Data <= (others=>(others=>'0'));
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
@@ -271,6 +273,8 @@ g0: if moduleEnabled /= 0 generate
 						when x"007c" => dac088s085_x3_0w.valuesChip2(6) <= dataBusIn(7 downto 0); valuesChangedChip2Temp(6) <= '1';
 						when x"007e" => dac088s085_x3_0w.valuesChip2(7) <= dataBusIn(7 downto 0); valuesChangedChip2Temp(7) <= '1';
 						
+						when x"0490" => gpsTiming_0w.counterPeriod <= dataBusIn;
+						
 						when x"0090" => ad56x1_0w.valueChip0 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
 						when x"0092" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
 						when x"0094" => ad56x1_0w.valueChangedChip0 <= dataBusIn(0); ad56x1_0w.valueChangedChip1 <= dataBusIn(1); -- autoreset
@@ -314,7 +318,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"030a" => iceTad_0w.rs485Data(5) <= dataBusIn(7 downto 0); 
 						when x"030c" => iceTad_0w.rs485Data(6) <= dataBusIn(7 downto 0); 
 						when x"030e" => iceTad_0w.rs485Data(7) <= dataBusIn(7 downto 0); 
-						when x"0310" => iceTad_0w.rs485TxStart <= dataBusIn(7 downto 0); -- autoreset 
+						when x"0310" => iceTad_0w.rs485TxStart <= dataBusIn(7 downto 0); -- autoreset
 						
 						--when x"1000" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
 						--when x"1800" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
@@ -358,14 +362,14 @@ g0: if moduleEnabled /= 0 generate
 						when x"012c" => readDataBuffer <= eventFifoSystem_0r.eventFifoWords;
 						when x"012e" => readDataBuffer <= eventFifoSystem_0r.eventFifoFlags;						
 						
-						when x"0030" => readDataBuffer <= pixelRateCounter_0r.channel(0);
-						when x"0032" => readDataBuffer <= pixelRateCounter_0r.channel(1);
-						when x"0034" => readDataBuffer <= pixelRateCounter_0r.channel(2);
-						when x"0036" => readDataBuffer <= pixelRateCounter_0r.channel(3);
-						when x"0038" => readDataBuffer <= pixelRateCounter_0r.channel(4);
-						when x"003a" => readDataBuffer <= pixelRateCounter_0r.channel(5);
-						when x"003c" => readDataBuffer <= pixelRateCounter_0r.channel(6);
-						when x"003e" => readDataBuffer <= pixelRateCounter_0r.channel(7);
+						when x"0030" => readDataBuffer <= pixelRateCounter_0r.channelLatched(0);
+						when x"0032" => readDataBuffer <= pixelRateCounter_0r.channelLatched(1);
+						when x"0034" => readDataBuffer <= pixelRateCounter_0r.channelLatched(2);
+						when x"0036" => readDataBuffer <= pixelRateCounter_0r.channelLatched(3);
+						when x"0038" => readDataBuffer <= pixelRateCounter_0r.channelLatched(4);
+						when x"003a" => readDataBuffer <= pixelRateCounter_0r.channelLatched(5);
+						when x"003c" => readDataBuffer <= pixelRateCounter_0r.channelLatched(6);
+						when x"003e" => readDataBuffer <= pixelRateCounter_0r.channelLatched(7);
 						
 						when x"0042" => readDataBuffer <= pixelRateCounter_0r.counterPeriod;
 						
@@ -399,14 +403,15 @@ g0: if moduleEnabled /= 0 generate
 						when x"007c" => readDataBuffer <= x"00" & dac088s085_x3_0r.valuesChip2(6);
 						when x"007e" => readDataBuffer <= x"00" & dac088s085_x3_0r.valuesChip2(7);
 						
-						when x"0080" => readDataBuffer <= gpsTiming_0r.week;
-						when x"0082" => readDataBuffer <= gpsTiming_0r.quantizationError(31 downto 16);
-						when x"0084" => readDataBuffer <= gpsTiming_0r.quantizationError(15 downto 0);
-						when x"0086" => readDataBuffer <= gpsTiming_0r.timeOfWeekMilliSecond(31 downto 16);
-						when x"0088" => readDataBuffer <= gpsTiming_0r.timeOfWeekMilliSecond(15 downto 0);
-						when x"008a" => readDataBuffer <= gpsTiming_0r.timeOfWeekSubMilliSecond(31 downto 16);
-						when x"008c" => readDataBuffer <= gpsTiming_0r.timeOfWeekSubMilliSecond(15 downto 0);
-						when x"008e" => readDataBuffer <= gpsTiming_0r.differenceGpsToLocalClock;
+						when x"0480" => readDataBuffer <= gpsTiming_0r.week;
+						when x"0482" => readDataBuffer <= gpsTiming_0r.quantizationError(31 downto 16); -- sync!
+						when x"0484" => readDataBuffer <= gpsTiming_0r.quantizationError(15 downto 0);
+						when x"0486" => readDataBuffer <= gpsTiming_0r.timeOfWeekMilliSecond(31 downto 16); -- sync!
+						when x"0488" => readDataBuffer <= gpsTiming_0r.timeOfWeekMilliSecond(15 downto 0);
+						when x"048a" => readDataBuffer <= gpsTiming_0r.timeOfWeekSubMilliSecond(31 downto 16); -- sync!
+						when x"048c" => readDataBuffer <= gpsTiming_0r.timeOfWeekSubMilliSecond(15 downto 0);
+						when x"048e" => readDataBuffer <= gpsTiming_0r.differenceGpsToLocalClock;
+						when x"0490" => readDataBuffer <= gpsTiming_0r.counterPeriod;
 						
 						when x"0090" => readDataBuffer <= x"0" & ad56x1_0r.valueChip0;
 						when x"0092" => readDataBuffer <= x"0" & ad56x1_0r.valueChip1;
@@ -445,16 +450,26 @@ g0: if moduleEnabled /= 0 generate
 						when x"00e8" => readDataBuffer <= "000000" & ltm9007_14_0r.baselineEnd;
 						
 						when x"00f0" => readDataBuffer <= x"00" & iceTad_0r.powerOn;
-						when x"0300" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(0);
-						when x"0302" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(1);
-						when x"0304" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(2);
-						when x"0306" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(3);
-						when x"0308" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(4);
-						when x"030a" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(5);
-						when x"030c" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(6);
-						when x"030e" => readDataBuffer <= x"00" & iceTad_0r.rs485Data(7);
+						when x"0300" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(0);iceTad_0w.rs485FifoRead(0) <= '1'; -- autoreset
+						when x"0302" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(1);iceTad_0w.rs485FifoRead(1) <= '1'; -- autoreset
+						when x"0304" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(2);iceTad_0w.rs485FifoRead(2) <= '1'; -- autoreset
+						when x"0306" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(3);iceTad_0w.rs485FifoRead(3) <= '1'; -- autoreset
+						when x"0308" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(4);iceTad_0w.rs485FifoRead(4) <= '1'; -- autoreset
+						when x"030a" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(5);iceTad_0w.rs485FifoRead(5) <= '1'; -- autoreset
+						when x"030c" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(6);iceTad_0w.rs485FifoRead(6) <= '1'; -- autoreset
+						when x"030e" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(7);iceTad_0w.rs485FifoRead(7) <= '1'; -- autoreset
 						when x"0310" => readDataBuffer <= x"00" & iceTad_0r.rs485TxBusy;
 						when x"0312" => readDataBuffer <= x"00" & iceTad_0r.rs485RxBusy;
+						when x"0314" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoFull;
+						when x"0316" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoEmpty;
+						when x"0320" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(0); 
+						when x"0322" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(1);
+						when x"0324" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(2);
+						when x"0326" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(3);
+						when x"0328" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(4);
+						when x"032a" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(5);
+						when x"032c" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(6);
+						when x"032e" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(7);
 						
 						when x"f000" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoEmptyA;
 						when x"f002" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoValidA;

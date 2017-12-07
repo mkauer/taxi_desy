@@ -14,6 +14,9 @@ use IEEE.numeric_std.all;
 package types_platformSpecific is
 
 constant numberOfChannels_platformSpecific : integer := 8;
+constant globalClockRate_platformSpecific : integer := 118750;
+
+--alias numberOfChannels : integer is numberOfChannels_platformSpecific;
 
 end types_platformSpecific;
 

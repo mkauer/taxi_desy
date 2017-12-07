@@ -49,12 +49,9 @@ entity ltm9007_14 is
 		sclk : out std_logic;
 		
 		drs4_to_ltm9007_14 : in drs4_to_ltm9007_14_t;
-		--adcDataValid : in std_logic;
-
-		drs4Clocks : in drs4Clocks_t;
-		adcFifo : out adcFifo_t;
+		--drs4Clocks : in drs4Clocks_t;
+		--adcFifo : out adcFifo_t;
 		ltm9007_14_to_eventFifoSystem : out ltm9007_14_to_eventFifoSystem_t;
-		
 		adcClocks : in adcClocks_t;
 		
 		registerRead : out ltm9007_14_registerRead_t;
@@ -278,12 +275,12 @@ begin
 	);
 
 	fifoReadClock <= registerWrite.clock;
-	adcFifo.fifoOutA <= fifoOutA;
-	adcFifo.fifoOutB <= fifoOutB;
+	--adcFifo.fifoOutA <= fifoOutA;
+	--adcFifo.fifoOutB <= fifoOutB;
 	fifoWordsA(4) <= eventFifoFullA;
 	fifoWordsB(4) <= eventFifoFullB;
-	adcFifo.fifoWordsA <= fifoWordsA;
-	adcFifo.fifoWordsB <= fifoWordsB;
+	--adcFifo.fifoWordsA <= fifoWordsA;
+	--adcFifo.fifoWordsB <= fifoWordsB;
 	registerRead.fifoValidA <= fifoValidA;
 	registerRead.fifoEmptyA <= fifoEmptyA;
 	registerRead.baselineStart <= registerWrite.baselineStart;
