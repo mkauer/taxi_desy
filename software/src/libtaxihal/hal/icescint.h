@@ -100,7 +100,7 @@ void icescint_doIrq(void)
 //}
 
 // enable or disable the irq generation
-void icescint_setIrqEnable(int _enable)
+void icescint_setIrqEnable(uint16_t _enable)
 {
 	IOWR_16DIRECT(BASE_ICESCINT_READOUT,OFFS_ICESCINT_IRQ_CTRL, changeBitVal16(0, BIT_ICESCINT_IRQ_CTRL_IRQ_EN, _enable)); // interrupt disable
 }
@@ -223,5 +223,47 @@ void icescint_doRs485SendData(uint8_t _data, uint8_t _panel)
 	icescint_setRs485Data(_data, _panel);
 	icescint_doRs485Send(1<<_panel);
 }
+
+//
+//
+//
+static inline void icescint_setSerdesDelay(uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGER_SERDESDELAY, _value);
+}
+static inline uint16_t icescint_getSerdesDelay(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGER_SERDESDELAY);
+}
+
+static inline void icescint_setPanelPowerMask(uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_ICETAD_PANELPOWER, _value);
+}
+static inline uint16_t icescint_getPanelPowerMask(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_ICETAD_PANELPOWER);
+}
+
+static inline void icescint_setPanelPower(uint16_t _channel, uint16_t _value)
+{
+	uint16_t temp = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_ICETAD_PANELPOWER);
+	temp = changeBitVal16(temp, clipValueMax(_channel,ICESCINT_NUMBEROFCHANNELS-1),__MAKE_BOOL(_value));
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_ICETAD_PANELPOWER, temp);
+}
+static inline uint16_t icescint_getPanelPower(uint16_t _channel)
+{
+	uint16_t temp = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_ICETAD_PANELPOWER);
+	return testBitVal16(temp, clipValueMax(_channel,ICESCINT_NUMBEROFCHANNELS-1));
+}
+
+//static inline void icescint_set(uint16_t _value)
+//{
+//	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_XXX, _value);
+//}
+//static inline uint16_t icescint_get(void)
+//{
+//	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_XXX);
+//}
 
 #endif
