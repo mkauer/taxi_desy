@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 	icescint_setNumberOfSamplesToRead(drs4MaxSamples);
 
 	uint16_t oldFifoConfig = icescint_getEventFifoPacketConfig();
-	icescint_setEventFifoPacketConfig(VALUE_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING);
+	icescint_setEventFifoPacketConfig(MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING);
 
 	int oldIrqEnabled = icescint_isIrqEnable();
 	icescint_setIrqEnable(1);
