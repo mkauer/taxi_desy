@@ -29,6 +29,7 @@ int main(int argc, char** argv)
 		("iterate,i", po::value<int>(&iterate)->default_value(1), "increments i times the address by 2 and reads/writes the selected value")
 		("times,t", po::value<int>(&times)->default_value(1), "number of read cycles per address")
 		("decimal,d", "all values for read and write are [dec]")
+		("ascii,a", "all values for read and write are ascii (first char only if ore are given)")
 	;
 
 	po::variables_map vm;
@@ -58,6 +59,10 @@ int main(int argc, char** argv)
 				{
 					std::cout << "read from [0x" << std::hex << addr << "]: " << std::dec << "" << int(value) << std::dec << std::endl;
 				}
+				else if(vm.count("ascii"))
+				{
+					std::cout << "read from [0x" << std::hex << addr << "]: " << std::dec << "'" << char(value) << "'" << std::dec << std::endl;
+				}
 				else
 				{
 					std::cout << "read from [0x" << std::hex << addr << "]: " << "0x" << int(value) << std::dec << std::endl;
@@ -79,9 +84,10 @@ int main(int argc, char** argv)
 			int value = 0;
 			std::stringstream interpreter2;
 			//interpreter2 << std::hex << vm["value"].as<std::string>();
-			if(vm.count("decimal")) {interpreter2 << std::dec << vm["value"].as<std::string>();}
-			else {interpreter2 << std::hex << vm["value"].as<std::string>();}
-			interpreter2 >> value;
+			if(vm.count("decimal")) {interpreter2 << std::dec << vm["value"].as<std::string>(); interpreter2 >> value;}
+			else if(vm.count("ascii")) {value = vm["value"].as<std::string>().at(0);}
+			else {interpreter2 << std::hex << vm["value"].as<std::string>(); interpreter2 >> value;}
+//			interpreter2 >> value;
 
 			for(int i=0; i<iterate;i++)
 			{
