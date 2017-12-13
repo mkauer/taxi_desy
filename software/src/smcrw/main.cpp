@@ -5,7 +5,6 @@
 
 #include "hal/smc.h"
 
-using namespace std;
 namespace po = boost::program_options;
 
 #define EXIT_OK 0
@@ -38,8 +37,8 @@ int main(int argc, char** argv)
 
 	if (vm.count("help") || !(vm.count("read") || vm.count("write")))
 	{
-		cout << "*** smcrw - simple read/write tool for the smc interface" << __DATE__ << " " << __TIME__ << " ***"<< endl;
-		cout << desc << "\n";
+		std::cout << "*** smcrw - simple read/write tool for the smc interface" << __DATE__ << " " << __TIME__ << " ***" << std::endl;
+		std::cout << desc << std::endl;
 	    return EXIT_ERROR;
 	}
 

@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 
 		IOWR_16DIRECT(0x104,0x00, 0x01); // irq at eventfifoword count (1 eventfifoword 182 bytes)
 
-		icescint_setEventFifoPacketConfig(VALUE_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DEBUG);
+		icescint_setEventFifoPacketConfig(MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DEBUG);
 
 		IOWR_16DIRECT(0x106,0x00, 0x01); // interrupt enable
 

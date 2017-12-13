@@ -62,6 +62,11 @@ static inline uint16_t changeBitVal16(uint16_t value, uint16_t index, int true_m
 	if (true_means_set__false_means_clear) {return setBit16(value, index);}
 	else {return clrBit16(value, index);}
 }
+static inline uint16_t changeMask16(uint16_t value, uint16_t mask, int true_means_set__false_means_clear)
+{
+	if (true_means_set__false_means_clear) {return setMask16(value, mask);}
+	else {return clrMask16(value, mask);}
+}
 static inline int testBitVal16(uint16_t value, uint16_t index)
 {
 	return (value & ((uint16_t)(1)<<index))?1:0;

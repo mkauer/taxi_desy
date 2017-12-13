@@ -21,11 +21,11 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL AT91SAM)
 #	add_subdirectory( httpdfcgi )
 
 	add_subdirectory( libtaxihal )
-	add_subdirectory( ctaPower )
-	add_subdirectory( ctaRw )
+#	add_subdirectory( ctaPower )
+#	add_subdirectory( ctaRw )
 	
-	add_subdirectory( polarsternEventSender )
-	add_subdirectory( polarsternEventReceiver )
+#	add_subdirectory( polarsternEventSender )
+#	add_subdirectory( polarsternEventReceiver )
 
 	add_subdirectory( thriftExampleServer )
 	
@@ -33,6 +33,6 @@ else()
 	add_subdirectory( icescint )
 	add_subdirectory( libtaxihal )
 	add_subdirectory( eventReceiver)  # generic event receiver 
-	add_subdirectory( polarsternEventReceiver )
+#	add_subdirectory( polarsternEventReceiver )
 endif()
 
