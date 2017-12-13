@@ -69,7 +69,7 @@ architecture behavioral of eventFifoSystem is
 --	signal dmaLookAheadIsIdle : std_logic := '0';
 	signal s : integer range 0 to 63 := 0;
 	
-	type state1_t is (wait0, idle, writeGps, writeWhiteRabbit, writePixelRateCounter0, writePixelRateCounter1, writeHeader, writeDebug, writeTriggerTiming, writeDrs4Sampling, writeDrs4Charge, writeDrs4Baseline, writeDrs4Timing, testDataHeader, testData, waitForRoiData);
+	type state1_t is (wait0, idle, writeGps, writeWhiteRabbit, writePixelRateCounter0, writePixelRateCounter1, writePixelRateCounter2, writeHeader, writeDebug, writeTriggerTiming, writeDrs4Sampling, writeDrs4Charge, writeDrs4Baseline, writeDrs4Timing, testDataHeader, testData, waitForRoiData);
 	signal state1 : state1_t := idle;
 	
 	type state7_t is (wait0, wait1, idle, read0, read1, read2, read3);
@@ -349,12 +349,32 @@ begin
 					pixelRateCounter_realTimeDeltaCounterLatched <= pixelRateCounter.realTimeDeltaCounterLatched;
 					state1 <= nextState;
 
-				when writePixelRateCounter1 =>
+				when writePixelRateCounter1 => -- no timing information here....
+					newPixelRateCounterEvent <= '0';
+					nextState := writePixelRateCounter2;
+					if(unsigned(eventFifoWords) < (eventFifoWordsMax-1)) then
+						eventFifoIn <= (others=>'0');
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_PIXELRATES & "00" & x"01";
+						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(0);
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(1);
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(2);
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(3);
+						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(4);
+						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(5);
+						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(6);
+						eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= pixelRateCounter.channelDeadTimeLatched(7);
+						eventFifoWriteRequest <= '1'; -- autoreset
+					else
+						eventFifoErrorCounter <= eventFifoErrorCounter + 1;
+					end if;
+					state1 <= nextState;
+
+				when writePixelRateCounter2 =>
 					--newPixelRateCounterEvent <= '0'; -- ## two times?!
 					nextState := idle;
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax)) then
 						eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_PIXELRATES & "00" & x"01";
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_PIXELRATES & "00" & x"02";
 						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= pixelRateCounter_realTimeCounterLatched(63 downto 48);
 						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= pixelRateCounter_realTimeCounterLatched(47 downto 32);
 						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= pixelRateCounter_realTimeCounterLatched(31 downto 16);

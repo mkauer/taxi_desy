@@ -32,6 +32,7 @@ entity pixelRateCounter is
 	port
 	(
 		triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
+		deadTime : in std_logic;
 		--triggerPixelIn : in std_logic_vector(8*8-1 downto 0);
 		--triggerPixelIn : in triggerSerdes_t;
 		pixelRateCounter : out pixelRateCounter_t;
@@ -46,9 +47,11 @@ architecture behavioral of pixelRateCounter is
 	signal pixel_old : std_logic_vector(pixel'length-1 downto 0) := (others => '0');
 	type counter_t is array (0 to numberOfChannels-1) of unsigned(15 downto 0);
 	signal pixelCounter : counter_t := (others => (others => '0'));
+	signal pixelCounterInsideDeadTime : counter_t := (others => (others => '0'));
 	signal counter_ms : unsigned(15 downto 0) := (others => '0');
 	signal counter_sec : unsigned(15 downto 0) := (others => '0');
 	signal channelLatched : counter_t := (others => (others => '0'));
+	signal channelDeadTimeLatched : counter_t := (others => (others => '0'));
 	signal realTimeDeltaCounter : unsigned(63 downto 0) := (others=>'0');
 	signal realTimeDeltaCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
 	signal realTimeCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
@@ -64,6 +67,8 @@ begin
 	g0: for i in 0 to numberOfChannels-1 generate
 		pixelRateCounter.channelLatched(i) <= std_logic_vector(channelLatched(i));
 		registerRead.channelLatched(i) <= std_logic_vector(channelLatched(i));
+		pixelRateCounter.channelDeadTimeLatched(i) <= std_logic_vector(channelDeadTimeLatched(i));
+		registerRead.channelDeadTimeLatched(i) <= std_logic_vector(channelDeadTimeLatched(i));
 		registerRead.channel(i) <= std_logic_vector(pixelCounter(i));
 	end generate;
 
@@ -79,6 +84,7 @@ begin
 				counter_sec <= (others => '0');
 				--channel <= (others => (others => '0'));
 				channelLatched <= (others => (others => '0'));
+				channelDeadTimeLatched <= (others => (others => '0'));
 				realTimeDeltaCounter <= (others => '0');
 				realTimeDeltaCounterLatched <= (others => '0');
 			else
@@ -105,10 +111,17 @@ begin
 						if(pixelCounter(i) = x"ffff") then
 							pixelCounter(i) <= x"ffff";
 						end if;
+						if(deadTime = '1') then
+							pixelCounterInsideDeadTime(i) <= pixelCounterInsideDeadTime(i) + 1;	
+						end if;
+						if(pixelCounterInsideDeadTime(i) = x"ffff") then
+							pixelCounterInsideDeadTime(i) <= x"ffff";
+						end if;
 					end if;
 				
 					if(registerWrite.resetCounter(i) = '1') then
 						pixelCounter(i) <= (others => '0');
+						pixelCounterInsideDeadTime(i) <= (others => '0');
 						realTimeDeltaCounter <= (others => '0');
 					end if;
 				end loop;
@@ -117,13 +130,16 @@ begin
 					for i in 0 to numberOfChannels-1 loop
 						--channel(i) <= std_logic_vector(pixelCounter(i));
 						channelLatched(i) <= pixelCounter(i);
+						channelDeadTimeLatched(i) <= pixelCounterInsideDeadTime(i);
 					end loop;
 				elsif(counter_sec >= unsigned(registerWrite.counterPeriod)) then -- ## rates for continuous operation
 					counter_sec <= (others => '0');
 					pixelCounter <= (others => (others => '0'));
+					pixelCounterInsideDeadTime <= (others => (others => '0'));
 					for i in 0 to numberOfChannels-1 loop
 						--channel(i) <= std_logic_vector(pixelCounter(i));
 						channelLatched(i) <= pixelCounter(i);
+						channelDeadTimeLatched(i) <= pixelCounterInsideDeadTime(i);
 					end loop;
 					-- if(period2 = foo) then
 					pixelRateCounter.newData <= '1'; -- autoreset

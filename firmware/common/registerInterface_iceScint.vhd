@@ -374,6 +374,15 @@ g0: if moduleEnabled /= 0 generate
 						when x"003c" => readDataBuffer <= pixelRateCounter_0r.channelLatched(6);
 						when x"003e" => readDataBuffer <= pixelRateCounter_0r.channelLatched(7);
 						
+						when x"0130" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(0);
+						when x"0132" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(1);
+						when x"0134" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(2);
+						when x"0136" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(3);
+						when x"0138" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(4);
+						when x"013a" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(5);
+						when x"013c" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(6);
+						when x"013e" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(7);
+						
 						when x"0042" => readDataBuffer <= pixelRateCounter_0r.counterPeriod;
 						
 						when x"0048" => readDataBuffer <= x"000" & "000" & dac088s085_x3_0r.dacBusy;

@@ -48,6 +48,8 @@ entity drs4 is
 		dtap : in std_logic;
 		plllck : in std_logic;
 		
+		deadTime : out std_logic;
+		
 		--stopDrs4 : in std_logic; -- should be truly async later on
 		--stopDrs4Serdes : in std_logic_vector(7 downto 0); -- should be truly async later on
 		trigger : in triggerLogic_t;
@@ -149,6 +151,8 @@ architecture Behavioral of drs4 is
 	signal dwrite_i : std_logic := '0';
 	signal stopDrs4 : std_logic := '0';
 	signal sumTrigger : std_logic := '0';
+
+	--signal deadTime : std_logic := '0'; 
 
 	--signal realTimeCounter_latched : std_logic_vector(63 downto 0) := (others=>'0');
 	
@@ -595,6 +599,7 @@ begin
 				--dwrite_i <= '0';
 				drs4_to_ltm9007_14.realTimeCounter_latched <= (others => '0');
 				stateDrs4 <= init1;
+				deadTime <= '0';
 			else
 				stopDrs4_old <= stopDrs4;
 				
@@ -677,6 +682,7 @@ begin
 					when startSampling =>
 						denable <= '1';
 						dwrite_i <= '1';
+						deadTime <= '0';
 						if(registerWrite.sampleMode = x"0") then
 							spiTransferMode <= sampleNormalMode;
 						elsif(registerWrite.sampleMode = x"1") then
@@ -713,6 +719,7 @@ begin
 							end if;
 							dwrite_i <= '0';
 							drs4_to_ltm9007_14.realTimeCounter_latched <= internalTiming.realTimeCounter;
+							deadTime <= '1';
 						end if;
 						
 					when debug =>

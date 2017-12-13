@@ -282,6 +282,7 @@ package types is
 	type pixelRateCounter_registerRead_t is record
 		channel : dataNumberOfChannelsX16Bit_t;
 		channelLatched : dataNumberOfChannelsX16Bit_t;
+		channelDeadTimeLatched : dataNumberOfChannelsX16Bit_t;
 		counterPeriod : std_logic_vector(15 downto 0);
 	end record;
 	
@@ -297,6 +298,7 @@ package types is
 		newData : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
 		channelLatched : dataNumberOfChannelsX16Bit_t;
+		channelDeadTimeLatched : dataNumberOfChannelsX16Bit_t;
 		realTimeCounterLatched : std_logic_vector(63 downto 0);
 		realTimeDeltaCounterLatched : std_logic_vector(63 downto 0); -- more or less like counterPeriod 
 	end record;
