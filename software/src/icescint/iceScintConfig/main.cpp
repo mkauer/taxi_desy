@@ -45,14 +45,16 @@ int main(int argc, char** argv)
 	desc.add_options()
 		("help,h", "")
 		("channel,c", po::value<int>(), "channel [0-7]")
-		("setTriggerTheshold", po::value<int>(), "[0-255] needs {channel}")
-		("setSerdesDelay", po::value<int>(), "[0-1024]")
+		("setTriggerThreshold", po::value<int>(), "[0-255] needs {channel}")
+		("setSerdesDelay", po::value<int>(), "[0-1023]")
 		("setDrs4ReadoutMode", po::value<int>(), "") // ## the spike thing...
 		("setDrs4NumberOfSamplesToRead", po::value<int>(), "[10-1024] more than 1024 will reread old samples")
 		("setTriggerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel")
 		("setPanelPower", po::value<int>(), "[0-1] needs {channel} (remember: the panel needs some time to boot)")
 		("setPanelPowerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel (remember: the panel needs some time to boot)")
 		("setIrqEnable", po::value<int>(), "[0-1] interrupt from FPGA to ARM")
+		("setDrs4BaselineStart", po::value<int>(), "[0-1023] needs to be less than {setDrs4NumberOfSamplesToRead}")
+		("setDrs4BaselineStop", po::value<int>(), "[0-1023] needs to be less than {setDrs4NumberOfSamplesToRead}")
 		("setPixelRatePeriod", po::value<int>(), "[0-65535] in seconds, no counter reset if 0")
 		("setPacketConfigMask", po::value<std::string>(), "each bit enables one type of packets in the main fifo")
 		("setPacketDrs4Sampling", po::value<int>(), "[0-1] enables data type for fifo")
@@ -66,19 +68,24 @@ int main(int argc, char** argv)
 		("setSoftTriggerSingleShot", po::value<int>(), "no value")
 		("setSoftTriggerGeneratorEnable", po::value<int>(), "[0,1]")
 		("setSoftTriggerGeneratorPeriod", po::value<int>(), "[0-2^32] in ~8ns steps")
-//			("", po::value<int>(), "")
+//		("", po::value<int>(), "")
 		;
 
+//	po::variables_map vm;
+//	try
+//	{
+//		po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
+//	}
+//	catch (boost::program_options::invalid_command_line_syntax &e)
+//	{
+//		std::cerr << "error parsing command line: " << e.what() << std::endl;
+//		std::cout << "error parsing command line: " << e.what() << std::endl;
+//		return EXIT_ERROR;
+//	}
+//	po::notify(vm);
+
 	po::variables_map vm;
-	try
-	{
-		po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
-	}
-	catch (boost::program_options::invalid_command_line_syntax &e)
-	{
-		std::cerr << "error parsing command line: " << e.what() << std::endl;
-		return EXIT_ERROR;
-	}
+	po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 	po::notify(vm);
 
 	if (vm.count("help"))
@@ -111,10 +118,10 @@ int main(int argc, char** argv)
 		else{channel = temp;}
 	}
 
-	if(vm.count("setTriggerTheshold"))
+	if(vm.count("setTriggerThreshold"))
 	{
 		if(!vm.count("channel")){std::cout << "'setTriggerTheshold' needs a 'channel'" << std::endl; return EXIT_ERROR;}
-		icescint_setTriggerThreshold(vm["channel"].as<int>(), vm["setTriggerTheshold"].as<int>());
+		icescint_setTriggerThreshold(vm["channel"].as<int>(), vm["setTriggerThreshold"].as<int>());
 		return EXIT_OK;
 	}
 
@@ -252,6 +259,18 @@ int main(int argc, char** argv)
 	if(vm.count("setPixelRatePeriod"))
 	{
 		icescint_setPixelTriggerCounterPeriod(vm["setPixelRatePeriod"].as<int>());
+		return EXIT_OK;
+	}
+
+	if(vm.count("setDrs4BaselineStart"))
+	{
+		icescint_setBaselineStart(vm["setDrs4BaselineStart"].as<int>());
+		return EXIT_OK;
+	}
+
+	if(vm.count("setDrs4BaselineStop"))
+	{
+		icescint_setBaselineStop(vm["setDrs4BaselineStop"].as<int>());
 		return EXIT_OK;
 	}
 
