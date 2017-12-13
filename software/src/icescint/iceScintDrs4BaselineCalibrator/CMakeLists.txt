@@ -12,5 +12,5 @@ compile_executable(icescint_drs4BaselineCalibrator "main.cpp" "${LIBS}")
 install(TARGETS icescint_drs4BaselineCalibrator RUNTIME DESTINATION ${INSTALL_BIN})
 
 # version of marek
-compile_executable(icescint_drs4BaselineCalibrator_mp "main_mp.cpp" "${LIBS}")
-install(TARGETS icescint_drs4BaselineCalibrator_mp RUNTIME DESTINATION ${INSTALL_BIN})
+#compile_executable(icescint_drs4BaselineCalibrator_mp "main_mp.cpp" "${LIBS}")
+#install(TARGETS icescint_drs4BaselineCalibrator_mp RUNTIME DESTINATION ${INSTALL_BIN})
