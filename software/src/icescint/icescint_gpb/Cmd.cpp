@@ -47,6 +47,8 @@
 #include "HalfDuplexHardwareSerial.h"
 #include "Cmd.h"
 
+#include "protocol.h"
+
 //HalfDuplexHardwareSerial HalfDuplexSerial(&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0);
 
 // command line message buffer and pointer
@@ -65,18 +67,8 @@ const char cmd_unrecog[] PROGMEM = "CMD: Command not recognized.";
 
 typedef enum {
 	MODE_CLI,
-	MODE_PACKET_HEADER2,
-	MODE_PACKET_SIZE,
-	MODE_PACKET_DATA,
-	MODE_PACKET_IGNORE_DATA,
-	MODE_PACKET_TAIL1,
-	MODE_PACKET_TAIL2,
+	MODE_PACKET
 } cmd_mode_t;
-
-#define PACKET_HEADER1 0xCA
-#define PACKET_HEADER2 0xFE
-#define PACKET_TAIL1   0xEF
-#define PACKET_TAIL2   0xAC
 
 static cmd_mode_t cmd_mode;
 #define CMD_BINARY_MAX_SIZE 120
@@ -84,6 +76,9 @@ static unsigned char cmd_binary_size;
 static unsigned char cmd_binary_wrpos;
 static unsigned char cmd_binary_data[CMD_BINARY_MAX_SIZE];
 static bool cmd_binary_data_valid;
+
+packetDecoder_t packetDecoder;
+packet_t		packet;
 
 void cmd_setDirection(cmd_direction_t _mode)
 {
@@ -179,7 +174,8 @@ void cmd_handler()
 		switch (c)
 		{
 		case PACKET_HEADER1:
-			cmd_mode=MODE_PACKET_HEADER2;
+			cmd_mode=MODE_PACKET;
+			packetDecoder_processData(&packetDecoder, c);
 			// First byte of the binary packet header
 			break;
 		case '\r':
@@ -217,71 +213,18 @@ void cmd_handler()
 			break;
 		}
     } else {
-    	bool error=false;
-    	bool packetReady=false;
-
-    	// enter packet mode
-    	switch (cmd_mode) {
-    	case MODE_CLI:
-    		break;
-    	case MODE_PACKET_HEADER2:
-    		if (c==PACKET_HEADER1) {
-    			cmd_mode=MODE_PACKET_HEADER2;
-    		} else if (c==PACKET_HEADER2) {
-    			cmd_mode=MODE_PACKET_SIZE;
-    		} else {
-    			// Packet Error
-    			error=true;
-    		}
-			break;
-    	case MODE_PACKET_SIZE:
-    		cmd_binary_size=c;
-    		cmd_binary_wrpos=0;
-			cmd_binary_data_valid=false;
-    		if (cmd_binary_size<CMD_BINARY_MAX_SIZE) {
-        		cmd_mode=MODE_PACKET_DATA;
-    		} else {
-    			// Error, Packet to big
-        		cmd_mode=MODE_PACKET_IGNORE_DATA;
-    		}
-    		break;
-    	case MODE_PACKET_DATA:
-    		cmd_binary_data[cmd_binary_wrpos]=c;
-    		cmd_binary_wrpos++;
-    		if (cmd_binary_wrpos==cmd_binary_size) {
-    			cmd_mode=MODE_PACKET_TAIL1;
-    			cmd_binary_data_valid=true;
-    		}
-    		break;
-    	case MODE_PACKET_IGNORE_DATA:
-    		cmd_binary_wrpos++;
-    		if (cmd_binary_wrpos==cmd_binary_size) {
-    			cmd_mode=MODE_PACKET_TAIL1;
-    		}
-    		break;
-    	case MODE_PACKET_TAIL1:
-    		if (c==PACKET_TAIL1) {
-    			cmd_mode=MODE_PACKET_TAIL2;
-    		} else {
-    			// Packet Error
-    			error=true;
-    		}
-    		break;
-    	case MODE_PACKET_TAIL2:
-    		if (c==PACKET_TAIL2) {
-    			packetReady=true;
-    			cmd_mode=MODE_CLI;
-    		} else {
-    			// Packet Error
-    			error=true;
-    		}
-    		break;
+    	// in packet processing mode
+    	// decode packet...
+    	if (packetDecoder_processData(&packetDecoder, c))
+    	{
+    		// packet detected, call callback
+    		packetHandler(&packet);
+    		// switch back to cli mode
+    		cmd_mode=MODE_CLI;
+    	} else if (packetDecoder.mode==MODE_PACKET_HEADER1) {
+    		cmd_mode=MODE_CLI;
     	}
 
-    	if (packetReady) {
-    		Serial1.write("Packet Received!\r\n");
-
-    	}
     }
 }
 
@@ -314,6 +257,11 @@ void cmdInit(uint32_t speed)
     cmd_tbl_list = NULL;
 
     cmd_mode=MODE_CLI;
+
+    // initialize packet storage
+    packet_init(&packet, 0, cmd_binary_data, CMD_BINARY_MAX_SIZE);
+    // initialize decoder
+    packetDecoder_init(&packetDecoder, &packet);
 
     // set the HalfDuplexSerial speed
     HalfDuplexSerial.begin(speed);

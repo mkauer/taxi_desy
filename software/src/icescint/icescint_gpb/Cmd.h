@@ -43,6 +43,7 @@
 
 #define MAX_MSG_SIZE    60
 #include <stdint.h>
+#include "protocol.h"
 
 // command line structure
 typedef struct _cmd_t
@@ -59,6 +60,8 @@ void cmdInit(uint32_t speed);
 void cmdPoll();
 void cmdAdd(const char *name, void (*func)(int argc, char **argv));
 uint32_t cmdStr2Num(char *str, uint8_t base);
+
+void packetHandler(packet_t* _packet);
 
 class cmd_write_scope
 {

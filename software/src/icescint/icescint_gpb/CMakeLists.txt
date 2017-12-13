@@ -4,6 +4,9 @@ include(${CMAKE_SOURCE_DIR}/cmake/avr-cross.cmake)
 
 if (AVR_CC) 
 	set(AVR_MCU atmega128)
+	set(AVR_PROGRAMMER avrispmkII)
+	set(AVR_UPLOAD_MCU m128)
+	
 	
 	include_directories(./libs)
 	
@@ -37,7 +40,7 @@ if (AVR_CC)
 	# main program
 	include_directories(.)
 	
-	set(SRC	${SRC} Cmd.cpp main.cpp )
+	set(SRC	${SRC} protocol.c Cmd.cpp main.cpp )
 	
 	add_avr_executable(icescint "${SRC}" "${LIBS}")
 else()

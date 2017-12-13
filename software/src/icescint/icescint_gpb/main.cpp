@@ -2,6 +2,11 @@
 #include <HalfDuplexHardwareSerial.h>
 #include <Cmd.h>
 
+/*
+ * version 1.0
+ * version 1.1 - added packet decoder and sender
+ */
+
 // fuses must be set in mcu, in order to function correctly:
 // - BODEN   = 1
 // - BODLEV  = 2.7V
@@ -20,10 +25,10 @@
 #define PIN_TERM_ENA 3 // PE3
 #define PIN_LG_SEL   7 /* does not exist as arduino pin */     // PE7
 
-#define PIN_TEST_LED_SCL 21 // PD0
+//#define PIN_TEST_LED_SCL 21 // PD0
 
-bool led_blink_enb = false;
-int led_blink_delay_time = 1000;
+//bool led_blink_enb = false;
+//int led_blink_delay_time = 1000;
 
 // converts a ascii byte representated hex nibble (0..9 , a..f or A..F) into a integer 0..15
 // on success returns integere 0..15
@@ -59,6 +64,22 @@ char nibbleToHex(char val) {
 	}
 }
 
+// packet type definitions 0x0 - 0xf reserved for boot loader
+#define PACKET_TYPE_TEST 	0x10
+#define PACKET_TYPE_LGSEL 	0x11
+#define PACKET_TYPE_RXLBSEL 0x12
+#define PACKET_TYPE_PMT		0x13
+#define PACKET_TYPE_STATUS	0x14
+#define PACKET_TYPE_UNKNOWN	0x15
+
+typedef enum {
+	PMT_ANSWER_CLI,
+	PMT_ANSWER_PACKET,
+} pmt_answer_mode_t;
+
+pmt_answer_mode_t pmt_answer_mode=PMT_ANSWER_CLI;
+
+// Photo Multiplier Hamamatsu Power Supply Protocol (CL204-02)
 
 typedef enum {
 	PMT_DECODER_MODE_STX,
@@ -133,8 +154,119 @@ char pmt_decoder_process(pmt_decoder_t* _decoder, char _data)
 	return packetReady;
 }
 
-// Print "hello world" when called from the command line.
-//
+// serializes packet into a buffer with packet frame
+int packet_send(uint8_t _type, unsigned char* _buf, size_t _size)
+{
+	unsigned char checksum=0;
+#define SEND(X) do { HalfDuplexSerial.write(X); checksum+=X; } while(0)
+
+	HalfDuplexSerial.beginWrite();
+	SEND(0xca);
+	SEND(0xfe);
+	SEND(_type);
+	SEND(_size & 0xff);
+	SEND((_size >> 8) & 0xff);
+
+	for (int i=0;i<_size;i++) SEND(_buf[i]);
+
+	HalfDuplexSerial.write(checksum);
+	HalfDuplexSerial.write(0xef);
+	HalfDuplexSerial.write(0xac);
+	HalfDuplexSerial.endWrite();
+	return _size+8;
+#undef SEND
+}
+
+// set lgsel pin to 1 or 0
+void set_lgsel(int val)
+{
+	if (val) {
+		PORTE|=_BV(PIN_LG_SEL);
+	} else {
+		PORTE&=~_BV(PIN_LG_SEL);
+	}
+}
+// returns current lg pin setting 0 (clear) or 1 (set)
+int get_lgsel(void)
+{
+	return (PORTE & _BV(PIN_LG_SEL))?1:0;
+}
+// set rxlbsel pin to 1 or to 0
+void set_rxlbsel(int val)
+{
+	if (val) {
+		PORTE|=_BV(PIN_RXLB_SEL);
+	} else {
+		PORTE&=~_BV(PIN_RXLB_SEL);
+	}
+}
+// returns current rxlbsel pin 0 (clear) or 1 (set)
+int get_rxlbsel(void)
+{
+	return (PORTE & _BV(PIN_RXLB_SEL))?1:0;
+}
+
+void packetHandler(packet_t* _packet)
+{
+	unsigned char buf[50];
+
+	if (_packet->type==PACKET_TYPE_TEST)
+	{
+		// received test packet, just answer with similar packet
+		buf[0]=4;
+		buf[1]=3;
+		buf[2]=2;
+		buf[3]=1;
+		packet_send(PACKET_TYPE_TEST, buf, 4);
+		return;
+	}
+	if (_packet->type==PACKET_TYPE_LGSEL)
+	{
+		set_lgsel(_packet->data[0]);
+		packet_send(PACKET_TYPE_LGSEL, buf, 0);
+		return;
+	}
+	if (_packet->type==PACKET_TYPE_RXLBSEL)
+	{
+		set_rxlbsel(_packet->data[0]);
+		packet_send(PACKET_TYPE_RXLBSEL, buf, 0);
+		return;
+	}
+	if (_packet->type==PACKET_TYPE_PMT)
+	{
+		// forward command to pmt
+		unsigned char checksum=0;
+#define SEND(X) do  { Serial1.write(X); checksum+=X; } while(0)
+		SEND(0x02); // STX
+		for (int i=0;i<_packet->size;i++) SEND(_packet->data[i]);
+		SEND(0x03);
+		Serial1.write(nibbleToHex(checksum >> 4));
+		Serial1.write(nibbleToHex(checksum & 0xf));
+		Serial1.write(0x0d);
+#undef SEND
+		pmt_answer_mode=PMT_ANSWER_PACKET;
+		return;
+	}
+	if (_packet->type==PACKET_TYPE_STATUS)
+	{
+		// received test packet, just answer with similar packet
+		buf[0]=get_lgsel();
+		buf[1]=get_rxlbsel();
+		packet_send(PACKET_TYPE_STATUS, buf, 2);
+		return;
+	}
+
+	buf[0]=_packet->type;
+	buf[1]=_packet->size & 0xff;
+	buf[2]=_packet->size >> 8;
+
+	packet_send(PACKET_TYPE_UNKNOWN, buf, 3);
+
+
+}
+
+// **** CLI Command Implementation
+
 // Usage:
 // hello
 void help(int arg_cnt, char **args)
@@ -146,9 +278,6 @@ void help(int arg_cnt, char **args)
 	HalfDuplexSerial.write("rxlbsel	- (0) 1k-gnd => lg-in , (1) rs485-rx => lg-in \r\n");
 	HalfDuplexSerial.write("status	- print status\r\n");
 	HalfDuplexSerial.write("pmt HPO - get monitor info and status\r\n");
-//	HalfDuplexSerial.write("temp    - read temperature (i2c)\r\n");
-//	HalfDuplexSerial.write("baud 	- set rs232 baud rate\r\n");
-//	HalfDuplexSerial.write("savecfg - store settings to eeprom\r\n");
 }
 
 // Print "hello world" when called from the command line.
@@ -160,6 +289,7 @@ void hello(int arg_cnt, char **args)
 	HalfDuplexSerial.println("Hello world!\r\n");
 }
 
+// pmt command
 void send(int arg_cnt, char **args)
 {
 	if (arg_cnt<0) {
@@ -186,8 +316,11 @@ void send(int arg_cnt, char **args)
 
 	HalfDuplexSerial.println("Sending command via rs232.\r\n");
 	Serial1.write(buf,len+5);
+
+	pmt_answer_mode=PMT_ANSWER_CLI;
 }
 
+// lgsel command
 void lgsel(int arg_cnt, char **args)
 {
 	if (arg_cnt>0) {
@@ -212,6 +345,7 @@ void lgsel(int arg_cnt, char **args)
 	}
 }
 
+// rxlbsel command
 void rxlbsel(int arg_cnt, char **args)
 {
 	if (arg_cnt>0) {
@@ -236,6 +370,7 @@ void rxlbsel(int arg_cnt, char **args)
 	}
 }
 
+// status command
 void status(int arg_cnt, char **args)
 {
 	HalfDuplexSerial.write("lgsel = ");
@@ -295,19 +430,15 @@ void setup() {
   cmdAdd("lgsel", lgsel);
   cmdAdd("rxlbsel", rxlbsel);
   cmdAdd("status", status);
-//  cmdAdd("test", test);
-// cmdAdd("baud", baud);
-//  cmdAdd("save", save);
 
   DDRE=DDRE | 0b10111000; // activate all output control pins
   DDRD=1;
 
   //cmd_write_scope scope;
-//  Serial1.println("RESET! Hello RS232!");
-  HalfDuplexSerial.beginWrite();
-  HalfDuplexSerial.println("*** Icescint GDB Application - booting ***\r\n");
-//  cmd_display();
+/*  HalfDuplexSerial.beginWrite();
+  HalfDuplexSerial.println("*** Icescint GDB Application v1.1 - booting ***\r\n");
   HalfDuplexSerial.endWrite();
+  */
 
   pmt_decoder_init(&pmt_decoder);
 
@@ -324,80 +455,38 @@ void loop()
 
   cmdPoll();
 
-/*  if (HalfDuplexSerial.available()) {
-    int inByte = HalfDuplexSerial.read();
-    Serial1.write(inByte);
-  }
-  */
-
   // read from port 0, send to port 1:
   if (Serial1.available()) {
 	  int inByte = Serial1.read();
-	  //Serial1.write(inByte);
-/*
-	  if (s_pos<sizeof(s)) {
-		  s[s_pos]=inByte;
-		  s_pos++;
-	  }
 
-	  if (inByte==0xd) {
-		  HalfDuplexSerial.beginWrite();
-		  for (int i=0;i<s_pos;i++) {
-			  HalfDuplexSerial.write(nibbleToHex(s[i]>>4));
-			  HalfDuplexSerial.write(nibbleToHex(s[i]));
-			  HalfDuplexSerial.write(' ');
-		  }
-		  HalfDuplexSerial.write(0x10);
-		  s_pos=0;
-		  HalfDuplexSerial.endWrite();
-	  }
-	  */
-/*	  HalfDuplexSerial.beginWrite();
-	  HalfDuplexSerial.endWrite();*/
 	  int res=pmt_decoder_process(&pmt_decoder, inByte);
 	  if (res) {
-		  HalfDuplexSerial.beginWrite();
-		  HalfDuplexSerial.write("\r\n");
+		  if (pmt_answer_mode==PMT_ANSWER_CLI) {
+			  HalfDuplexSerial.beginWrite();
+			  HalfDuplexSerial.write("\r\n");
 
-		  HalfDuplexSerial.write("pmt: '");
-		  HalfDuplexSerial.write(pmt_decoder.data, pmt_decoder.data_len);
-		  HalfDuplexSerial.write("' ");
-		  if (pmt_decoder.checksum!=pmt_decoder.checksum_received) {
-			  HalfDuplexSerial.write("checksum mismatch!");
+			  HalfDuplexSerial.write("pmt: '");
+			  HalfDuplexSerial.write(pmt_decoder.data, pmt_decoder.data_len);
+			  HalfDuplexSerial.write("' ");
+			  if (pmt_decoder.checksum!=pmt_decoder.checksum_received) {
+				  HalfDuplexSerial.write("checksum mismatch!");
 
-			  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum>>4));
-			  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum));
+				  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum>>4));
+				  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum));
 
-			  HalfDuplexSerial.write("!=");
-			  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum_received>>4));
-			  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum_received));
+				  HalfDuplexSerial.write("!=");
+				  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum_received>>4));
+				  HalfDuplexSerial.write(nibbleToHex(pmt_decoder.checksum_received));
 
+			  }
+			  HalfDuplexSerial.write("\r\nCMD>");
+			  HalfDuplexSerial.endWrite();
+		  } else {
+			  // send back pmt answer as packet
+			  packet_send(PACKET_TYPE_PMT, (unsigned char*)pmt_decoder.data, pmt_decoder.data_len);
 		  }
-		  HalfDuplexSerial.write("\r\nCMD>");
-
-
-		  HalfDuplexSerial.endWrite();
 	  }
   }
-
-//  delay(1000);
-
-
-//  Serial1.write("RESET! Hello RS232! ");
-/*
-  char buf[30];
-  sprintf(buf,"0x%x 0x%x \n",(counter >>16) , (counter) & 0xffff);
-  counter++;
-  Serial1.println(buf);
-*/
-/*  delay(10);
-
-  HalfDuplexSerial.beginWrite();
-  HalfDuplexSerial.write("Hello RS485 ... !\r\n");
-  HalfDuplexSerial.write("ABCDEFGHIJKLM");
-//  delay(100);
-  HalfDuplexSerial.endWrite();
-*/
 }
 
 void main(void) __attribute__ ((noreturn));

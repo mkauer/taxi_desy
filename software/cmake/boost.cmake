@@ -5,13 +5,13 @@ else()
 	set(BOOST_ROOT ${CMAKE_FIND_ROOT_PATH} )
 endif()
 
-set(Boost_NO_SYSTEM_PATHS ON)
+#set(Boost_NO_SYSTEM_PATHS ON)
 set(Boost_DEBUG false)
 set(Boost_USE_MULTITHREADED ON)	
 
-set(Boost_ADDITIONAL_VERSIONS "1.53" "1.53.0" "1.54" "1.54.0")
-#find_package(Boost 1.53 COMPONENTS atomic chrono date_time filesystem graph iostreams program_options regex random signals system thread timer)
-find_package(Boost 1.53 COMPONENTS chrono date_time filesystem graph program_options regex random signals system thread timer)
+set(Boost_ADDITIONAL_VERSIONS "1.53" "1.53.0" "1.54" "1.54.0" "1.60")
+find_package(Boost 1.53 COMPONENTS atomic chrono date_time filesystem graph iostreams program_options regex random signals system thread timer)
+find_package(Boost COMPONENTS chrono date_time filesystem graph program_options regex random signals system thread timer)
 message(INFO ": BOOST_INCLUDEDIR = " ${Boost_INCLUDE_DIR})
 #message(INFO ": BOOST_LIBRARIES = " ${Boost_LIBRARIES})
 

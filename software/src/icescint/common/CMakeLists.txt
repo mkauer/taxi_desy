@@ -8,6 +8,8 @@ SET(SRC ${SRCC} ${SRCCPP})
 
 include_directories( . )
 
+    set(AVR_PROGRAMMER avrispmkII)
+
 set(HESS1U_THRIFT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thriftSlowControl)
 set(THRIFT_SRC )
 thrift_generate(THRIFT_SRC ${HESS1U_THRIFT_SOURCE_DIR}/slowcontrol.thrift)
