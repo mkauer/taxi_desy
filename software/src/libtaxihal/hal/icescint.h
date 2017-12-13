@@ -203,26 +203,31 @@ static inline uint16_t icescint_getPixelTriggerCounterRate(uint16_t _channel)
 //
 // RS485
 //
-void icescint_doRs485Send(uint8_t _panelMask)
+static inline void icescint_doRs485Send(uint8_t _panelMask)
 {
 	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATASEND, _panelMask);
 }
-void icescint_setRs485Data(uint8_t _data, uint8_t _panel)
+static inline void icescint_setRs485Data(uint8_t _data, uint8_t _panel)
 {
 	_panel = _panel & 0x7;
 	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATA+(2*_panel), _data);
 }
-uint16_t icescint_getRs485Data(uint8_t _panel)
+static inline uint16_t icescint_getRs485Data(uint8_t _panel)
 {
 	_panel = _panel & 0x7;
 	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATA+(2*_panel));
 }
-void icescint_doRs485SendData(uint8_t _data, uint8_t _panel)
+static inline void icescint_doRs485SendData(uint8_t _data, uint8_t _panel)
 {
 	_panel = _panel & 0x7;
 	icescint_setRs485Data(_data, _panel);
 	icescint_doRs485Send(1<<_panel);
 }
+static inline uint16_t icescint_getRs485RxFifoCount(uint8_t _panel)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATAWORDS+(2*_panel));
+}
+
 //uint16_t icescint_getRs485Data(uint8_t _panel)
 //{
 //	_panel = clipValueMax(_panel, ICESCINT_NUMBEROFCHANNELS-1);

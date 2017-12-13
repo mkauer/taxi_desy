@@ -13,7 +13,11 @@
 #include <fstream>
 
 #include "FlashMemory.hpp"
+
 #include "gpb/USBSerialTransport.hpp"
+
+#include "gpb/TaxiSerialTransport.hpp"
+
 #include "gpb/GPBPacketProtocol.hpp"
 
 #define  error_message(MSG...) (MSG)
@@ -227,7 +231,7 @@ public:
 			while(1) {
 				usleep(10000);
 				// Send
-				std::cout << "send packet" << std::endl;
+				//std::cout << "send packet" << std::endl;
 				gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
 				prepare_writeCmd(&packet, addr, buf, s);
 				m_protocol->sendPacket( &packet);
