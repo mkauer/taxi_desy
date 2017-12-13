@@ -20,8 +20,18 @@
 #include <hal/icescint.h>
 #include <hal/icescint_panelGeneralPurposeBoard.hpp>
 
-using namespace std;
+//using namespace std;
 namespace po = boost::program_options;
+
+int stringHexToInt(std::string _string)
+{
+	int temp;
+	std::stringstream interpreter;
+	interpreter << std::hex << _string;
+	interpreter >> temp;
+
+	return temp;
+}
 
 int main(int argc, char** argv)
 {
@@ -39,6 +49,8 @@ int main(int argc, char** argv)
 			("pon", "switch high voltage for sipm on")
 			("poff", "switch high voltage for sipm off")
 			("sethv,s", po::value<double>(&voltage), "set the voltage in Volt e.g. [56.78], step size is ~1.812mV")
+			("getrawtemperaturehex,r", "temperature value form the Hamamatsu power supply in hex")
+			("getrawtemperaturedec,R", "temperature value form the Hamamatsu power supply in decimal")
 			("custom,c", po::value<std::string>(&custom), "send custom command to panel (use '' if command has spaces)")
 			("timeout,t", po::value<int>(&timeout)->default_value(10), "rs485 timeout in ms")
 			("verbose,v", "be verbose")
@@ -58,7 +70,7 @@ int main(int argc, char** argv)
 
 	if (vm.count("help"))
 	{
-		cout << "*** icescint_panel - compiled " << __DATE__ << " " << __TIME__ << " ***"<< endl;
+		std::cout << "*** icescint_panel - compiled " << __DATE__ << " " << __TIME__ << " ***"<< std::endl;
 		std::cout << desc << std::endl;
 		return 1;
 	}
@@ -96,6 +108,27 @@ int main(int argc, char** argv)
 	else if(vm.count("custom"))
 	{
 		icescint_pannelCustomCommand(panel, custom, timeout, vm.count("verbose"));
+	}
+
+	if(vm.count("getrawtemperaturehex") || vm.count("getrawtemperaturedec"))
+	{
+		icescint_pannelFlushRxFifo(panel);
+		icescint_pannelCustomCommand(panel, "pmt HGT", timeout, vm.count("verbose"));
+		sleep(1);
+		for(int i=0;i<108;i++)
+		{
+			icescint_getRs485Data(panel);
+		}
+
+		char temp[5];
+		for(int i=0;i<4;i++)
+		{
+			temp[i] = char(icescint_getRs485Data(panel));
+		}
+		int temperature = stringHexToInt(std::string(temp));
+		if(vm.count("getrawtemperaturehex")){std::cout << "0x" << std::hex << temperature << std::endl;}
+		if(vm.count("getrawtemperaturedec")){std::cout << "" << std::dec << temperature << std::endl;}
+		icescint_pannelFlushRxFifo(panel);
 	}
 
 	return 0;
