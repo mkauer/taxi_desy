@@ -3,9 +3,13 @@
 #include <Cmd.h>
 
 /*
- * version 1.0
- * version 1.1 - added packet decoder and sender
+ * version 1.0 - first version, only with cli working
+ * version 1.1 - added packet decoder for non-cli access
  */
+
+// software version
+#define VERSION_MAJOR 0x01
+#define VERSION_MINOR 0x01
 
 // fuses must be set in mcu, in order to function correctly:
 // - BODEN   = 1
@@ -71,16 +75,22 @@ char nibbleToHex(char val) {
 #define PACKET_TYPE_PMT		0x13
 #define PACKET_TYPE_STATUS	0x14
 #define PACKET_TYPE_UNKNOWN	0x15
+#define PACKET_TYPE_VERSION	0x16
 
+
+// *** Support for Photo Multiplier Hamamatsu Power Supply Protocol (CL204-02)
+
+// when receiving an answer from the pmt base,
+// the answer is either send as a human readable answer
+// or as a packet (non-cli)
+// the mode depends on the last pmt request if it was cli or non-cli
 typedef enum {
 	PMT_ANSWER_CLI,
 	PMT_ANSWER_PACKET,
 } pmt_answer_mode_t;
-
 pmt_answer_mode_t pmt_answer_mode=PMT_ANSWER_CLI;
 
-// Photo Multiplier Hamamatsu Power Supply Protocol (CL204-02)
-
+// decoder modes
 typedef enum {
 	PMT_DECODER_MODE_STX,
 	PMT_DECODER_MODE_DATA,
@@ -90,13 +100,13 @@ typedef enum {
 	PMT_DECODER_MODE_DELIM,
 } pmt_decoder_mode_t;
 
+// pmt packet structure
 typedef struct {
 	char data[52];
 	char data_pos;
 	char data_len;
 	char checksum;
 	char checksum_received;
-
 	pmt_decoder_mode_t mode;
 } pmt_decoder_t;
 
@@ -105,6 +115,7 @@ void pmt_decoder_init(pmt_decoder_t* _decoder)
 	_decoder->mode=PMT_DECODER_MODE_STX;
 }
 
+// decode state machine
 char pmt_decoder_process(pmt_decoder_t* _decoder, char _data)
 {
 	char packetReady=0;
@@ -154,28 +165,7 @@ char pmt_decoder_process(pmt_decoder_t* _decoder, char _data)
 	return packetReady;
 }
 
-// serializes packet into a buffer with packet frame
-int packet_send(uint8_t _type, unsigned char* _buf, size_t _size)
-{
-	unsigned char checksum=0;
-#define SEND(X) do { HalfDuplexSerial.write(X); checksum+=X; } while(0)
-
-	HalfDuplexSerial.beginWrite();
-	SEND(0xca);
-	SEND(0xfe);
-	SEND(_type);
-	SEND(_size & 0xff);
-	SEND((_size >> 8) & 0xff);
-
-	for (int i=0;i<_size;i++) SEND(_buf[i]);
-
-	HalfDuplexSerial.write(checksum);
-	HalfDuplexSerial.write(0xef);
-	HalfDuplexSerial.write(0xac);
-	HalfDuplexSerial.endWrite();
-	return _size+8;
-#undef SEND
-}
+// *** Little Helper access functions
 
 // set lgsel pin to 1 or 0
 void set_lgsel(int val)
@@ -206,9 +196,43 @@ int get_rxlbsel(void)
 	return (PORTE & _BV(PIN_RXLB_SEL))?1:0;
 }
 
+// Packet protocol sender function
+// serializes a datablock into the gpb packet frame format
+// Packet frame format is
+//  - 16 bit magic 1. 0xCA  2. 0xFE
+//  -  8 bit type
+//  - 16 bit size (Little Endian)
+//  -  n bytes data
+//  -  8 bit checksum
+//  - 16 bit tailer 1. 0xEF 2. 0xAC
+
+int packet_send(uint8_t _type, unsigned char* _buf, size_t _size)
+{
+	unsigned char checksum=0;
+#define SEND(X) do { HalfDuplexSerial.write(X); checksum+=X; } while(0)
+
+	HalfDuplexSerial.beginWrite();
+	SEND(0xca);
+	SEND(0xfe);
+	SEND(_type);
+	SEND(_size & 0xff);
+	SEND((_size >> 8) & 0xff);
+
+	for (int i=0;i<_size;i++) SEND(_buf[i]);
+
+	HalfDuplexSerial.write(checksum);
+	HalfDuplexSerial.write(0xef);
+	HalfDuplexSerial.write(0xac);
+	HalfDuplexSerial.endWrite();
+	return _size+8;
+#undef SEND
+}
+
+// Callback, get called from the cmd.cpp cli command handler
+// when it successfully decoded a gpb packet frame
 void packetHandler(packet_t* _packet)
 {
-	unsigned char buf[50];
+	unsigned char buf[10];
 
 	if (_packet->type==PACKET_TYPE_TEST)
 	{
@@ -222,19 +246,22 @@ void packetHandler(packet_t* _packet)
 	}
 	if (_packet->type==PACKET_TYPE_LGSEL)
 	{
+		// received lgsel setter packet
 		set_lgsel(_packet->data[0]);
 		packet_send(PACKET_TYPE_LGSEL, buf, 0);
 		return;
 	}
 	if (_packet->type==PACKET_TYPE_RXLBSEL)
 	{
+		// received rxlbsel setter packet
 		set_rxlbsel(_packet->data[0]);
 		packet_send(PACKET_TYPE_RXLBSEL, buf, 0);
 		return;
 	}
 	if (_packet->type==PACKET_TYPE_PMT)
 	{
-		// forward command to pmt
+		// received command packet for pmt
+		// which we forward immediately
 		unsigned char checksum=0;
 #define SEND(X) do  { Serial1.write(X); checksum+=X; } while(0)
 		SEND(0x02); // STX
@@ -245,24 +272,38 @@ void packetHandler(packet_t* _packet)
 		Serial1.write(0x0d);
 #undef SEND
 		pmt_answer_mode=PMT_ANSWER_PACKET;
+		// at this point we do not send any gpb packet answer
+		// because we wait until the pmt answers
+		// Note: if the command is no recognized by the pmt
+		// it might not answer
 		return;
 	}
 	if (_packet->type==PACKET_TYPE_STATUS)
 	{
-		// received test packet, just answer with similar packet
+		// received status request packet,
+		// answer with lgsel and rxlbsel settings
 		buf[0]=get_lgsel();
 		buf[1]=get_rxlbsel();
 		packet_send(PACKET_TYPE_STATUS, buf, 2);
 		return;
 	}
+	if (_packet->type==PACKET_TYPE_VERSION)
+	{
+		// received version request
+		buf[0]=VERSION_MAJOR;
+		buf[1]=VERSION_MINOR;
+		packet_send(PACKET_TYPE_STATUS, buf, 2);
+		return;
 
+	}
+
+	// we received some unknown packet which we do not support
+	// lets answer with UNKNOWN reply
 	buf[0]=_packet->type;
 	buf[1]=_packet->size & 0xff;
 	buf[2]=_packet->size >> 8;
 
 	packet_send(PACKET_TYPE_UNKNOWN, buf, 3);
-
-
 }
 
 // **** CLI Command Implementation
@@ -272,34 +313,47 @@ void packetHandler(packet_t* _packet)
 void help(int arg_cnt, char **args)
 {
 	HalfDuplexSerial.write("help    - print this help\r\n");
-	HalfDuplexSerial.write("hello   - hello world test\r\n");
+	HalfDuplexSerial.write("hello   - hello test\r\n");
 	HalfDuplexSerial.write("pmt     - send command to Hamamats pmt power controller via rs232\r\n");
 	HalfDuplexSerial.write("lgsel   - (0) hg-in => hg-out , (1) lg => hg-out \r\n");
 	HalfDuplexSerial.write("rxlbsel	- (0) 1k-gnd => lg-in , (1) rs485-rx => lg-in \r\n");
 	HalfDuplexSerial.write("status	- print status\r\n");
+	HalfDuplexSerial.write("version	- print version\r\n");
 	HalfDuplexSerial.write("pmt HPO - get monitor info and status\r\n");
 }
 
-// Print "hello world" when called from the command line.
-//
-// Usage:
-// hello
 void hello(int arg_cnt, char **args)
 {
-	HalfDuplexSerial.println("Hello world!\r\n");
+	HalfDuplexSerial.println("Hello my friend!\r\n");
+}
+
+void version(int arg_cnt, char **args)
+{
+	HalfDuplexSerial.write("version: ");
+	int digits[4];
+	digits[0]=VERSION_MAJOR / 10;
+	digits[1]=VERSION_MAJOR % 10;
+	digits[2]=VERSION_MINOR;
+
+	if (digits[0]) HalfDuplexSerial.write('0'+digits[0]);
+	HalfDuplexSerial.write('0'+digits[1]);
+	HalfDuplexSerial.write('.');
+	HalfDuplexSerial.write('0'+digits[2]);
+
+	HalfDuplexSerial.println("\r\n");
 }
 
 // pmt command
-void send(int arg_cnt, char **args)
+void pmt(int arg_cnt, char **args)
 {
 	if (arg_cnt<0) {
-		HalfDuplexSerial.println("send: need 1 parameter, ex.g.: send HPO\r\n");
+		HalfDuplexSerial.println("pmt: need 1 parameter, ex.g.: send HPO\r\n");
 		return;
 	}
 	char buf[100];
 	int len=strlen(args[1]);
 	if (len>=52) {
-		HalfDuplexSerial.println("send: string must be < 52 bytes\r\n");
+		HalfDuplexSerial.println("pmt: string must be < 52 bytes\r\n");
 		return;
 	}
 	unsigned char checksum=0x02;
@@ -314,7 +368,7 @@ void send(int arg_cnt, char **args)
 	buf[len+3]=nibbleToHex((checksum & 0xf));
 	buf[len+4]=0x0d;
 
-	HalfDuplexSerial.println("Sending command via rs232.\r\n");
+	HalfDuplexSerial.println("Sending command via rs232 to pmt.\r\n");
 	Serial1.write(buf,len+5);
 
 	pmt_answer_mode=PMT_ANSWER_CLI;
@@ -387,23 +441,6 @@ void status(int arg_cnt, char **args)
 	}
 }
 
-/*
-void test(int arg_cnt, char **args)
-{
-	HalfDuplexSerial.println("running test.\r\n");
-}
-
-void baud(int arg_cnt, char **args)
-{
-	HalfDuplexSerial.println("set baud rate to\r\n");
-}
-
-void save(int arg_cnt, char **args)
-{
-	HalfDuplexSerial.println("settings stored\r\n");
-}
-*/
-
 int counter=0;
 
 pmt_decoder_t pmt_decoder;
@@ -425,20 +462,15 @@ void setup() {
   // arg_cnt is the number of arguments typed into the command line
   // args is a list of argument strings that were typed into the command line
   cmdAdd("hello", hello);
-  cmdAdd("pmt", send);
+  cmdAdd("pmt", pmt);
   cmdAdd("help", help);
   cmdAdd("lgsel", lgsel);
   cmdAdd("rxlbsel", rxlbsel);
   cmdAdd("status", status);
+  cmdAdd("version", version);
 
   DDRE=DDRE | 0b10111000; // activate all output control pins
   DDRD=1;
-
-  //cmd_write_scope scope;
-/*  HalfDuplexSerial.beginWrite();
-  HalfDuplexSerial.println("*** Icescint GDB Application v1.1 - booting ***\r\n");
-  HalfDuplexSerial.endWrite();
-  */
 
   pmt_decoder_init(&pmt_decoder);
 
@@ -501,7 +533,6 @@ void main(void)
 
 	for (;;) {
 		loop();
-		//if (serialEventRun) serialEventRun();
 	}
 }
 
