@@ -5,8 +5,8 @@ include_directories( . )
 set(SRC main.cpp)
 
 use_library( boost LIBS )
+use_library( icescint_gpb LIBS )
 
 compile_executable(icescint_gpb_programmer "${SRC}" "${LIBS}")
-compile_executable(icescint_test_pmt_sender "testpmtsender.cpp" "${LIBS}")
- 
+
 install(TARGETS icescint_gpb_programmer RUNTIME DESTINATION ${INSTALL_BIN})
