@@ -98,10 +98,10 @@ begin
 			dout => registerRead.rs485FifoData(i),
 			full => registerRead.rs485FifoFull(i),
 			empty => registerRead.rs485FifoEmpty(i),
-			data_count => registerRead.rs485FifoWords(i)(4 downto 0)
+			data_count => registerRead.rs485FifoWords(i)(7 downto 0)
 		);
 	
-		registerRead.rs485FifoWords(i)(7 downto 5) <= (others=>'0');
+		--registerRead.rs485FifoWords(i)(7 downto 6) <= "0";
 	end generate;
 
 	g2: if(numberOfUarts < 8) generate
@@ -138,6 +138,10 @@ begin
 				rxBusy_old <= (others=>'0');
 				fifoReset <= (others=>'1'); -- autoreset
 			else
+				if(registerWrite.rs485FifoClear /= x"00") then
+					fifoReset <= registerWrite.rs485FifoClear; -- autoreset
+				end if;
+
 				rxBusy_old <= rxBusy;
 
 				q:for i in 0 to fifoWrite'length-1 loop

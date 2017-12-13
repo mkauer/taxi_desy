@@ -252,6 +252,8 @@ architecture behaviour of taxiTop is
 	signal iceTad_0w : iceTad_registerWrite_t;
 	signal panelPower_0r : panelPower_registerRead_t;
 	signal panelPower_0w : panelPower_registerWrite_t;
+	--signal _0r : _registerRead_t;
+	--signal _0w : _registerWrite_t;
 
 	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
 	signal triggerTiming : triggerTiming_t;

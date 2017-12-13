@@ -74,7 +74,7 @@ use unisim.vcomponents.all;
 entity rs485fifo_exdes is
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(5-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(8-1 DOWNTO 0);
            SRST                      : IN  std_logic;
            WR_EN 		     : IN  std_logic;
            RD_EN                     : IN  std_logic;
@@ -96,7 +96,7 @@ architecture xilinx of rs485fifo_exdes is
   component rs485fifo is
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(5-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(8-1 DOWNTO 0);
            SRST                      : IN  std_logic;
            WR_EN 		     : IN  std_logic;
            RD_EN                     : IN  std_logic;

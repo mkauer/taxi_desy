@@ -93,6 +93,7 @@ architecture behavior of registerInterface_iceScint is
 	signal actualOffsetCorrectionRamValue : std_logic_vector(15 downto 0) := (others => '0');
 
 	signal eventFifoWordsDmaSlice_latched : std_logic_vector(3 downto 0) := (others => '0');
+	signal whiteRabbitTiming_0r_irigDataLatched : std_logic_vector(89 downto 0) := (others => '0');
 	
 begin
 
@@ -170,6 +171,7 @@ g0: if moduleEnabled /= 0 generate
 			eventFifoSystem_0w.forceIrq <= '0'; -- autoreset
 			eventFifoSystem_0w.clearEventCounter <= '0'; -- autoreset
 			iceTad_0w.rs485TxStart <= (others=>'0'); -- autoreset
+			iceTad_0w.rs485FifoClear <= (others=>'0'); -- autoreset
 			iceTad_0w.rs485FifoRead <= (others=>'0'); -- autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
@@ -319,6 +321,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"030c" => iceTad_0w.rs485Data(6) <= dataBusIn(7 downto 0); 
 						when x"030e" => iceTad_0w.rs485Data(7) <= dataBusIn(7 downto 0); 
 						when x"0310" => iceTad_0w.rs485TxStart <= dataBusIn(7 downto 0); -- autoreset
+						when x"0318" => iceTad_0w.rs485FifoClear <= dataBusIn(7 downto 0); -- autoreset
 						
 						--when x"1000" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
 						--when x"1800" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
@@ -470,6 +473,23 @@ g0: if moduleEnabled /= 0 generate
 						when x"032a" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(5);
 						when x"032c" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(6);
 						when x"032e" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(7);
+						
+						when x"0400" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r.irigDataLatched(8 downto 0); whiteRabbitTiming_0r_irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched;
+						when x"0402" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(17 downto 9);
+						when x"0404" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(26 downto 18);
+						when x"0406" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(35 downto 27);
+						when x"0408" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(44 downto 36);
+						when x"040a" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(53 downto 45);
+						when x"040c" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(62 downto 54);
+						when x"040e" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(71 downto 63);
+						when x"0410" => readDataBuffer <= "00000000" & whiteRabbitTiming_0r_irigDataLatched(79 downto 72);
+						when x"0412" => readDataBuffer <= whiteRabbitTiming_0r.errorCounter;
+						when x"0420" => readDataBuffer <= whiteRabbitTiming_0r.irigDataLatched(15 downto 0); whiteRabbitTiming_0r_irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched;
+						when x"0422" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(31 downto 16);
+						when x"0424" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(47 downto 32);
+						when x"0426" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(63 downto 48);
+						when x"0428" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(79 downto 64);
+						when x"042a" => readDataBuffer <= "000000" & whiteRabbitTiming_0r_irigDataLatched(89 downto 80);
 						
 						when x"f000" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoEmptyA;
 						when x"f002" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoValidA;

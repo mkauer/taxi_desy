@@ -259,6 +259,8 @@ package types is
 
 	type whiteRabbitTiming_registerRead_t is record
 		counterPeriod : std_logic_vector(15 downto 0);
+		irigDataLatched : std_logic_vector(89 downto 0);
+		errorCounter : std_logic_vector(15 downto 0);
 	end record;
 	
 	type whiteRabbitTiming_registerWrite_t is record
@@ -272,6 +274,7 @@ package types is
 		realTimeCounterLatched : std_logic_vector(63 downto 0);
 		whiteRabbitClockCounterLatched : std_logic_vector(31 downto 0);
 		localClockSubSecondCounterLatched : std_logic_vector(31 downto 0);
+		irigDataLatched : std_logic_vector(89 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -440,6 +443,7 @@ package types is
 		rs485Data : data8x8Bit_t;
 		rs485TxStart : std_logic_vector(7 downto 0);
 		rs485FifoRead : std_logic_vector(7 downto 0);
+		rs485FifoClear : std_logic_vector(7 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
