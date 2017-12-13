@@ -22,6 +22,8 @@ else()
 	
 	add_subdirectory( common )
 	
+	add_subdirectory( libgpb )
+		
 	add_subdirectory( icescint_gpb_programmer )
 	add_subdirectory( icescint_gpb_client )
 	add_subdirectory( test_root )

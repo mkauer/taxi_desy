@@ -40,6 +40,7 @@ register_library( src/libtaxihal taxihal )
 register_library( src/libcommon common ) 
 
 register_library( src/icescint/common icescint_common ) 
+register_library( src/icescint/libgpb icescint_gpb ) 
 
 ############################# LIBRARY Setup ############################
 #

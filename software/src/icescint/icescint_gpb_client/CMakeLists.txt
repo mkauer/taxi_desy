@@ -5,6 +5,7 @@ include_directories( . )
 set(SRC main.cpp)
 
 use_library( boost LIBS )
+use_library( icescint_gpb LIBS )
 
 compile_executable(icescint_gpb_client "${SRC}" "${LIBS}")
 
