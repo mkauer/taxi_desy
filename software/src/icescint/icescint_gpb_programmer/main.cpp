@@ -343,13 +343,11 @@ using namespace std;
 using boost::filesystem::file_size;
 namespace po = boost::program_options;
 
-
-
-
 int main(int argc, char** argv)
 {
 	cout << "***** icescint GPB cpu firmware programmer - " << __DATE__ << " " << __TIME__ << endl;
 
+	int panel=0;
 	string filename;
 
 	unsigned int     mask;
@@ -359,6 +357,9 @@ int main(int argc, char** argv)
 			("help,h", "")
 			("check,c", "check bootloader id")
 		    ("filename,f", po::value<std::string>(&filename), "set .hex file to use")
+#ifdef ARCH_AT91
+		    ("panel,p", po::value<int>(&panel), "select panel to use")
+#endif
 			("write,w", "write hex file to flash")
 			("verify,v", "verify hex file with flash")
 			("test,t", "test communication")
@@ -376,7 +377,17 @@ int main(int argc, char** argv)
 
 	//po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
 
+#ifdef ARCH_AT91
+	if (!vm.count("panel") || panel<0 || panel>7) {
+		cerr << "you must select a panel 0..7 !" << endl;
+		return 0
+	}
+
+	TaxiSerialTransport transport(panel);
+#else
 	USBSerialTransport transport(portname);
+#endif
+
 	GPBPacketProtocol protocol(&transport);
 	GPBProgrammer programmer(&protocol);
 
@@ -415,61 +426,4 @@ int main(int argc, char** argv)
 	} else if (vm.count("start")) {
 		programmer.startApp();
 	}
-
-/*
-	int fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
-	if (fd < 0)
-	{
-	        error_message ("error %d opening %s: %s", errno, portname, strerror (errno));
-	        return 0;
-	}
-
-	set_interface_attribs (fd, B9600, 0); // set speed to 115,200 bps, 8n1 (no parity)
-//	set_blocking (fd, 1	);                	// set no blocking
-
-	//sendPacketType(fd, 3, 0, 0);
-
-	packetDecoder_t decoder;
-	packet_t packet;
-	unsigned char packet_data[1000];
-
-	packet_init(&packet, 0, packet_data, sizeof(packet_data));
-	packetDecoder_init(&decoder, &packet);
-
-
-	while (1) {
-
-		usleep(500000);
-		packet_init(&packet, 0, packet_data, sizeof(packet_data));
-		prepare_readCmd(&packet, 0, 100);
-		sendPacket(fd, &packet);
-		int error=receivePacket(fd, &decoder, 2000);
-
-		if (error==1) {
-			std::cout << "received packet! type: " << (int) packet.type << std::endl;
-			if (packet.type==1) {
-				// received Programmer ID
-				std::stringstream s;
-				for (int i=0;i<packet.size;i++) {
-					s << packet.data[i];
-				}
-				std::cout << "Programmers ID: " << s.str() << std::endl;
-			}
-			else if (packet.type==3) {
-				// received Programmer ID
-				for (int i=0;i<packet.size;i++) {
-					std::cout << std::hex << " 0x" << (((unsigned int)packet.data[i])&0xff);
-				}
-				std::cout << std::endl;
-			}
-		}
-		if (error<0) {
-			std::cout << "decoder error: " << error << std::endl;
-		}
-		if (error==0) {
-			std::cout << "decoder timeout: " << std::endl;
-			break;
-		}
-
-	}*/
 }
