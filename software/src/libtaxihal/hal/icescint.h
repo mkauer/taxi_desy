@@ -257,6 +257,32 @@ static inline uint16_t icescint_getPanelPower(uint16_t _channel)
 	return testBitVal16(temp, clipValueMax(_channel,ICESCINT_NUMBEROFCHANNELS-1));
 }
 
+static inline void icescint_setBaselineStart(uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_BASELINESTART, _value);
+}
+static inline uint16_t icescint_getBaselineStart(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_BASELINESTART);
+}
+
+static inline void icescint_setBaselineStop(uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_BASELINESTOP, _value);
+}
+static inline uint16_t icescint_getBaselineStop(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_BASELINESTOP);
+}
+
+static inline void icescint_getIrig(uint16_t *_data)
+{
+	for(int i=0;i<6;i++)
+	{
+		*(_data+i) = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA + 2*i);
+	}
+}
+
 //static inline void icescint_set(uint16_t _value)
 //{
 //	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_XXX, _value);
