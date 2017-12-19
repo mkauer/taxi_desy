@@ -26,9 +26,12 @@ int main(int argc, char** argv)
 		("value,v", po::value<std::string>(), "value to write [hex]")
 		("compare,c", "read back the written value and compare")
 		("iterate,i", po::value<int>(&iterate)->default_value(1), "increments i times the address by 2 and reads/writes the selected value")
-		("times,t", po::value<int>(&times)->default_value(1), "number of read cycles per address")
+		("times,t", po::value<int>(&times)->default_value(1), "number of read/write cycles per address")
 		("decimal,d", "all values for read and write are [dec]")
-		("ascii,a", "all values for read and write are ascii (first char only if ore are given)")
+		("ascii,a", "all values for read and write are ascii (first char only if more are given)")
+		("printonlyvalues,o", "prints only the values for read and write")
+		("nonewline,n", "no newline at the end")
+		("silent,s", "no output at all")
 	;
 
 	po::variables_map vm;
@@ -37,7 +40,7 @@ int main(int argc, char** argv)
 
 	if (vm.count("help") || !(vm.count("read") || vm.count("write")))
 	{
-		std::cout << "*** smcrw - simple read/write tool for the smc interface" << __DATE__ << " " << __TIME__ << " ***" << std::endl;
+		std::cout << "*** smcrw - simple read/write tool for the smc interface" << " | " << __DATE__ << " | " << __TIME__ << " ***" << std::endl;
 		std::cout << desc << std::endl;
 	    return EXIT_ERROR;
 	}
@@ -54,17 +57,24 @@ int main(int argc, char** argv)
 			for(int j=0; j<times;j++)
 			{
 				uint16_t value = IORD_16DIRECT(addr, 0);
-				if(vm.count("decimal"))
+				if(!vm.count("silent"))
 				{
-					std::cout << "read from [0x" << std::hex << addr << "]: " << std::dec << "" << int(value) << std::dec << std::endl;
-				}
-				else if(vm.count("ascii"))
-				{
-					std::cout << "read from [0x" << std::hex << addr << "]: " << std::dec << "'" << char(value) << "'" << std::dec << std::endl;
-				}
-				else
-				{
-					std::cout << "read from [0x" << std::hex << addr << "]: " << "0x" << int(value) << std::dec << std::endl;
+					if(vm.count("decimal"))
+					{
+						if(vm.count("printonlyvalues")) {std::cout << std::dec << int(value);}
+						else {std::cout << "read from [0x" << std::hex << addr << "]: " << std::dec << "" << int(value) << std::dec;}
+					}
+					else if(vm.count("ascii"))
+					{
+						if(vm.count("printonlyvalues")) {std::cout << std::dec << char(value);}
+						else{std::cout << "read from [0x" << std::hex << addr << "]: " << std::dec << "'" << char(value) << "'" << std::dec;}
+					}
+					else
+					{
+						if(vm.count("printonlyvalues")) {std::cout << std::hex << "0x" << int(value);}
+						else{std::cout << "read from [0x" << std::hex << addr << "]: " << "0x" << int(value) << std::dec;}
+					}
+					if(!vm.count("nonewline")) {std::cout << std::endl;}
 				}
 			}
 			addr += 2;
@@ -93,31 +103,41 @@ int main(int argc, char** argv)
 				for(int j=0; j<times;j++)
 				{
 					IOWR_16DIRECT(addr, 0, value);
-					if(vm.count("decimal"))
+					if(!vm.count("silent"))
 					{
-						std::cout << "write to [0x" << std::hex << addr << "]: " << std::dec << "" << value << std::dec;
-					}
-					else
-					{
-						std::cout << "write to [0x" << std::hex << addr << "]: " << "0x" << value << std::dec;
+						if(vm.count("decimal"))
+						{
+							if(vm.count("printonlyvalues")) {std::cout << std::dec << int(value);}
+							else {std::cout << "write to [0x" << std::hex << addr << "]: " << std::dec << "" << value << std::dec;}
+						}
+						else if(vm.count("ascii"))
+						{
+							if(vm.count("printonlyvalues")) {std::cout << std::dec << char(value);}
+							else{std::cout << "write to [0x" << std::hex << addr << "]: " << "0x" << value << std::dec;}
+						}
+						else
+						{
+							if(vm.count("printonlyvalues")) {std::cout << std::hex << "0x" << int(value);}
+							else{std::cout << "write to [0x" << std::hex << addr << "]: " << "0x" << value << std::dec;}
+						}
 					}
 
 					if(vm.count("compare"))
 					{
 						int valueRead = IORD_16DIRECT(addr, 0);
-						if(valueRead == value)
+						if(!vm.count("silent"))
 						{
-							std::cout << " ok" << std::endl;
-						}
-						else
-						{
-							std::cout << " failed: 0x" << std::hex << value << " != " << "0x" << valueRead << std::dec << std::endl;
+							if(valueRead == value)
+							{
+								std::cout << " ok";
+							}
+							else
+							{
+								std::cout << " failed: 0x" << std::hex << value << " != " << "0x" << valueRead << std::dec;
+							}
 						}
 					}
-					else
-					{
-						 std::cout << std::endl;
-					}
+					if(!vm.count("silent")) {if(!vm.count("nonewline")) {std::cout << std::endl;}}
 				}
 				addr += 2;
 			}
