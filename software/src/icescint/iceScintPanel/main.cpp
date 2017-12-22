@@ -112,9 +112,11 @@ int main(int argc, char** argv)
 
 	if(vm.count("getrawtemperaturehex") || vm.count("getrawtemperaturedec"))
 	{
-		icescint_pannelFlushRxFifo(panel);
+		icescint_doRs485FlushRxFifo(panel);
 		icescint_pannelCustomCommand(panel, "pmt HGT", timeout, vm.count("verbose"));
 		sleep(1);
+		int len = icescint_getRs485RxFifoWords(panel);
+		std::cout << "length: " << std::dec << len << std::endl;
 		for(int i=0;i<108;i++)
 		{
 			icescint_getRs485Data(panel);
@@ -128,7 +130,7 @@ int main(int argc, char** argv)
 		int temperature = stringHexToInt(std::string(temp));
 		if(vm.count("getrawtemperaturehex")){std::cout << "0x" << std::hex << temperature << std::endl;}
 		if(vm.count("getrawtemperaturedec")){std::cout << "" << std::dec << temperature << std::endl;}
-		icescint_pannelFlushRxFifo(panel);
+		icescint_doRs485FlushRxFifo(panel);
 	}
 
 	return 0;
