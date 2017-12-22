@@ -14,7 +14,6 @@
 #include <string>
 
 
-static const double voltageConversionFactor=1.812e-3;
 
 class GPBController
 {

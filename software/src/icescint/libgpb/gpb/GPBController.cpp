@@ -16,6 +16,8 @@
 #include <sstream>
 #include <iomanip>
 
+static const double voltageConversionFactor=1.812e-3;
+
 int GPBController::stringHexToInt(std::string _string)
 {
 	int temp;
