@@ -35,5 +35,5 @@ cmake_build_dir() {
 #cmake_build_dir x86 Release "Eclipse CDT4 - Unix Makefiles" -DCMAKE_INSTALL_PREFIX=${HESS1U_ROOT}
 
 cmake_build_dir at91 Debug "Eclipse CDT4 - Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_PATH}/at91sam9g45.cmake -DCMAKE_INSTALL_PREFIX=${HESS1U_ROOT}
-#cmake_build_dir at91 Release "Eclipse CDT4 - Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_PATH}/at91sam9g45.cmake -DCMAKE_INSTALL_PREFIX=${HESS1U_ROOT}/nfs/root/opt/hess1u
+cmake_build_dir at91 Release "Eclipse CDT4 - Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_PATH}/at91sam9g45.cmake -DCMAKE_INSTALL_PREFIX=${HESS1U_ROOT}/nfs/root/opt/hess1u
 #cmake_build_dir at91 MinSizeRel "Eclipse CDT4 - Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_PATH}/at91sam9g45.cmake -DCMAKE_INSTALL_PREFIX=${HESS1U_ROOT}/nfs/root/opt/hess1u

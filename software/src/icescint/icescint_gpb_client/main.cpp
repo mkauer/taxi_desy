@@ -4,151 +4,20 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <gpb/DebugTransport.hpp>
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
 #include "gpb/USBSerialTransport.hpp"
-#include "gpb/GPBPacketProtocol.hpp"
 #include <fstream>
 
+#include "hal/smc.h"
+
+#include "gpb/TaxiSerialTransport.hpp"
+#include "gpb/GPBController.hpp"
 #define  error_message(MSG...) (MSG)
-
-#define PACKET_TYPE_TEST 	0x10
-#define PACKET_TYPE_LGSEL 	0x11
-#define PACKET_TYPE_RXLBSEL 0x12
-#define PACKET_TYPE_PMT		0x13
-#define PACKET_TYPE_STATUS	0x14
-
-
-char portname[] = "/dev/ttyUSB0";
-
-
-
-#define PACKET_TYPE_TEST 	0x10
-#define PACKET_TYPE_LGSEL 	0x11
-#define PACKET_TYPE_RXLBSEL 0x12
-#define PACKET_TYPE_PMT		0x13
-#define PACKET_TYPE_STATUS	0x14
-
-class GPBClient
-{
-private:
-	enum{
-		TIMEOUT = 1000
-
-
-	};
-
-	GPBPacketProtocol* 	m_protocol;
-	gpb_packet_t 		m_packet;
-	unsigned char 		m_packet_data[1000];
-
-	int prepare_testCmd(gpb_packet_t* _packet)
-	{
-		_packet->size=4;
-		_packet->type=PACKET_TYPE_TEST;
-
-		gpb_packet_write_u16(_packet, 0, 0x0201);
-		gpb_packet_write_u16(_packet, 2, 0x0403);
-		return 4;
-	}
-
-	int prepare_lgselCmd(gpb_packet_t* _packet, int _lgsel)
-	{
-		_packet->size=1;
-		_packet->type=PACKET_TYPE_LGSEL;
-
-		gpb_packet_write(_packet, 0, _lgsel);
-		return 1;
-	}
-
-	int prepare_rxlbselCmd(gpb_packet_t* _packet, int _rxlbsel)
-	{
-		_packet->size=1;
-		_packet->type=PACKET_TYPE_LGSEL;
-
-		gpb_packet_write(_packet, 0, _rxlbsel);
-		return 1;
-	}
-
-	int prepare_pmtCmd(gpb_packet_t* _packet, std::string _s)
-	{
-		_packet->size=_s.length();
-		_packet->type=PACKET_TYPE_PMT;
-
-		for (int i=0;i<_s.length();i++) {
-			gpb_packet_write(_packet, i, _s[i]);
-		}
-		return _s.length();
-	}
-public:
-	GPBClient(GPBPacketProtocol* _protocol)
-	: m_protocol(_protocol)
-	{
-		gpb_packet_init(&m_packet, 0, m_packet_data, sizeof(m_packet_data));
-	}
-
-	// sends test command, returns true, if test command reply was received successfully
-	bool testCmd()
-	{
-		prepare_testCmd(&m_packet);
-		m_protocol->sendPacket(&m_packet);
-
-		m_protocol->receivePacket(TIMEOUT);
-		const gpb_packet_t& p=m_protocol->receivedPacket();
-		if (p.type!=PACKET_TYPE_TEST) return false;
-		return true;
-	}
-
-	// sends test command, returns true, if test command reply was received successfully
-	bool pmt(std::string _command, std::string& _reply)
-	{
-		prepare_pmtCmd(&m_packet, _command);
-		m_protocol->sendPacket(&m_packet);
-
-		m_protocol->receivePacket(TIMEOUT);
-		const gpb_packet_t& p=m_protocol->receivedPacket();
-		if (p.type!=PACKET_TYPE_PMT) {
-
-			return false;
-		}
-		_reply = std::string((char*)p.data, p.data_size);
-		return true;
-	}
-
-	bool setLgSel(int _lgsel)
-	{
-		prepare_lgselCmd(&m_packet, _lgsel);
-		m_protocol->sendPacket(&m_packet);
-		m_protocol->receivePacket(TIMEOUT);
-		const gpb_packet_t& p=m_protocol->receivedPacket();
-		if (p.type!=PACKET_TYPE_LGSEL) return false;
-		return true;
-	}
-
-	bool setRxlbSel(int _value)
-	{
-		prepare_rxlbselCmd(&m_packet, _value);
-		m_protocol->sendPacket(&m_packet);
-		m_protocol->receivePacket(TIMEOUT);
-		const gpb_packet_t& p=m_protocol->receivedPacket();
-		if (p.type!=PACKET_TYPE_RXLBSEL) return false;
-		return true;
-	}
-
-	bool getStatus(bool& _lgsel, bool& _rxlbsel)
-	{
-		m_packet.size=0;
-		m_packet.type=PACKET_TYPE_STATUS;
-		m_protocol->sendPacket(&m_packet);
-		m_protocol->receivePacket(TIMEOUT);
-		const gpb_packet_t& p=m_protocol->receivedPacket();
-		if (p.type!=PACKET_TYPE_RXLBSEL) return false;
-		return true;
-	}
-};
 
 using namespace std;
 using boost::filesystem::file_size;
@@ -160,15 +29,28 @@ int main(int argc, char** argv)
 {
 	cout << "***** icescint GPB client - " << __DATE__ << " " << __TIME__ << endl;
 
-	string filename;
-
+	string filename, portname;
+	int panel,lgsel,rxlbsel;
 	unsigned int     mask;
 	bool didSomething = false;
+	double highVoltage=0;
 	po::options_description desc("Allowed options");
 	desc.add_options()
 			("help,h", "")
 			("test,t", "test communication")
-		    ("pmt,p", po::value<std::string>(), "send pmt command")
+#ifdef ARCH_AT91SAM
+		    ("panel,p", po::value<int>(&panel), "select panel to use")
+#else
+		    ("device,d", po::value<std::string>(&portname), "send pmt command")
+#endif
+		    ("cmd,c", po::value<std::string>(), "send pmt command")
+		    ("lgsel", po::value<int>(&lgsel), "set lgsel to 0 or 1")
+		    ("rxlbsel", po::value<int>(&rxlbsel), "set rxlbsel to 0 or 1")
+		    ("sethv", po::value<double>(&highVoltage), "set pmt high voltage")
+		    ("pon", "set pmt high voltage on")
+		    ("poff", "set pmt high voltage off")
+		    ("status", "request lgsel & rxlbsel status")
+			("debug,d", "debug")
 		;
 	po::variables_map vm;
 	try {
@@ -184,32 +66,169 @@ int main(int argc, char** argv)
 
 	po::notify(vm);
 
-
 	if (vm.count("help")) {
 		cout << desc << "\n";
 		return 0;
 	}
 
-	USBSerialTransport transport(portname);
-	GPBPacketProtocol packetProtocol(&transport);
-	GPBClient client(&packetProtocol);
+#ifdef ARCH_AT91SAM
+
+	smc_open(NULL);
+
+	if (!vm.count("panel") || panel<0 || panel>7) {
+		cerr << "you must select a panel 0..7 !" << endl;
+		return 0;
+	}
+
+	TaxiSerialTransport transportSerial(panel);
+#else
+	USBSerialTransport transport(portname.c_str());
+#endif
+
+	DebugTransport transportDbg(&transportSerial);
+
+	IIOTransport* transport;
+
+	if (vm.count("debug")) transport=&transportDbg;
+	else transport=&transportSerial;
+
+	GPBPacketProtocol packetProtocol(transport);
+
+	GPBController& client=getGPBController(panel);
+	//&packetProtocol);
+
+	GPBController::error_t err;
+
+	// requests software version
+	// returns EOK on success and
+	// returns in version bit 15..8 major version and in bit 7..0 minor version
+
+	client.initialize(true);
+
+	uint16_t version=0;
+	err=client.getVersion(version);
+	if (err!=GPBController::EOK) {
+		std::cerr << "error retrieving firmware version from panel" << std::endl;
+	} else {
+		if (version<0x0101) {
+			std::cerr << "error version not supported : " << std::hex << "0x" << version << " (required > 0x0101)" << std::endl;
+		}
+	}
 
 	if (vm.count("test")) {
-		if (client.testCmd()) {
-			std::cout << "connection established!" << std::endl;
+		std::cout << "testing connection... ";
+		err=client.testCmd();
+		if (err==GPBController::EOK) {
+			std::cout << "test ok!" << std::endl;
+			didSomething=true;
 		} else {
-			std::cout << "connection timeout!" << std::endl;
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
 		}
 		return 0;
 	}
 
-	if (vm.count("pmt")) {
+	if (vm.count("cmd")) {
+		std::cout << "sending pmt command... ";
 		std::string reply;
-		if (client.pmt(vm["pmt"].as<std::string>(), reply)) {
+		err=client.sendPmtCommand(vm["cmd"].as<std::string>(), reply);
+		if (err==GPBController::EOK) {
 			std::cout << "reply: " << reply << std::endl;
+			didSomething=true;
 		} else {
-			std::cout << "connection timeout!" << std::endl;
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
 		}
+		return 0;
+	}
+
+	if (vm.count("lgsel")) {
+		if (lgsel<0 or lgsel>1) {
+			std::cerr << "lgsel must be 0 or 1" << std::endl;
+			return 1;
+		}
+		std::cout << "sending lgsel value... ";
+		err=client.setLgSel(lgsel);
+		if (err==GPBController::EOK) {
+			std::cout << "set lgsel = " << lgsel << std::endl;
+			didSomething=true;
+		} else {
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
+		}
+		return 0;
+	}
+
+	if (vm.count("rxlbsel")) {
+		if (rxlbsel<0 or rxlbsel>1) {
+			std::cerr << "rxlbsel must be 0 or 1" << std::endl;
+			return 1;
+		}
+		std::cout << "sending rxlbsel value... ";
+		if (!client.setRxlbSel(rxlbsel)) {
+			std::cout << "set rxlbsel = " << rxlbsel << std::endl;
+			didSomething=true;
+		} else {
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
+		}
+		return 0;
+	}
+
+	if (vm.count("sethv")) {
+		std::cout << "sending pmt hv value... ";
+		if (!client.pmt_setHV(highVoltage)) {
+			std::cout << "set hv value = " << highVoltage << std::endl;
+			didSomething=true;
+		} else {
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
+		}
+	}
+
+	if (vm.count("pon") || vm.count("poff") ) {
+		bool onoff=vm.count("pon");
+		std::cout << "sending pmt power... ";
+		if (!client.pmt_setHV(highVoltage)) {
+
+			std::cout << "set pmt power = " << (onoff?"on":"off") << std::endl;
+			didSomething=true;
+		} else {
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
+		}
+	}
+
+	if (vm.count("status")) {
+		bool rxlbsel,lgsel;
+		std::cout << "request status... " << std::endl;
+		err=client.getStatus(lgsel, rxlbsel);
+		if (err==GPBController::EOK) {
+			std::cout << "lgsel        = " << lgsel   << std::endl;
+			std::cout << "rxlbsel      = " << rxlbsel << std::endl;
+			didSomething=true;
+		} else {
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
+		}
+
+		int temp;
+		err=client.pmt_getTemperature(temp);
+		if (err==GPBController::EOK) {
+			std::cout << "temperature  = " << temp << std::endl;
+			didSomething=true;
+		} else {
+			std::cout << "error: " << client.toString(err) << std::endl;
+			return 1;
+		}
+
+		return 0;
+	}
+
+	if (!didSomething) {
+		std::cerr << "no command defined. run with --help to get all options." << std::endl;
+		return 1;
+	} else {
 		return 0;
 	}
 

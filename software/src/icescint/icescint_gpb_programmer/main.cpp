@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <gpb/DebugTransport.hpp>
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
@@ -77,6 +78,55 @@ public:
 		gpb_packet_init(&m_packet, 0, m_packet_data, sizeof(m_packet_data));
 	}
 
+	bool readFlash(int _addr, int _len)
+	{
+		using namespace std;
+		gpb_packet_t packet;
+		unsigned char packet_data[1000];
+		gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
+
+		while(1) {
+			usleep(10000);
+			// Send
+//			std::cout << "send packet" << std::endl;
+			gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
+			prepare_readCmd(&packet, _addr, _len);
+			m_protocol->sendPacket(&packet);
+			int error=m_protocol->receivePacket(2000);
+
+			if (error<0) {
+				std::cout << "programmer protocol error: " << error << std::endl;
+				return false;
+			}
+
+			if (error==0) {
+				std::cout << "programmer timeout error, resend packet " << std::endl;
+				continue;
+			}
+
+			break;
+		} ;
+
+		std::cout << "received data:" << std::endl;
+
+		const gpb_packet_t& rpacket=m_protocol->receivedPacket();
+
+		for (int i=0;i<rpacket.size;i++) {
+
+			if (i%16 == 0) {
+				std::cout << std::hex << "addr 0x" << (_addr + i) << " :";
+			}
+			std::cout << std::hex << " 0x" << (((unsigned int)rpacket.data[i])&0xff);
+
+			if (i%16 == 15) {
+				std::cout << std::endl;
+			}
+		}
+
+		std::cout << std::endl;
+
+		return true;
+	}
 	bool verifyFlash(std::string _filename)
 	{
 		using namespace std;
@@ -163,20 +213,36 @@ public:
 		return true;
 	}
 
-	bool testWriteFlash()
+	bool testWriteFlash(int _addr, int _len)
 	{
 		gpb_packet_t packet;
 		unsigned char packet_data[1000];
 
 		gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
 
+		if (_len>64) _len=64;
 		unsigned char buf[64];
-		for (int i=0;i<sizeof(buf);i++) buf[i]=i;
+		for (int i=0;i<_len;i++) buf[i]=i;
 
-		std::cout << "send packet test write packet" << std::endl;
+		std::cout << "send packet test write packet to addr 0x" << std::hex << _addr << std::endl;
 		gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
-		prepare_writeCmd(&packet, 0xf000, buf, sizeof(buf));
+		prepare_writeCmd(&packet, _addr, buf, _len);
 		m_protocol->sendPacket(&packet);
+
+		usleep(10000);
+		int error=m_protocol->receivePacket(2000);
+
+		if (error<0) {
+			std::cout << "programmer protocol error: " << error << std::endl;
+			return false;
+		}
+
+		if (error==0) {
+			std::cout << "programmer timeout error: " << std::endl;
+			return false;
+		}
+
+		return true;
 	}
 
 	bool writeFlash(std::string _filename)
@@ -220,13 +286,18 @@ public:
 			line_n++;
 		}
 
-		size_t addr=0;
-		unsigned char buf[256];
+		size_t addr=0; // must start at
+		size_t sizeToWrite=256; // must be always page size (256 bytes) because page gets erased before write
+		unsigned char buf[255];
 
 		while (1){
-			size_t s=memory.getContinuesBlock(addr, buf, sizeof(buf));
+			size_t s=memory.getContinuesBlock(addr, buf, sizeToWrite);
 			if (!s) break;
-			std::cout << " writing block at addr: " << std::dec << addr << " size: " << s << std::endl;
+			// std::cout << "writing block at addr: " << std::dec << addr << " size: " << s << std::endl;
+			if (addr%(sizeToWrite*4)==0) std::cout << std::hex << "writing to addr: 0x" << addr << " ";
+			std::cout << "[256b] ";
+			std::cout.flush();
+			if (addr%(sizeToWrite*4)==(sizeToWrite*3)) std::cout << std::endl;
 
 			while(1) {
 				usleep(10000);
@@ -236,7 +307,7 @@ public:
 				prepare_writeCmd(&packet, addr, buf, s);
 				m_protocol->sendPacket( &packet);
 				usleep(10000);
-				int error=m_protocol->receivePacket(2000);
+				int error=m_protocol->receivePacket(1000);
 
 				if (error<0) {
 					std::cout << "programmer protocol error: " << error << std::endl;
@@ -252,11 +323,11 @@ public:
 			} ;
 
 			addr+=s;
-
 		}
+
+		std::cout << "programmer done! leaving in bootloader mode" << std::endl;
+
 	}
-
-
 
 	bool startApp()
 	{
@@ -265,7 +336,7 @@ public:
 
 		gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
 
-		std::cout << "send start packet" << std::endl;
+		std::cout << "request to start application code" << std::endl;
 		gpb_packet_init(&packet, 0, packet_data, sizeof(packet_data));
 		prepare_startCmd(&packet);
 		m_protocol->sendPacket(&packet);
@@ -282,7 +353,7 @@ public:
 			return false;
 		}
 
-		std::cout << "start app" << std::endl;
+		std::cout << "received confirmation: starting application code" << std::endl;
 
 		return true;
 	}
@@ -351,19 +422,26 @@ int main(int argc, char** argv)
 	string filename;
 
 	unsigned int     mask;
+	int     addr=0;
+	int     len=100;
+
 	bool didSomething = false;
 	po::options_description desc("Allowed options");
 	desc.add_options()
 			("help,h", "")
 			("check,c", "check bootloader id")
 		    ("filename,f", po::value<std::string>(&filename), "set .hex file to use")
-#ifdef ARCH_AT91
+#ifdef ARCH_AT91SAM
 		    ("panel,p", po::value<int>(&panel), "select panel to use")
 #endif
+			("debug,d", "print debug information")
 			("write,w", "write hex file to flash")
 			("verify,v", "verify hex file with flash")
 			("test,t", "test communication")
 			("start,s", "start application")
+			("read,r", "read from flash")
+		    ("addr,a", po::value<int>(&addr), "select read address")
+		    ("len,l", po::value<int>(&len)->default_value(64), "select read length")
 		;
 	po::variables_map vm;
 	try {
@@ -377,19 +455,26 @@ int main(int argc, char** argv)
 
 	//po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
 
-#ifdef ARCH_AT91
-	if (!vm.count("panel") || panel<0 || panel>7) {
-		cerr << "you must select a panel 0..7 !" << endl;
-		return 0
-	}
+#ifdef ARCH_AT91SAM
 
-	TaxiSerialTransport transport(panel);
+	smc_open(NULL);
+
+
+	TaxiSerialTransport transportSerial(panel);
 #else
-	USBSerialTransport transport(portname);
+	USBSerialTransport transportSerial(portname);
 #endif
 
-	GPBPacketProtocol protocol(&transport);
-	GPBProgrammer programmer(&protocol);
+	DebugTransport transportDbg(&transportSerial);
+
+	IIOTransport* transport;
+
+	if (vm.count("debug")) transport=&transportDbg;
+	else transport=&transportSerial;
+
+	GPBPacketProtocol packetProtocol(transport);
+
+	GPBProgrammer programmer(&packetProtocol);
 
 	po::notify(vm);
 
@@ -398,14 +483,27 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	if (vm.count("check")) {
 
+	if (!vm.count("panel") || panel<0 || panel>7) {
+		cerr << "you must select a panel 0..7 !" << endl;
+		return 0;
+	}
+
+	icescint_setPanelPower(panel,0);
+	sleep(1);
+	icescint_setPanelPower(panel,1);
+	sleep(1);
+
+
+	if (vm.count("check")) {
+		cerr << "not implemented yet!" << endl;
+		return 1;
 	} else if (vm.count("verify")) {
 		cout << "verify hex file with flash content" << std::endl;
 
 		if (!vm.count("filename")) {
 			cerr << "a filename must be given with -f or --filename " << endl;
-			return 0;
+			return 1;
 		}
 
 		programmer.verifyFlash(filename);
@@ -416,14 +514,18 @@ int main(int argc, char** argv)
 
 		if (!vm.count("filename")) {
 			cerr << "a filename must be given with -f or --filename " << endl;
-			return 0;
+			return 1;
 		}
 
 		//testWriteFlash();
 		programmer.writeFlash(filename);
 	} else if (vm.count("test")) {
-		programmer.test_communication();
+		programmer.testWriteFlash(addr, len);
+		//test_communication()communication();
 	} else if (vm.count("start")) {
 		programmer.startApp();
+	} else if (vm.count("read")) {
+		programmer.readFlash(addr, len);
 	}
+
 }

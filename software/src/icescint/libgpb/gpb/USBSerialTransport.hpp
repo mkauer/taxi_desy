@@ -26,22 +26,15 @@ private:
 	void set_blocking (int fd, int should_block);
 
 public:
-	USBSerialTransport(const char* _device)
-	{
-		m_fd = open (_device, O_RDWR | O_NOCTTY | O_SYNC);
-		if (m_fd < 0)
-		{
-		        std::cerr << "error " << errno << " : " << _device << " " << strerror(errno) << std::endl;
-		        return ;
-		}
-
-		set_interface_attribs (m_fd, B9600, 0); // set speed to 115,200 bps, 8n1 (no parity)
-	}
+	USBSerialTransport(const char* _device);
 	~USBSerialTransport()
 	{
 		close(m_fd);
 	}
-
+	virtual void setSendEnable(bool _enable)
+	{
+		// not needed, rs485 usb adapter does it magically automatically
+	}
 	virtual void write(void* _data, size_t _size)
 	{
 		::write (m_fd, _data, _size); // send data
@@ -50,6 +43,10 @@ public:
 	{
 		return ::read(m_fd, _data, _size);
 	}
+	virtual void flush(void)
+	{}
+	virtual void reboot(void)
+	{}
 };
 
 #endif /* LIBGBP_GPB_USBSERIALTRANSPORT_HPP_ */

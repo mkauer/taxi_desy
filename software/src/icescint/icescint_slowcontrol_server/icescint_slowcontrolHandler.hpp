@@ -8,6 +8,7 @@
 #ifndef SOURCE_DIRECTORY__TAXI_ICESCINT_ICESCINT_SLOWCONTROL_SERVER_ICESCINT_SLOWCONTROLHANDLER_HPP_
 #define SOURCE_DIRECTORY__TAXI_ICESCINT_ICESCINT_SLOWCONTROL_SERVER_ICESCINT_SLOWCONTROLHANDLER_HPP_
 
+#include <gpb/GPBController.hpp>
 #include "thriftSlowControl/gen-cpp/slowcontrol_types.h"
 #include "thriftSlowControl/gen-cpp/icescint_slowcontrol.h"
 #include <thrift/protocol/TBinaryProtocol.h>
@@ -66,7 +67,9 @@ public:
 	{
 		if (!m_debug)
 		{
-			icescint_pannelSetSipmVoltage(channel, voltage, 10, 0);
+			// TODO: check channel, otherwise crash here
+			getGPBController(channel).pmt_setHV(voltage);
+			//icescint_pannelSetSipmVoltage(channel, voltage, 10, 0);
 		}
 		else
 		{

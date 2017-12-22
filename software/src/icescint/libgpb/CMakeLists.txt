@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 
-use_library( thrift LIBS)
+use_library( taxihal LIBS )
+use_library( smcdrv LIBS )
+
 
 FILE(GLOB_RECURSE SRCC *.c )
 FILE(GLOB_RECURSE SRCCPP *.cpp )

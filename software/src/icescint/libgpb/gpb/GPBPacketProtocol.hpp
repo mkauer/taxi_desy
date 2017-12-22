@@ -8,11 +8,18 @@
 #ifndef ICESCINT_GPB_CLIENT_GPBPACKETPROTOCOL_HPP_
 #define ICESCINT_GPB_CLIENT_GPBPACKETPROTOCOL_HPP_
 
+#include <gpb/Transport.hpp>
+#include <stdlib.h>
+#include <unistd.h>
 #include "gpb_protocol.h"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 class GPBPacketProtocol
 {
 private:
+	enum {
+		TRANSMIT_DELAY = 5000
+	};
 	IIOTransport* m_transport;
 	packetDecoder_t m_decoder;
 	gpb_packet_t m_packet;
@@ -20,6 +27,11 @@ private:
 	size_t 	 m_packet_data_size;
 
 public:
+	IIOTransport* transport() const
+	{
+		return m_transport;
+	}
+
 	GPBPacketProtocol(IIOTransport* _transport, size_t _bufferSize=1000)
 	: m_transport(_transport)
 	{
@@ -34,13 +46,19 @@ public:
 	}
 
 	// Sends packet to file descriptor
-	int sendPacket(gpb_packet_t* _packet)
+	int sendPacket(const gpb_packet_t* _packet)
 	{
 		unsigned char buf[1000];
 		int size=gpb_packet_serialize(_packet, buf, sizeof(buf));
 		if (size<0) return -1; // error
 
+		usleep(TRANSMIT_DELAY);
+		m_transport->setSendEnable(true);
 		m_transport->write (buf, size); // send packet
+		m_transport->setSendEnable(false);
+		m_transport->flush();
+		usleep(TRANSMIT_DELAY);
+
 		return size;
 	}
 
@@ -50,6 +68,7 @@ public:
 	int receivePacket(int _timeout)
 	{
 		boost::posix_time::ptime timeoutTime=boost::posix_time::microsec_clock::local_time()+boost::posix_time::milliseconds(_timeout);
+		m_transport->setSendEnable(false);
 
 		bool checksumError=false;
 

@@ -8,6 +8,9 @@
 #ifndef GPB_PROGRAMMER_PROTOCOL_H_
 #define GPB_PROGRAMMER_PROTOCOL_H_
 
+#include <string.h>
+#include <iostream>
+
 typedef enum {
 	MODE_PACKET_HEADER1,
 	MODE_PACKET_HEADER2,
@@ -149,7 +152,7 @@ static inline int gpb_packetDecoder_processData(packetDecoder_t* _decoder, unsig
 			// checksum error!
 			_decoder->mode=MODE_PACKET_HEADER1;
 			_decoder->error=DECODER_ERROR_CHECKSUM;
-			std::cout << "Checksum error!" << std::endl;
+		//	std::cout << "Checksum error!" << std::endl;
 		} else {
 			_decoder->mode=MODE_PACKET_TAIL1;
 		}
@@ -182,7 +185,7 @@ static inline int gpb_packetDecoder_processData(packetDecoder_t* _decoder, unsig
 }
 
 // serializes packet into a buffer with packet frame
-static inline int gpb_packet_serialize(gpb_packet_t*_packet, void* _buf, gpb_packet_size_t _bufsize)
+static inline int gpb_packet_serialize(const gpb_packet_t*_packet, void* _buf, gpb_packet_size_t _bufsize)
 {
 	unsigned char* buf=static_cast<unsigned char*>(_buf);
 	memset(buf,0,sizeof(buf));

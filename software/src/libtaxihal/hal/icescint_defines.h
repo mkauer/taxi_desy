@@ -68,9 +68,12 @@
 #define OFFS_ICESCINT_IRQ_FORCE						0x108	// writing to this address generates a single IRQ, no matter if irq are enabled or not
 
 #define OFFS_ICESCINT_READOUT_RS485DATA					0x300
-#define OFFS_ICESCINT_READOUT_RS485DATASEND				0x310
+#define OFFS_ICESCINT_READOUT_RS485DATASEND				0x310	// write bit 0..7 -> start command for panel rs483 channel
+																// read  bit 0..7 -> bit set if busy
 #define OFFS_ICESCINT_READOUT_RS485FIFORESET			0x318
-#define OFFS_ICESCINT_READOUT_RS485DATAWORDS			0x320
+#define OFFS_ICESCINT_READOUT_RS485FIFOREADREQUEST		0x31A	// bit 0..7 , bit set starts fifo read request
+#define OFFS_ICESCINT_READOUT_RS485TXENABLE				0x31C	// bit 0..7 , bit set enables tx mode
+#define OFFS_ICESCINT_READOUT_RS485DATAWORDS			0x320   // words in rx fif00
 
 #define OFFS_ICESCINT_WHITERABBIT_IRIGDATA							0x0420
 

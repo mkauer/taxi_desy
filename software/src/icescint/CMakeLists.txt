@@ -5,6 +5,8 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL AT91SAM)
 
 	add_subdirectory( common )
 
+	add_subdirectory( libgpb )
+
 	add_subdirectory( test_daqdrv )
 
 	add_subdirectory( icescint_register_info )
@@ -13,6 +15,7 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL AT91SAM)
 	add_subdirectory( iceScintPanel )
 
 	add_subdirectory( icescint_gpb_programmer )
+	add_subdirectory( icescint_gpb_client )
 
 	add_subdirectory( icescint_slowcontrol_server )
 	add_subdirectory( icescint_slowcontrol_client )

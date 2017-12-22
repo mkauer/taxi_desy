@@ -84,16 +84,16 @@ public:
 
 		// try to find next block of used data
 		if (!getNextBlock(_addr)) {
-			std::cout << "no next block found!" <<std::endl;
+			//std::cout << "no next block found!" <<std::endl;
 			return 0; // none found, exit
 		} else {
-			std::cout << "using addr : 0x" << std::hex << _addr <<std::endl;
+			//std::cout << "using addr : 0x" << std::hex << _addr <<std::endl;
 		}
 
 		// check size of bytes available for usage
 		_size=getContinuesBlockSize(_addr, _size);
 		if (!_size) {
-			std::cout << "no continues block found!" <<std::endl;
+			//std::cout << "no continues block found!" <<std::endl;
 			return 0; // nothing to copy found
 		}
 

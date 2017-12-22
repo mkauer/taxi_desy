@@ -1,4 +1,5 @@
 #include "SlowControl.hpp"
+#include <iostream>
 
 namespace taxi
 {

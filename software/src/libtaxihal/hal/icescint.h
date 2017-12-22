@@ -9,6 +9,7 @@
 #define ICESCINT_HAL_ICESCINT_H_
 
 #include <hal/icescint_defines.h>
+#include <unistd.h>
 #include "bits.h"
 #include "hal/smc.h"
 #include <stdexcept>
@@ -210,18 +211,40 @@ static inline void icescint_doRs485Send(uint8_t _panelMask)
 static inline void icescint_setRs485Data(uint8_t _data, uint8_t _panel)
 {
 	_panel = _panel & 0x7;
+	// read data
 	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATA+(2*_panel), _data);
+}
+static inline uint16_t icescint_getRs485Busy(uint8_t _panel)
+{
+	_panel = _panel & 0x7;
+	return testBitVal16(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATASEND), _panel);
 }
 static inline uint16_t icescint_getRs485Data(uint8_t _panel)
 {
 	_panel = _panel & 0x7;
+	// start read request
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485FIFOREADREQUEST, setBit16(0,_panel));
 	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485DATA+(2*_panel));
 }
-static inline void icescint_doRs485SendData(uint8_t _data, uint8_t _panel)
+static inline void icescint_doRs485SetTxEnable(uint8_t _enable, uint8_t _panel)
 {
+	_panel = _panel & 0x7;
+	// start read request
+	uint16_t val=IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485TXENABLE);
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485TXENABLE, changeBitVal16(val,_panel,_enable));
+}
+static inline int icescint_doRs485SendData(uint8_t _data, uint8_t _panel)
+{
+	int i=0;
+	while (icescint_getRs485Busy(_panel)) {
+		usleep(100);
+		i++;
+		if (i>100) return 0; // timeout
+	}
 	_panel = _panel & 0x7;
 	icescint_setRs485Data(_data, _panel);
 	icescint_doRs485Send(1<<_panel);
+	return 1;
 }
 static inline uint16_t icescint_getRs485RxFifoCount(uint8_t _panel)
 {
@@ -239,6 +262,12 @@ void icescint_pannelFlushRxFifo(uint16_t _panel)
 //	{
 //		icescint_getRs485Data(_panel);
 //	}
+	int i=0;
+	while (icescint_getRs485Busy(_panel)) {
+		usleep(100);
+		i++;
+		if (i>100) return; // timeout
+	}
 	_panel = _panel & 0x7;
 	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485FIFORESET, (1<<_panel));
 }

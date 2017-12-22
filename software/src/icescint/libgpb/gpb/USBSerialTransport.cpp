@@ -7,9 +7,23 @@
 
 #include "USBSerialTransport.hpp"
 
+#include <errno.h>
 #include <string.h>
 #include <termios.h>
 #include <iostream>
+
+USBSerialTransport::USBSerialTransport(const char* _device)
+{
+	m_fd = open (_device, O_RDWR | O_NOCTTY | O_SYNC);
+	if (m_fd < 0)
+	{
+			std::cerr << "error " << errno << " : " << _device << " " << strerror(errno) << std::endl;
+			return ;
+	}
+
+	set_interface_attribs (m_fd, B9600, 0); // set speed to 115,200 bps, 8n1 (no parity)
+}
+
 
 int USBSerialTransport::set_interface_attribs (int fd, int speed, int parity)
 {
