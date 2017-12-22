@@ -83,18 +83,34 @@ int main(int argc, char** argv)
 		return EXIT_ERROR;
 	}
 
-	uint16_t data[10];
+	uint16_t data[10] = {1,2,3,4,5,6,7,8,9,0};
 
 	while(1)
 	{
 		icescint_getIrig(data);
-		for(int i=0;i<6;i++)
+//		std::cout << std::hex << int(data[0]) << " " << int(data[1])  << " "<< int(data[2])  << " "<< int(data[3])  << " "<< int(data[4]) << " " << int(data[5]) << std::dec <<std::endl;
+//		std::cout << "a: ";
+//		for(int i=0;i<6;i++)
+//		{
+//			std::string temp = std::bitset<16>(*(data+i)).to_string();
+//			boost::replace_all(temp, "0", ".");
+//			std::cout << temp;
+//			std::cout << "|";
+//		}
+//		std::cout << std::endl;
+
+//		std::cout << "b: ";
+		for(int i=5;i>=0;i--)
 		{
-			std::string temp = std::bitset<16>(*(data+i)).to_string();
-			boost::replace_all(temp, "0", ".");
-			std::cout << temp;
+			for(int j=15;j>=0;j--)
+			{
+				if((*(data+i) & (1<<j)) == 0) {std::cout << ".";}
+				else {std::cout << "1";}
+			}
+			std::cout << "|";
 		}
 		std::cout << std::endl;
+
 		sleep(1);
 	}
 
