@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 
 	if (vm.count("help"))
 	{
-		std::cout << "*** icescint_panel - compiled " << __DATE__ << " " << __TIME__ << " ***"<< std::endl;
+		std::cout << "*** icescint_panel - compiled " << __DATE__ << " " << __TIME__ << " ***" << std::endl;
 		std::cout << desc << std::endl;
 		return 1;
 	}

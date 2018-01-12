@@ -19,7 +19,7 @@ typedef int bool_t;
 
 static inline void icescint_setTriggerMask(uint16_t _mask) //if a bit == 1 channel is deactivated
 {
-	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_TRIGGERMASK, _mask);
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_TRIGGERMASK, _mask);
 }
 
 static inline void iceSint_flushEventFifo(void)
@@ -146,34 +146,34 @@ uint16_t icescint_getTriggerThreshold(uint16_t _channel)
 //
 static inline uint16_t icescint_getTriggerMask(void)
 {
-	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_TRIGGERMASK);
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_TRIGGERMASK);
 }
 
 static inline void icescint_doSingleSoftTrigger(void)
 {
-	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SINGLESOFTTRIGGER, 1);
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SINGLESOFTTRIGGER, 1);
 }
 
 static inline void icescint_setSoftTriggerGeneratorEnable(bool_t _enable)
 {
-	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SOFTTRIGGERGENERATORENABLE, __MAKE_BOOL(_enable));
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORENABLE, __MAKE_BOOL(_enable));
 }
 static inline bool_t iceSint_getSoftTriggerGeneratorEnable(void)
 {
-	return __MAKE_BOOL(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SOFTTRIGGERGENERATORENABLE));
+	return __MAKE_BOOL(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORENABLE));
 }
 
 static inline void icescint_setSoftTriggerGeneratorPeriod(uint32_t _value)
 {
-	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SOFTTRIGGERGENERATORPERIOD_LOW, _value&0xffff);
-	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SOFTTRIGGERGENERATORPERIOD_HIGH, _value>>16);
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORPERIOD_LOW, _value&0xffff);
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORPERIOD_HIGH, _value>>16);
 }
 
 static inline uint32_t icescint_getSoftTriggerGeneratorPeriod(void)
 {
 	uint32_t temp;
-	temp = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SOFTTRIGGERGENERATORPERIOD_HIGH) << 16 +
-		   IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_SOFTTRIGGERGENERATORPERIOD_LOW);
+	temp = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORPERIOD_HIGH) << 16 +
+		   IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORPERIOD_LOW);
 	return temp;
 }
 
@@ -250,11 +250,11 @@ static inline uint16_t icescint_getRs485RxFifoWords(uint16_t _panel)
 //
 static inline void icescint_setSerdesDelay(uint16_t _value)
 {
-	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGER_SERDESDELAY, _value);
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SERDESDELAY, _value);
 }
 static inline uint16_t icescint_getSerdesDelay(void)
 {
-	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGER_SERDESDELAY);
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TRIGGERLOGIC_SERDESDELAY);
 }
 
 static inline void icescint_setPanelPowerMask(uint16_t _value)
@@ -296,12 +296,64 @@ static inline uint16_t icescint_getBaselineStop(void)
 	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_BASELINESTOP);
 }
 
-static inline void icescint_getIrig(uint16_t *_data)
+// IRIGB
+static inline uint16_t icescint_isNewIrigData(void)
+{
+	uint16_t ret = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_NEWDATALATCHED); // will latch the data
+	return ret;
+}
+static inline void icescint_doResetNewIrigData(void)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_NEWDATALATCHED, 0);
+}
+static inline void icescint_getIrigRawData(uint16_t *_data)
 {
 	for(int i=0;i<6;i++)
 	{
-		*(_data+i) = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA + 2*i);
+		*(_data+i) = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA_LSB0 + 2*i);
 	}
+}
+static inline uint16_t icescint_getIrigBinaryYear(void)
+{
+	uint16_t ret = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA_BINARY_YEARS); // will latch the data
+	return ret;
+}
+static inline uint16_t icescint_getIrigBinaryDay(void)
+{
+	uint16_t ret = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA_BINARY_DAYS); // will latch the data
+	return ret;
+}
+static inline uint16_t icescint_getIrigBinarySecond(void)
+{
+	uint16_t ret = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA_BINARY_SECONDS); // will latch the data
+	return ret;
+}
+
+// GPS
+static inline uint16_t icescint_isNewGpsData(void)
+{
+	uint16_t ret = IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_NEWDATALATCHED); // will latch the data
+	return ret;
+}
+static inline void icescint_doResetNewGpsData(void)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_NEWDATALATCHED, 0);
+}
+static inline uint16_t icescint_getGpsWeek(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_WEEK);
+}
+static inline uint32_t icescint_getGpsQuantizationError(void)
+{
+	return convert_2x_uint16_to_uint32(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_QUANTIZATIONERROR_H), IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_QUANTIZATIONERROR_L));
+}
+static inline uint32_t icescint_getGpsTimeOfWeek_ms(void)
+{
+	return convert_2x_uint16_to_uint32(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_TIMEOFWEEKMS_H), IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_TIMEOFWEEKMS_L));
+}
+static inline uint32_t icescint_getGpsTimeOfWeek_subms(void)
+{
+	return convert_2x_uint16_to_uint32(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_TIMEOFWEEKSUBMS_H), IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_TIMEOFWEEKSUBMS_L));
 }
 
 //static inline void icescint_set(uint16_t _value)

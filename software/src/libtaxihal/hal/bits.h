@@ -119,4 +119,12 @@ static inline uint16_t clipValueMin(uint16_t _value, uint16_t _minValue)
 	return ret;
 }
 
+static inline uint32_t convert_2x_uint16_to_uint32(uint16_t _valueH, uint16_t _valueL)
+{
+	uint32_t ret = _valueH;
+	ret = ret << 16;
+	ret = ret + _valueL;
+	return ret;
+}
+
 #endif

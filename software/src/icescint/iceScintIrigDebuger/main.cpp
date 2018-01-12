@@ -22,7 +22,6 @@
 #include <bitset>
 #include <boost/algorithm/string/replace.hpp>
 
-//using namespace std;
 namespace po = boost::program_options;
 
 #define EXIT_OK 0
@@ -50,26 +49,13 @@ int main(int argc, char** argv)
 //		("", po::value<int>(), "")
 		;
 
-//	po::variables_map vm;
-//	try
-//	{
-//		po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
-//	}
-//	catch (boost::program_options::invalid_command_line_syntax &e)
-//	{
-//		std::cerr << "error parsing command line: " << e.what() << std::endl;
-//		std::cout << "error parsing command line: " << e.what() << std::endl;
-//		return EXIT_ERROR;
-//	}
-//	po::notify(vm);
-
 	po::variables_map vm;
 	po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 	po::notify(vm);
 
 	if (vm.count("help"))
 	{
-		std::cout << "*** iceScintIrigDebugger | " << __DATE__ << " | " << __TIME__ << " ***" << std::endl;
+		std::cout << "*** iceScintDebugger | " << __DATE__ << " | " << __TIME__ << " ***" << std::endl;
 		std::cout << desc << std::endl;
 		std::cout << "all masks are hex, other values are decimal" << std::endl;
 		return EXIT_OK;
@@ -87,31 +73,40 @@ int main(int argc, char** argv)
 
 	while(1)
 	{
-		icescint_getIrig(data);
-//		std::cout << std::hex << int(data[0]) << " " << int(data[1])  << " "<< int(data[2])  << " "<< int(data[3])  << " "<< int(data[4]) << " " << int(data[5]) << std::dec <<std::endl;
-//		std::cout << "a: ";
-//		for(int i=0;i<6;i++)
-//		{
-//			std::string temp = std::bitset<16>(*(data+i)).to_string();
-//			boost::replace_all(temp, "0", ".");
-//			std::cout << temp;
-//			std::cout << "|";
-//		}
-//		std::cout << std::endl;
-
-//		std::cout << "b: ";
-		for(int i=5;i>=0;i--)
+		if(icescint_isNewIrigData())
 		{
-			for(int j=15;j>=0;j--)
+			icescint_getIrigRawData(data);
+			for(int i=5;i>=0;i--)
 			{
-				if((*(data+i) & (1<<j)) == 0) {std::cout << ".";}
-				else {std::cout << "1";}
+				for(int j=15;j>=0;j--)
+				{
+					if((*(data+i) & (1<<j)) == 0) {std::cout << ".";}
+					else {std::cout << "1";}
+				}
+				std::cout << "|";
 			}
-			std::cout << "|";
-		}
-		std::cout << std::endl;
+			std::cout << std::endl;
 
-		sleep(1);
+			std::cout << std::dec;
+			std::cout << "irigb binary year: " << std::dec << int(icescint_getIrigBinaryYear()) << std::endl;
+			std::cout << "irigb binary day: " << std::dec << int(icescint_getIrigBinaryDay()) << std::endl;
+			std::cout << "irigb binary second: " << std::dec << int(icescint_getIrigBinarySecond()) << std::endl;
+
+			icescint_doResetNewIrigData();
+		}
+
+		if(icescint_isNewGpsData())
+		{
+			std::cout << std::dec;
+			std::cout << "GPS week: " << int(icescint_getGpsWeek()) << std::endl;
+			std::cout << "GPS QuantizationError: " << int(icescint_getGpsQuantizationError()) << std::endl;
+			std::cout << "GPS time of week ms: " << int(icescint_getGpsTimeOfWeek_ms()) << std::endl;
+			std::cout << "GPS time of week sub ms: " << int(icescint_getGpsTimeOfWeek_subms()) << std::endl;
+
+			icescint_doResetNewGpsData();
+		}
+
+		usleep(1000*100);
 	}
 
 

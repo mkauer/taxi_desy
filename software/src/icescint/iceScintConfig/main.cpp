@@ -68,6 +68,9 @@ int main(int argc, char** argv)
 		("setSoftTriggerSingleShot", po::value<int>(), "no value")
 		("setSoftTriggerGeneratorEnable", po::value<int>(), "[0,1]")
 		("setSoftTriggerGeneratorPeriod", po::value<int>(), "[0-2^32] in ~8ns steps")
+		("automaticConfiguration,x", "uses a fixed configuration")
+//		("printAutomaticConfiguration,y", po::value<int>(), "print the fixed configuration")
+//		("programmFpga,z", po::value<int>(), "reloads the FPGA with a fixed version (does not use the defaultFirmware.bit)")
 //		("", po::value<int>(), "")
 		;
 
@@ -103,6 +106,10 @@ int main(int argc, char** argv)
 		std::cerr << "cannot open bus driver!" << std::endl;
 		return EXIT_ERROR;
 	}
+
+	// boot fpga
+
+	// automaticConfig
 
 	if(vm.count("triggermask"))
 	{
@@ -271,6 +278,38 @@ int main(int argc, char** argv)
 	if(vm.count("setDrs4BaselineStop"))
 	{
 		icescint_setBaselineStop(vm["setDrs4BaselineStop"].as<int>());
+		return EXIT_OK;
+	}
+
+	if(vm.count("automaticConfiguration"))
+	{
+		for(int i=0;i<8;i++) {icescint_setTriggerThreshold(i, 30);}
+		icescint_setSerdesDelay(100);
+		icescint_setDrs4ReadoutMode(6);
+		icescint_setNumberOfSamplesToRead(1024);
+		icescint_setTriggerMask(0x00);
+		icescint_setPanelPowerMask(0xff);
+		icescint_setIrqEnable(1);
+		icescint_setPixelTriggerCounterPeriod(1);
+
+		icescint_setEventFifoPacketConfig( 0x0
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4BASELINE
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4CHARGE
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4TIMING
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TRIGGERTIMING
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TEST_DATA1
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TEST_DATA2
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_WHITERABBIT
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_GPS
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_PIXELRATES
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DEBUG
+			);
+		icescint_setBaselineStart(0);
+		icescint_setBaselineStop(10);
+		icescint_setSoftTriggerGeneratorPeriod(0x8000000);
+		icescint_setSoftTriggerGeneratorEnable(0);
+
 		return EXIT_OK;
 	}
 

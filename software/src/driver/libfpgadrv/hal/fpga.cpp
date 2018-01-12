@@ -51,7 +51,7 @@ int fpga_loadFirmware(const char* _firmware, const char* _device)
 	fin.open(firmware, std::fstream::binary);
 
 	if (!fin) {
-		return false;
+		return 1;
 	}
 	size_t finsize=boost::filesystem::file_size(firmware);
 

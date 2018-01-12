@@ -10,82 +10,91 @@
 #include <boost/filesystem.hpp>
 #include "hal/fpga.h"
 
-using namespace std;
 using boost::filesystem::file_size;
 namespace po = boost::program_options;
 
 #define EXIT_OK 0
 #define EXIT_ERROR -1
 
+#define DEFAULT_FIRMWARE "/opt/taxi/firmware/icescint_180112_06.bit"
 
 int main(int argc, char** argv)
 {
-	using namespace std;
+	std::string filename;
+	std::string device;
 
-	cout << "***** fpga firmware loader" << __DATE__ << " " << __TIME__ << endl;
-
-	string filename;
-	string device;
-
-	int 	orbitTriggerDelay;
-	int 	histOrbitThreshold;
-	int 	samplingMode;
-	int     mode;
-	int		testNr;
-	unsigned int     mask;
+	int orbitTriggerDelay;
+	int histOrbitThreshold;
+	int samplingMode;
+	int mode;
+	int testNr;
+	unsigned int mask;
 	bool didSomething = false;
+	std::string defaultMessage = std::string("load the default firmware file (") + std::string(DEFAULT_FIRMWARE) + std::string (")");
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
-			("help,h", "")
-			("view,v", "view current settings")
-		    ("filename,f", po::value<std::string>(&filename)->default_value("/opt/firmware/defaultFirmware.bit"), "set image file to load")
-			("device,d", po::value<string>(&device)->default_value("/dev/fpga0"),"set device to use for fpga configuration")
-		;
+			("help,h", "print this help")
+			//("view,v", "view current settings")
+			("defaultFilename,d", defaultMessage.c_str())
+			("filename,f", po::value<std::string>(&filename), "load a custom firmware file")
+			("device", po::value<std::string>(&device)->default_value("/dev/fpga0"), "set device to use for fpga configuration")
+			;
+
 	po::variables_map vm;
-	try {
-		po::store(
-				po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(),
-				vm);
-	} catch (boost::program_options::invalid_command_line_syntax &e) {
-		cout << "error: " << e.what() << endl;
-		return -1;
+	try
+	{
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 	}
-
-	//po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-
+	catch (boost::program_options::invalid_command_line_syntax &e)
+	{
+		std::cout << "error: " << e.what() << std::endl;
+		return EXIT_ERROR;
+	}
 	po::notify(vm);
 
-	if (vm.count("help")) {
-		cout << desc << "\n";
+	if (vm.count("help"))
+	{
+		std::cout << "*** fpgainit | compiled " << __DATE__ << " " << __TIME__ << " ***" << std::endl;
+		std::cout << desc << std::endl;
 		return EXIT_OK;
 	}
 
-	cerr << "firmware filename: " << filename << endl;
-	if (!filename.empty())
+	if (vm.count("defaultFilename"))
 	{
-		cout << "Unconfiguring fpga" << endl;
+		filename = DEFAULT_FIRMWARE;
+	}
+	if ((vm.count("defaultFilename") or vm.count("filename")))
+	{
+		if (filename.empty())
+		{
+			std::cout << "Filename is empty" << std::endl;
+			return EXIT_ERROR;
+		}
+		else
+		{
+			std::cout << "firmware filename: " << filename << std::endl;
+		}
+
+		// TODO: check if file exists...
+
+		std::cout << "Unconfiguring FPGA..." << std::endl;
 		fpga_unconfigureFirmware(device.c_str());
 
-//		for (int i=0;i<3;i++) {
-		do {
-			cout << "Loading firmware from '" << filename << "' ..." << endl;
-			if (!fpga_loadFirmware(filename.c_str(), device.c_str())) break;
-
-//			if (hess1u_smi_getSystemType()!=HESS1U_SYSTEM_UNKNOWN) {
-//				cout << "firmware loading successful!" << endl;
-//				cout << "system firmware type is: '" << hess1u_smi_getSystemTypeName() << "'" << endl;
-//				setenv(HESS1U_ENVVAR_SYSTEM_TYPE,hess1u_smi_getSystemTypeName(),1);
-//				break;
-//			} else {
-//				cout << "ERROR: firmware loading failed!" << endl;
-//			}
-//		}
-		} while(0);
+		std::cout << "Loading firmware from '" << filename << "' ...";
+		if (fpga_loadFirmware(filename.c_str(), device.c_str()))
+		{
+			std::cout << " failed!";
+		}
+		else
+		{
+			std::cout << " done";
+		}
+		std::cout << std::endl;
 	}
 	else
 	{
-		cout << "no firmware loading performed." << endl;
+		std::cout << "No firmware loading performed." << std::endl;
 	}
 
 	return EXIT_OK;
