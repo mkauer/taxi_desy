@@ -33,8 +33,6 @@ entity pixelRateCounter is
 	(
 		triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
 		deadTime : in std_logic;
-		--triggerPixelIn : in std_logic_vector(8*8-1 downto 0);
-		--triggerPixelIn : in triggerSerdes_t;
 		pixelRateCounter : out pixelRateCounter_t;
 		internalTiming : in internalTiming_t;
 		registerRead : out pixelRateCounter_registerRead_t;

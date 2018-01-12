@@ -78,6 +78,8 @@ architecture behavioral of gpsTiming is
 	
 	signal tick_ms : std_logic := '0';
 	signal newData : std_logic := '0';
+	signal newDataLatched : std_logic := '0';
+	signal newDataLatchedReset : std_logic := '0';
 	
 	--signal counter_clock : integer range 0 to 2**17-1 := 0;
 	signal counter_ms : unsigned(15 downto 0) := (others=>'0');
@@ -117,6 +119,10 @@ registerRead.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsT
 
 registerRead.counterPeriod <= registerWrite.counterPeriod;
 
+registerRead.newDataLatched <= newDataLatched;
+newDataLatchedReset <= registerWrite.newDataLatchedReset;
+
+
 gpsTx <= '1';
 gpsIrq <= '0';
 gpsNotReset <= '1';
@@ -136,6 +142,7 @@ begin
 			--realTimeCounter <= (others=>'0');
 			realTimeCounterLatched <= (others=>'0');
 			ppsCounter <= x"0001";
+			newDataLatched <= '0';
 		else
 			gpsPps_now <= gpsPps; -- ## not in sync....
 			gpsPps_old <= gpsPps_now; 
@@ -143,6 +150,8 @@ begin
 			gpsRx_now <= gpsRx;
 			rx <= gpsRx_now;
 
+			newDataLatched <= newDataLatched and not(newDataLatchedReset);
+			
 			--realTimeCounter <= realTimeCounter + 1;
 			
 			if((gpsPps_old = '0') and (gpsPps_now = '1')) then
@@ -243,6 +252,7 @@ begin
 								ppsCounter <= x"0001";
 								counter_halfSec <= "0"&x"0001";
 								newData <= '1'; -- autoreset
+								newDataLatched <= '1';
 							else
 								ppsCounter <= ppsCounter + 1;
 							end if;

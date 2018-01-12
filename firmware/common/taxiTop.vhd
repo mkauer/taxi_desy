@@ -216,6 +216,7 @@ architecture behaviour of taxiTop is
 	signal reset : std_logic := '0';
 	signal discriminatorSerdes : std_logic_vector(8*8-1 downto 0) := (others=>'0');
 	signal discriminatorSerdesDelayed : std_logic_vector(discriminatorSerdes'length-1 downto 0) := (others=>'0');
+	signal discriminatorSerdesDelayed2 : std_logic_vector(discriminatorSerdes'length-1 downto 0) := (others=>'0');
 	attribute keep of discriminatorSerdes : signal is "true";
 	signal drs4RefClock : std_logic := '0';
 
@@ -230,6 +231,8 @@ architecture behaviour of taxiTop is
 	signal eventFifoSystem_0w : eventFifoSystem_registerWrite_t;
 	signal triggerDataDelay_0r : triggerDataDelay_registerRead_t;
 	signal triggerDataDelay_0w : triggerDataDelay_registerWrite_t;
+	signal triggerDataDelay_1r : triggerDataDelay_registerRead_t;
+	signal triggerDataDelay_1w : triggerDataDelay_registerWrite_t;
 	signal pixelRateCounter_0r : pixelRateCounter_registerRead_t;
 	signal pixelRateCounter_0w : pixelRateCounter_registerWrite_t;
 	signal dac088s085_x3_0r: dac088s085_x3_registerRead_t;
@@ -264,7 +267,7 @@ architecture behaviour of taxiTop is
 	signal drs4Clocks : drs4Clocks_t := (others=>'0');
 	signal adcFifo : adcFifo_t := (channel=>(others=>(others=>'0')) ,others=>(others=>'0'));
 	signal adcClocks : adcClocks_t := (others=>'0');
-	signal trigger : triggerLogic_t := (triggerNotDelayed => '0', triggerDelayed => '0', softTrigger => '0', others=>(others=>'0'));
+	signal trigger : triggerLogic_t; -- := (triggerNotDelayed => '0', triggerDelayed => '0', softTrigger => '0', others=>(others=>'0'));
 	signal pixelRates : pixelRateCounter_t; -- := (newData => '0', counterPeriod => (others=>'0') , channelLatched => (others=>(others=>'0')));
 	signal clockConfig_debug : clockConfig_debug_t;
 
@@ -314,6 +317,8 @@ architecture behaviour of taxiTop is
 	signal nPanelPowerOn : std_logic := '0'; --_vector(2 downto 0) := (others=>'0');
 	signal irq2arm : std_logic := '0';
 	signal whiteRabbitPpsIregbIn : std_logic := '0';
+	signal whiteRabbitPpsIregbInX : std_logic := '0';
+	signal whiteRabbitPpsIregbInZ : std_logic := '0';
 	signal whiteRabbitClockIn : std_logic := '0';
 	
 	signal deadTime : std_logic := '0'; 
@@ -384,12 +389,14 @@ begin
 	--i13: OBUFDS port map(O => LVDS_IO_P(3), OB => LVDS_IO_N(3), I => lvdsDebugOut(3));
 	--i14: OBUFDS port map(O => LVDS_IO_P(4), OB => LVDS_IO_N(4), I => lvdsDebugOut(4));
 	--i15: OBUFDS port map(O => LVDS_IO_P(5), OB => LVDS_IO_N(5), I => lvdsDebugOut(5));
-	i10: IBUF port map(I => LVDS_IO_P(0), O => whiteRabbitPpsIregbIn);
+	i10: IBUF port map(I => LVDS_IO_P(0), O => whiteRabbitPpsIregbInZ);
 	i11: OBUFT port map(O => LVDS_IO_N(0), I => '0', T => '1');
-	g3b: for i in 1 to 5 generate
+	g3b: for i in 1 to 4 generate
 		i12a: OBUFT port map(O => LVDS_IO_N(i), I => '0', T => '1');
 		i12b: OBUFT port map(O => LVDS_IO_P(i), I => '0', T => '1');
 	end generate;
+	i10a: IBUF port map(I => LVDS_IO_P(5), O => whiteRabbitPpsIregbInX);
+	i10b: OBUFT port map(O => LVDS_IO_N(5), I => '0', T => '1');
 
 	i16: IBUF port map(I => EBI1_NWE, O => ebiNotWrite);
 	i17: IBUF port map(I => EBI1_NCS2, O => ebiNotChipSelect);
@@ -468,6 +475,8 @@ begin
 
 	asyncReset <= not(PON_RESETn and clockValid);
 
+	whiteRabbitPpsIregbIn <= whiteRabbitPpsIregbInX or whiteRabbitPpsIregbInZ;
+
 	vcxoQ2Enable <= '0'; -- Q2 not mounted
 
 	drs4RefClock <= drs4Clocks.drs4RefClock;
@@ -478,13 +487,14 @@ begin
 --	x7a: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(7 downto 0), LVDS_IO_P(5 downto 5), LVDS_IO_N(5 downto 5));
 --	x7b: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(15 downto 8), LVDS_IO_P(0 downto 0), LVDS_IO_N(0 downto 0));
 
-	x8: entity work.triggerLogic generic map(8) port map(discriminatorSerdes, trigger, triggerLogic_0r, triggerLogic_0w);
+	x8: entity work.triggerLogic generic map(8) port map(discriminatorSerdes, deadTime, internalTiming, trigger, triggerLogic_0r, triggerLogic_0w);
 	
-	x9: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
+	x9a: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
+	x9b: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed2, triggerDataDelay_1r, triggerDataDelay_1w);
 
 	x10: entity work.triggerTimeToRisingEdge generic map(8) port map(discriminatorSerdesDelayed, trigger.triggerNotDelayed, edgeData, edgeDataReady, triggerTimeToRisingEdge_0r, triggerTimeToRisingEdge_0w, triggerTiming);
 
-	x12: entity work.pixelRateCounter port map(discriminatorSerdes, deadTime, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
+	x12: entity work.pixelRateCounter port map(discriminatorSerdesDelayed2, deadTime, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 
 	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
 
@@ -540,6 +550,8 @@ begin
 		eventFifoSystem_0w,
 		triggerDataDelay_0r,
 		triggerDataDelay_0w,
+		triggerDataDelay_1r,
+		triggerDataDelay_1w,
 		pixelRateCounter_0r,
 		pixelRateCounter_0w,
 		dac088s085_x3_0r,

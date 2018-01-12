@@ -223,6 +223,8 @@ begin
 	ltm9007_14_to_eventFifoSystem.roiBuffer <= drs4_to_ltm9007_14.roiBuffer;
 	ltm9007_14_to_eventFifoSystem.roiBufferReady <= drs4_to_ltm9007_14.roiBufferReady;
 	ltm9007_14_to_eventFifoSystem.realTimeCounter_latched <= drs4_to_ltm9007_14.realTimeCounter_latched;
+	
+	ltm9007_14_to_eventFifoSystem.maxValue <= (others=>(others=>'0'));
 
 	sclk <= sclk_i;
 

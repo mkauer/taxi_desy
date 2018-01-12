@@ -46,6 +46,8 @@ entity registerInterface_iceScint is
 		eventFifoSystem_0w : out eventFifoSystem_registerWrite_t;
 		triggerDataDelay_0r : in triggerDataDelay_registerRead_t;
 		triggerDataDelay_0w : out triggerDataDelay_registerWrite_t;
+		triggerDataDelay_1r : in triggerDataDelay_registerRead_t;
+		triggerDataDelay_1w : out triggerDataDelay_registerWrite_t;
 		pixelRateCounter_0r : in pixelRateCounter_registerRead_t;
 		pixelRateCounter_0w : out pixelRateCounter_registerWrite_t;
 		dac088s085_x3_0r : in dac088s085_x3_registerRead_t;
@@ -93,9 +95,23 @@ architecture behavior of registerInterface_iceScint is
 	signal actualOffsetCorrectionRamValue : std_logic_vector(15 downto 0) := (others => '0');
 
 	signal eventFifoWordsDmaSlice_latched : std_logic_vector(3 downto 0) := (others => '0');
-	signal whiteRabbitTiming_0r_irigDataLatched : std_logic_vector(89 downto 0) := (others => '0');
+	signal whiteRabbitTiming_0r_irigDataLatched : std_logic_vector(88 downto 0) := (others => '0');
+	signal whiteRabbitTiming_0r_irigBinaryYearsLatched : std_logic_vector(6 downto 0) := (others => '0');
+	signal whiteRabbitTiming_0r_irigBinaryDaysLatched : std_logic_vector(8 downto 0) := (others => '0');
+	signal whiteRabbitTiming_0r_irigBinarySecondsLatched : std_logic_vector(15 downto 0) := (others => '0');
+--	signal irigDataLatched : std_logic_vector(72 downto 0) := (others => '0');
 	
 begin
+
+--	irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched(87 downto 49)
+--					   & whiteRabbitTiming_0r.irigDataLatched(47 downto 44)
+--					   & whiteRabbitTiming_0r.irigDataLatched(36 downto 31)
+--					   & whiteRabbitTiming_0r.irigDataLatched(29 downto 26)
+--					   & whiteRabbitTiming_0r.irigDataLatched(23 downto 22)
+--					   & whiteRabbitTiming_0r.irigDataLatched(20 downto 17)
+--					   & whiteRabbitTiming_0r.irigDataLatched(15 downto 13)
+--					   & whiteRabbitTiming_0r.irigDataLatched(11 downto 5)
+--					   & whiteRabbitTiming_0r.irigDataLatched(3 downto 0);
 
 g0: if moduleEnabled /= 0 generate
 	controlBus <= smc_vectorToBus(addressAndControlBus);
@@ -108,17 +124,16 @@ g0: if moduleEnabled /= 0 generate
 	eventFifoSystem_0w.clock <= controlBus.clock;
 	eventFifoSystem_0w.reset <= controlBus.reset or debugReset;
 	eventFifoSystem_0w.eventFifoClear <= eventFifoClear;
-	--eventFifoSystem_0w.tick_ms <= internalTiming_0r.tick_ms;
 	triggerDataDelay_0w.clock <= controlBus.clock;
 	triggerDataDelay_0w.reset <= controlBus.reset;
+	triggerDataDelay_1w.clock <= controlBus.clock;
+	triggerDataDelay_1w.reset <= controlBus.reset;
 	pixelRateCounter_0w.clock <= controlBus.clock;
 	pixelRateCounter_0w.reset <= controlBus.reset;
-	--pixelRateCounter_0w.tick_ms <= internalTiming_0r.tick_ms;
 	dac088s085_x3_0w.clock <= controlBus.clock;
 	dac088s085_x3_0w.reset <= controlBus.reset;
 	gpsTiming_0w.clock <= controlBus.clock;
 	gpsTiming_0w.reset <= controlBus.reset;
-	--gpsTiming_0w.tick_ms <= internalTiming_0r.tick_ms;
 	whiteRabbitTiming_0w.clock <= controlBus.clock;
 	whiteRabbitTiming_0w.reset <= controlBus.reset;
 	internalTiming_0w.clock <= controlBus.clock;
@@ -153,6 +168,7 @@ g0: if moduleEnabled /= 0 generate
 		if rising_edge(controlBus.clock) then
 			eventFifoSystem_0w.nextWord <= '0'; -- autoreset
 			triggerDataDelay_0w.resetDelay <= '0'; -- autoreset
+			triggerDataDelay_1w.resetDelay <= '0'; -- autoreset
 			pixelRateCounter_0w.resetCounter <= (others=>'0'); -- autoreset
 			debugReset <= '0'; -- autoreset
 			eventFifoClear <= '0'; -- autoreset
@@ -166,6 +182,7 @@ g0: if moduleEnabled /= 0 generate
 			ltm9007_14_0w.bitslipStart <= '0'; --autoreset
 			triggerLogic_0w.triggerSerdesDelayInit <= '0'; --autoreset
 			triggerLogic_0w.softTrigger <= '0'; --autoreset
+			triggerLogic_0w.resetCounter <= (others=>'0'); -- autoreset
 			panelPower_0w.init <= '0'; -- autoreset
 			ltm9007_14_0w.offsetCorrectionRamWrite <= (others=>'0'); -- autoreset
 			eventFifoSystem_0w.forceIrq <= '0'; -- autoreset
@@ -173,11 +190,15 @@ g0: if moduleEnabled /= 0 generate
 			iceTad_0w.rs485TxStart <= (others=>'0'); -- autoreset
 			iceTad_0w.rs485FifoClear <= (others=>'0'); -- autoreset
 			iceTad_0w.rs485FifoRead <= (others=>'0'); -- autoreset
+			gpsTiming_0w.newDataLatchedReset <= '0'; -- autoreset
+			whiteRabbitTiming_0w.newDataLatchedReset <= '0'; -- autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
 				triggerDataDelay_0w.numberOfDelayCycles <= x"0004";
 				triggerDataDelay_0w.resetDelay <= '1';
+				triggerDataDelay_1w.numberOfDelayCycles <= x"0005";
+				triggerDataDelay_1w.resetDelay <= '1';
 				valuesChangedChip0Temp <= x"ff";
 				valuesChangedChip1Temp <= x"ff";
 				valuesChangedChip2Temp <= x"ff";
@@ -218,7 +239,11 @@ g0: if moduleEnabled /= 0 generate
 				clockConfig_debug_0w.drs4RefClockPeriod <= x"7f";
 				eventFifoWordsDmaSlice_latched <= (others=>'0');
 				pixelRateCounter_0w.counterPeriod <= x"0001"; -- 1 sec
+				whiteRabbitTiming_0w.counterPeriod <= x"0001"; -- 1 sec
+				triggerLogic_0w.counterPeriod <= x"0001"; -- 1 sec
 				iceTad_0w.rs485Data <= (others=>(others=>'0'));
+				iceTad_0w.softTxEnable <= (others=>'0');
+				iceTad_0w.softTxMask <= (others=>'1');
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
@@ -242,7 +267,8 @@ g0: if moduleEnabled /= 0 generate
 						when x"0022" => eventFifoClear <= '1'; -- autoreset
 						
 						when x"012c" => debugReset <= '1'; -- autoreset
-						when x"012e" => triggerDataDelay_0w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_0w.resetDelay <= '1'; -- autoreset
+						when x"000c" => triggerDataDelay_0w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_0w.resetDelay <= '1'; -- autoreset
+						when x"000e" => triggerDataDelay_1w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_1w.resetDelay <= '1'; -- autoreset
 						when x"0040" => pixelRateCounter_0w.resetCounter <= dataBusIn; -- autoreset
 						when x"0042" => pixelRateCounter_0w.counterPeriod <= dataBusIn; -- autoreset
 						
@@ -276,6 +302,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"007e" => dac088s085_x3_0w.valuesChip2(7) <= dataBusIn(7 downto 0); valuesChangedChip2Temp(7) <= '1';
 						
 						when x"0490" => gpsTiming_0w.counterPeriod <= dataBusIn;
+						when x"0492" => gpsTiming_0w.newDataLatchedReset <= '1'; -- autoreset
 						
 						when x"0090" => ad56x1_0w.valueChip0 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
 						when x"0092" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
@@ -293,14 +320,19 @@ g0: if moduleEnabled /= 0 generate
 						when x"00b4" => ltm9007_14_0w.bitslipStart <= '1'; -- autoreset 
 						when x"00b6" => ltm9007_14_0w.bitslipPattern <= dataBusIn(6 downto 0); 
 						
-						when x"00d0" => triggerLogic_0w.triggerSerdesDelay <= dataBusIn(9 downto 0);
+						when x"01d0" => triggerLogic_0w.triggerSerdesDelay <= dataBusIn(9 downto 0);
 							triggerLogic_0w.triggerSerdesDelayInit <= '1'; --autoreset
-						when x"00d2" => triggerLogic_0w.softTrigger <= '1'; --autoreset
-						when x"00d4" => triggerLogic_0w.triggerMask <= dataBusIn(7 downto 0);
-						when x"00d6" => triggerLogic_0w.singleSeq <= dataBusIn(0);
-						when x"00d8" => triggerLogic_0w.triggerGeneratorEnabled <= dataBusIn(0);
-						when x"00da" => triggerLogic_0w.triggerGeneratorPeriod(15 downto 0) <= unsigned(dataBusIn);
-						when x"00dc" => triggerLogic_0w.triggerGeneratorPeriod(31 downto 16) <= unsigned(dataBusIn);
+							triggerDataDelay_1w.numberOfDelayCycles <= x"00" & dataBusIn(7 downto 0);
+							triggerDataDelay_1w.resetDelay <= '1'; -- autoreset
+
+						when x"01d2" => triggerLogic_0w.softTrigger <= '1'; --autoreset
+						when x"01d4" => triggerLogic_0w.triggerMask <= dataBusIn(7 downto 0);
+						when x"01d6" => triggerLogic_0w.singleSeq <= dataBusIn(0);
+						when x"01d8" => triggerLogic_0w.triggerGeneratorEnabled <= dataBusIn(0);
+						when x"01da" => triggerLogic_0w.triggerGeneratorPeriod(15 downto 0) <= unsigned(dataBusIn);
+						when x"01dc" => triggerLogic_0w.triggerGeneratorPeriod(31 downto 16) <= unsigned(dataBusIn);
+						when x"01de" => triggerLogic_0w.resetCounter <= dataBusIn; -- autoreset
+						when x"01e0" => triggerLogic_0w.counterPeriod <= dataBusIn; -- autoreset
 						
 						when x"00e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(7 downto 0); -- autoreset 
 						--when x"00e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(2 downto 0); 
@@ -322,6 +354,12 @@ g0: if moduleEnabled /= 0 generate
 						when x"030e" => iceTad_0w.rs485Data(7) <= dataBusIn(7 downto 0); 
 						when x"0310" => iceTad_0w.rs485TxStart <= dataBusIn(7 downto 0); -- autoreset
 						when x"0318" => iceTad_0w.rs485FifoClear <= dataBusIn(7 downto 0); -- autoreset
+						when x"031a" => iceTad_0w.rs485FifoRead <= dataBusIn(7 downto 0); -- autoreset
+						when x"031c" => iceTad_0w.softTxEnable <= dataBusIn(7 downto 0); 
+						when x"031e" => iceTad_0w.softTxMask <= dataBusIn(7 downto 0); 
+						
+						when x"0400" => whiteRabbitTiming_0w.newDataLatchedReset <= '1'; -- autoreset
+						when x"0420" => whiteRabbitTiming_0w.counterPeriod <= dataBusIn;
 						
 						--when x"1000" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
 						--when x"1800" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
@@ -334,6 +372,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"0002" => readDataBuffer <= registerB;
 						
 						when x"000c" => readDataBuffer <= triggerDataDelay_0r.numberOfDelayCycles;
+						when x"000e" => readDataBuffer <= triggerDataDelay_1r.numberOfDelayCycles;
 						
 						when x"0100" => readDataBuffer <= eventFifoSystem_0r.packetConfig;
 						when x"0102" => readDataBuffer <= eventFifoSystem_0r.eventsPerIrq;
@@ -424,6 +463,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"048c" => readDataBuffer <= gpsTiming_0r.timeOfWeekSubMilliSecond(15 downto 0);
 						when x"048e" => readDataBuffer <= gpsTiming_0r.differenceGpsToLocalClock;
 						when x"0490" => readDataBuffer <= gpsTiming_0r.counterPeriod;
+						when x"0492" => readDataBuffer <= x"000" & "000" & gpsTiming_0r.newDataLatched;
 						
 						when x"0090" => readDataBuffer <= x"0" & ad56x1_0r.valueChip0;
 						when x"0092" => readDataBuffer <= x"0" & ad56x1_0r.valueChip1;
@@ -447,13 +487,17 @@ g0: if moduleEnabled /= 0 generate
 						when x"00cc" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+2*14 downto 0+2*14);
 						when x"00ce" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+3*14 downto 0+3*14);
 						
-						when x"00d0" => readDataBuffer <= x"0" & "00" & triggerLogic_0r.triggerSerdesDelay;
-						when x"00d4" => readDataBuffer <= x"00" & triggerLogic_0r.triggerMask;
-						when x"00d6" => readDataBuffer <= x"000" & "000" &  triggerLogic_0r.singleSeq;
-						when x"00d8" => readDataBuffer <= x"000" & "000" &  triggerLogic_0r.triggerGeneratorEnabled;
-						when x"00da" => readDataBuffer <= std_logic_vector(triggerLogic_0r.triggerGeneratorPeriod(15 downto 0));
-						when x"00dc" => readDataBuffer <= std_logic_vector(triggerLogic_0r.triggerGeneratorPeriod(31 downto 16));
-						
+						when x"01d0" => readDataBuffer <= x"0" & "00" & triggerLogic_0r.triggerSerdesDelay;
+						when x"01d4" => readDataBuffer <= x"00" & triggerLogic_0r.triggerMask;
+						when x"01d6" => readDataBuffer <= x"000" & "000" &  triggerLogic_0r.singleSeq;
+						when x"01d8" => readDataBuffer <= x"000" & "000" &  triggerLogic_0r.triggerGeneratorEnabled;
+						when x"01da" => readDataBuffer <= std_logic_vector(triggerLogic_0r.triggerGeneratorPeriod(15 downto 0));
+						when x"01dc" => readDataBuffer <= std_logic_vector(triggerLogic_0r.triggerGeneratorPeriod(31 downto 16));
+						when x"01e0" => readDataBuffer <= triggerLogic_0r.counterPeriod;
+						when x"01e2" => readDataBuffer <= triggerLogic_0r.rate(0);
+						when x"01e4" => readDataBuffer <= triggerLogic_0r.rateLatched(0);
+						when x"01e6" => readDataBuffer <= triggerLogic_0r.rateDeadTimeLatched(0);
+
 						when x"00e0" => readDataBuffer <= x"00" & ltm9007_14_0r.offsetCorrectionRamWrite;
 						when x"00e2" => readDataBuffer <= "000000" & ltm9007_14_0r.offsetCorrectionRamAddress;
 						--when x"00e4" => readDataBuffer <= x"00" & actualOffsetCorrectionRamValue;
@@ -462,18 +506,20 @@ g0: if moduleEnabled /= 0 generate
 						when x"00e8" => readDataBuffer <= "000000" & ltm9007_14_0r.baselineEnd;
 						
 						when x"00f0" => readDataBuffer <= x"00" & iceTad_0r.powerOn;
-						when x"0300" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(0);iceTad_0w.rs485FifoRead(0) <= '1'; -- autoreset
-						when x"0302" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(1);iceTad_0w.rs485FifoRead(1) <= '1'; -- autoreset
-						when x"0304" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(2);iceTad_0w.rs485FifoRead(2) <= '1'; -- autoreset
-						when x"0306" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(3);iceTad_0w.rs485FifoRead(3) <= '1'; -- autoreset
-						when x"0308" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(4);iceTad_0w.rs485FifoRead(4) <= '1'; -- autoreset
-						when x"030a" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(5);iceTad_0w.rs485FifoRead(5) <= '1'; -- autoreset
-						when x"030c" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(6);iceTad_0w.rs485FifoRead(6) <= '1'; -- autoreset
-						when x"030e" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(7);iceTad_0w.rs485FifoRead(7) <= '1'; -- autoreset
+						when x"0300" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(0);
+						when x"0302" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(1);
+						when x"0304" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(2);
+						when x"0306" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(3);
+						when x"0308" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(4);
+						when x"030a" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(5);
+						when x"030c" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(6);
+						when x"030e" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoData(7);
 						when x"0310" => readDataBuffer <= x"00" & iceTad_0r.rs485TxBusy;
 						when x"0312" => readDataBuffer <= x"00" & iceTad_0r.rs485RxBusy;
 						when x"0314" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoFull;
 						when x"0316" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoEmpty;
+						when x"031c" => readDataBuffer <= x"00" & iceTad_0r.softTxEnable;
+						when x"031e" => readDataBuffer <= x"00" & iceTad_0r.softTxMask;
 						when x"0320" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(0); 
 						when x"0322" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(1);
 						when x"0324" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(2);
@@ -483,32 +529,45 @@ g0: if moduleEnabled /= 0 generate
 						when x"032c" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(6);
 						when x"032e" => readDataBuffer <= x"00" & iceTad_0r.rs485FifoWords(7);
 						
-						when x"0400" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r.irigDataLatched(8 downto 0); whiteRabbitTiming_0r_irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched;
-						when x"0402" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(17 downto 9);
-						when x"0404" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(26 downto 18);
-						when x"0406" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(35 downto 27);
-						when x"0408" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(44 downto 36);
-						when x"040a" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(53 downto 45);
-						when x"040c" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(62 downto 54);
-						when x"040e" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(71 downto 63);
-						when x"0410" => readDataBuffer <= "00000000" & whiteRabbitTiming_0r_irigDataLatched(79 downto 72);
-						when x"0412" => readDataBuffer <= whiteRabbitTiming_0r.errorCounter;
-						when x"0420" => readDataBuffer <= whiteRabbitTiming_0r.irigDataLatched(15 downto 0); whiteRabbitTiming_0r_irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched;
-						when x"0422" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(31 downto 16);
-						when x"0424" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(47 downto 32);
-						when x"0426" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(63 downto 48);
-						when x"0428" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(79 downto 64);
-						when x"042a" => readDataBuffer <= "000000" & whiteRabbitTiming_0r_irigDataLatched(89 downto 80);
+						when x"0400" => readDataBuffer <= x"000" & "000" & whiteRabbitTiming_0r.newDataLatched;
+							whiteRabbitTiming_0r_irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched;
+							whiteRabbitTiming_0r_irigBinaryYearsLatched <= whiteRabbitTiming_0r.irigBinaryYearsLatched;
+							whiteRabbitTiming_0r_irigBinaryDaysLatched <= whiteRabbitTiming_0r.irigBinaryDaysLatched;
+							whiteRabbitTiming_0r_irigBinarySecondsLatched <= whiteRabbitTiming_0r.irigBinarySecondsLatched;
+						when x"0402" => readDataBuffer <= "0" & whiteRabbitTiming_0r_irigDataLatched(15 downto 13)
+															& whiteRabbitTiming_0r_irigDataLatched(11 downto 8) -- min
+															& "0" & whiteRabbitTiming_0r_irigDataLatched(7 downto 5)
+															& whiteRabbitTiming_0r_irigDataLatched(3 downto 0); -- sec
+						when x"0404" => readDataBuffer <= x"00" & "00" & whiteRabbitTiming_0r_irigDataLatched(23 downto 22)
+															& whiteRabbitTiming_0r_irigDataLatched(20 downto 17); -- hour
+						when x"0406" => readDataBuffer <= x"0" & "00" &  whiteRabbitTiming_0r_irigDataLatched(36 downto 35)
+															& whiteRabbitTiming_0r_irigDataLatched(34 downto 31)
+															& whiteRabbitTiming_0r_irigDataLatched(29 downto 26); -- day
+						when x"0408" => readDataBuffer <= x"00" & whiteRabbitTiming_0r_irigDataLatched(52 downto 49)
+															& whiteRabbitTiming_0r_irigDataLatched(47 downto 44); --year
+						when x"040a" => readDataBuffer <= whiteRabbitTiming_0r_irigBinarySecondsLatched; -- binary sec of day
+						when x"040c" => readDataBuffer <= x"0" & "000" & whiteRabbitTiming_0r_irigBinaryDaysLatched; 
+						when x"040e" => readDataBuffer <= x"00" & "0" & whiteRabbitTiming_0r_irigBinaryYearsLatched; 
+						
+						when x"0410" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(15 downto 0); 
+						when x"0412" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(31 downto 16);
+						when x"0414" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(47 downto 32);
+						when x"0416" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(63 downto 48);
+						when x"0418" => readDataBuffer <= whiteRabbitTiming_0r_irigDataLatched(79 downto 64);
+						when x"041a" => readDataBuffer <= "0000000" & whiteRabbitTiming_0r_irigDataLatched(88 downto 80);
+						when x"041c" => readDataBuffer <= x"00" & whiteRabbitTiming_0r.bitCounter;
+						when x"041e" => readDataBuffer <= whiteRabbitTiming_0r.errorCounter;
+						when x"0420" => readDataBuffer <= whiteRabbitTiming_0r.counterPeriod;
 						
 						when x"f000" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoEmptyA;
 						when x"f002" => readDataBuffer <= x"000" & "000" & ltm9007_14_0r.fifoValidA;
 						when x"f004" => readDataBuffer <= x"00" & ltm9007_14_0r.fifoWordsA;
 						when x"f006" => readDataBuffer <= x"00" & ltm9007_14_0r.fifoWordsA2;
 						
-						when x"f0d0" => readDataBuffer <= x"00" & triggerLogic_0r.trigger.triggerSerdesDelayed;
-						when x"f0d2" => readDataBuffer <= x"00" & triggerLogic_0r.trigger.triggerSerdesNotDelayed;
-						when x"f0d4" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerDelayed;
-						when x"f0d6" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerNotDelayed;
+						--when x"f0d0" => readDataBuffer <= x"00" & triggerLogic_0r.trigger.triggerSerdesDelayed;
+						--when x"f0d2" => readDataBuffer <= x"00" & triggerLogic_0r.trigger.triggerSerdesNotDelayed;
+						--when x"f0d4" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerDelayed;
+						--when x"f0d6" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerNotDelayed;
 						
 --						when others  => readDataBuffer <= (others => '0');
 						when others  => readDataBuffer <= x"dead";

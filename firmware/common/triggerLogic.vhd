@@ -34,8 +34,8 @@ generic(
 	);
 port(
 	triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
-	--triggerOutNoDelay : out std_logic; -- serdesDivClock clock domain...
-	--triggerSerdesDelayed : out std_logic_vector(7 downto 0);
+	deadTime : in std_logic;
+	internalTiming : in internalTiming_t;
 	trigger : out triggerLogic_t;
 	registerRead : out triggerLogic_registerRead_t;
 	registerWrite : in triggerLogic_registerWrite_t	
@@ -61,10 +61,26 @@ architecture Behavioral of triggerLogic is
 	signal triggerDisabled : std_logic := '0';
 	signal singleSeq_old : std_logic := '0';
 	signal triggerNotDelayed : std_logic := '0';
+	signal triggerNotDelayed_old : std_logic := '0';
 	signal triggerDelayed : std_logic := '0';
 	
 	signal triggerGeneratorCounter : unsigned(31 downto 0) := (others=>'0');
 	signal triggerGeneratorTrigger : std_logic := '0';
+
+	constant rateChannels : integer := 1;
+	type counter_t is array (0 to rateChannels-1) of unsigned(15 downto 0);
+	signal rateCounter : counter_t := (others => (others => '0'));
+	signal rateCounterInsideDeadTime : counter_t := (others => (others => '0'));
+	signal triggerToRate : std_logic_vector(rateChannels-1 downto 0) := (others=>'0');
+	signal triggerToRate_old : std_logic_vector(rateChannels-1 downto 0) := (others=>'0');
+	signal newData : std_logic := '0';
+	signal counter_ms : unsigned(15 downto 0) := (others => '0');
+	signal counter_sec : unsigned(15 downto 0) := (others => '0');
+	signal rateLatched : counter_t := (others => (others => '0'));
+	signal rateDeadTimeLatched : counter_t := (others => (others => '0'));
+	signal realTimeDeltaCounter : unsigned(63 downto 0) := (others=>'0');
+	signal realTimeDeltaCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
+	signal realTimeCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
 
 begin
 
@@ -73,10 +89,10 @@ begin
 	registerRead.triggerGeneratorEnabled <= registerWrite.triggerGeneratorEnabled;
 	registerRead.triggerGeneratorPeriod <= registerWrite.triggerGeneratorPeriod;
 
-	registerRead.trigger.triggerNotDelayed <= triggerNotDelayed;
-	registerRead.trigger.triggerDelayed <= triggerDelayed;
-	registerRead.trigger.triggerSerdesNotDelayed <= triggerSerdesNotDelayed;
-	registerRead.trigger.triggerSerdesDelayed <= triggerSerdesDelayed;
+	--registerRead.trigger.triggerNotDelayed <= triggerNotDelayed;
+	--registerRead.trigger.triggerDelayed <= triggerDelayed;
+	--registerRead.trigger.triggerSerdesNotDelayed <= triggerSerdesNotDelayed;
+	--registerRead.trigger.triggerSerdesDelayed <= triggerSerdesDelayed;
 	
 	trigger.triggerNotDelayed <= triggerNotDelayed;
 	trigger.triggerDelayed <= triggerDelayed;
@@ -87,7 +103,23 @@ begin
 	triggerNotDelayed <= '1' when (triggerSerdesNotDelayed /= x"00") else '0';
 	triggerDelayed <= '1' when (triggerSerdesDelayed /= x"00") else '0';
 
-	g0: for i in 0 to numberOfChannels-1 generate
+
+	triggerToRate(0) <= triggerDelayed;
+	trigger.newData <= newData;
+	registerRead.counterPeriod <= registerWrite.counterPeriod;
+	trigger.counterPeriod <= registerWrite.counterPeriod;
+	trigger.realTimeCounterLatched <= realTimeCounterLatched;
+	trigger.realTimeDeltaCounterLatched <= realTimeDeltaCounterLatched;
+	g0: for i in 0 to rateChannels-1 generate
+		trigger.rateLatched(i) <= std_logic_vector(rateLatched(i));
+		registerRead.rateLatched(i) <= std_logic_vector(rateLatched(i));
+		trigger.rateDeadTimeLatched(i) <= std_logic_vector(rateDeadTimeLatched(i));
+		registerRead.rateDeadTimeLatched(i) <= std_logic_vector(rateDeadTimeLatched(i));
+		registerRead.rate(i) <= std_logic_vector(rateCounter(i));
+	end generate;
+
+
+	g1: for i in 0 to numberOfChannels-1 generate
 		triggerMasked(i) <= triggerPixelIn(8*i+7 downto 8*i+0) when ((registerWrite.triggerMask(i) = '0') and (triggerDisabled = '0')) else x"00";
 	end generate;
 		
@@ -168,6 +200,77 @@ begin
 			end if;
 		end if;
 	end process P1;
+
+	P2:process (registerWrite.clock)
+	begin
+		if rising_edge(registerWrite.clock) then
+			newData <= '0'; -- autoreset
+			if(registerWrite.reset = '1') then
+				rateCounter <= (others => (others => '0'));
+				rateCounterInsideDeadTime <= (others => (others => '0'));
+				counter_ms <= (others => '0');
+				counter_sec <= (others => '0');
+				rateLatched <= (others => (others => '0'));
+				rateDeadTimeLatched <= (others => (others => '0'));
+				realTimeDeltaCounter <= (others => '0');
+				realTimeDeltaCounterLatched <= (others => '0');
+			else
+				triggerToRate_old <= triggerToRate;
+				realTimeDeltaCounter <= realTimeDeltaCounter + 1;
+
+				if(internalTiming.tick_ms = '1') then
+					counter_ms <= counter_ms + 1;
+				end if;
+				if(counter_ms >= x"03e7") then
+					counter_ms <= (others => '0');
+					counter_sec <= counter_sec + 1;
+				end if;
+				
+				for i in 0 to rateChannels-1 loop
+					if((triggerToRate_old(i) = '0') and (triggerToRate(i) = '1')) then
+						rateCounter(i) <= rateCounter(i) + 1;
+						if(rateCounter(i) = x"ffff") then
+							rateCounter(i) <= x"ffff";
+						end if;
+						if(deadTime = '1') then
+							rateCounterInsideDeadTime(i) <= rateCounterInsideDeadTime(i) + 1;	
+						end if;
+						if(rateCounterInsideDeadTime(i) = x"ffff") then
+							rateCounterInsideDeadTime(i) <= x"ffff";
+						end if;
+					end if;
+				
+					if(registerWrite.resetCounter(i) = '1') then
+						rateCounter(i) <= (others => '0');
+						rateCounterInsideDeadTime(i) <= (others => '0');
+						realTimeDeltaCounter <= (others => '0');
+					end if;
+				end loop;
+				
+				if(registerWrite.counterPeriod = x"0000") then
+					for i in 0 to rateChannels-1 loop
+						rateLatched(i) <= rateCounter(i);
+						rateDeadTimeLatched(i) <= rateCounterInsideDeadTime(i);
+					end loop;
+				elsif(counter_sec >= unsigned(registerWrite.counterPeriod)) then -- ## rates for continuous operation
+					counter_sec <= (others => '0');
+					rateCounter <= (others => (others => '0'));
+					rateCounterInsideDeadTime <= (others => (others => '0'));
+					for i in 0 to rateChannels-1 loop
+						rateLatched(i) <= rateCounter(i);
+						rateDeadTimeLatched(i) <= rateCounterInsideDeadTime(i);
+					end loop;
+					-- if(period2 = foo) then
+					newData <= '1'; -- autoreset
+					realTimeCounterLatched <= internalTiming.realTimeCounter;
+					-- end if;
+					realTimeDeltaCounterLatched <= std_logic_vector(realTimeDeltaCounter);
+					realTimeDeltaCounter <= (others => '0');
+				end if;
+				
+			end if;
+		end if;
+	end process P2;
 
 
 end Behavioral;

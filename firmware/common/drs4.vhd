@@ -719,7 +719,7 @@ begin
 							end if;
 							dwrite_i <= '0';
 							drs4_to_ltm9007_14.realTimeCounter_latched <= internalTiming.realTimeCounter;
-							deadTime <= '1';
+							deadTime <= '1'; -- ## lag...
 						end if;
 						
 					when debug =>

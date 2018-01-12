@@ -103,7 +103,7 @@ begin
 					when latch =>
 						pixelCounterLatched <= pixelCounter; -- ## 'jemand' sollte mal den ort ueberdenken an dem gelatched wird
 						state1 <= prepare;
-						dataReady <= '1';
+						dataReady <= '1'; -- ## change to newData stobe...
 						registerRead.channel(0) <= std_logic_vector(pixelCounter(0));
 						registerRead.channel(1) <= std_logic_vector(pixelCounter(1));
 						registerRead.channel(2) <= std_logic_vector(pixelCounter(2));

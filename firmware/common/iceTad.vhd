@@ -47,6 +47,8 @@ architecture Behavioral of iceTad is
 
 	signal rs485DataIn_intern : std_logic_vector(numberOfUarts-1 downto 0);
 	signal rs485DataEnable_intern : std_logic_vector(numberOfUarts-1 downto 0);
+	signal softTxEnable : std_logic_vector(7 downto 0) := (others=>'0');
+	signal softTxMask : std_logic_vector(7 downto 0) := (others=>'0');
 	signal txBusy : std_logic_vector(7 downto 0) := (others=>'0');
 	signal rxBusy : std_logic_vector(7 downto 0) := (others=>'0');
 	signal rxBusy_old : std_logic_vector(7 downto 0) := (others=>'0');
@@ -65,6 +67,10 @@ begin
 	nP24VOn <= (others=>'0');
 	registerRead.rs485RxBusy <= rxBusy;
 	registerRead.rs485TxBusy <= txBusy;
+	registerRead.softTxEnable <= registerWrite.softTxEnable;
+	softTxEnable <= registerWrite.softTxEnable;
+	registerRead.softTxMask <= registerWrite.softTxMask;
+	softTxMask <= registerWrite.softTxMask;
 
 	g1: for i in 0 to numberOfUarts-1 generate
 		rs485DataIn_intern(i) <= rs485In(i) and not(rs485DataEnable_intern(i));
@@ -85,8 +91,10 @@ begin
 			TX_Start => registerWrite.rs485TxStart(i)
 		);
 		
-		rs485DataTristate(i) <= not(txBusy(i));
-		rs485DataEnable(i) <= txBusy(i);
+		--rs485DataTristate(i) <= not(txBusy(i));
+		--rs485DataEnable(i) <= txBusy(i);
+		rs485DataTristate(i) <= not(softTxEnable(i)) when softTxMask(i) = '1' else not(txBusy(i));
+		rs485DataEnable(i) <= softTxEnable(i) when softTxMask(i) = '1' else txBusy(i);
 
 		x2: entity work.rs485fifo
 		port map(
@@ -146,7 +154,8 @@ begin
 
 				q:for i in 0 to fifoWrite'length-1 loop
 					if((rxBusy_old(i) = '1') and (rxBusy(i) = '0')) then
-						fifoWrite(i) <= '1'; -- autoreset
+						fifoWrite(i) <= '1' and not(txBusy(i)); -- autoreset
+						--fifoWrite(i) <= '1'; -- autoreset
 					end if;
 				end loop;
 

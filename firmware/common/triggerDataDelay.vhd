@@ -33,6 +33,8 @@ entity triggerDataDelay is
 	(
 		triggerPixelIn : in std_logic_vector(8*8-1 downto 0);
 		triggerPixelOut : out std_logic_vector(8*8-1 downto 0);
+		--triggerLogicIn : in std_logic; --_vector(0 downto 0);
+		--triggerLogicOut : out std_logic; --_vector(0 downto 0);
 		registerRead : out triggerDataDelay_registerRead_t;
 		registerWrite : in triggerDataDelay_registerWrite_t
 	);
@@ -47,14 +49,28 @@ architecture behavioral of triggerDataDelay is
 	
 	signal numberOfDelayCycles : std_logic_vector(15 downto 0);
 	
+	--signal fifoIn : std_logic_vector((triggerPixelIn'length+1)-1 downto 0);
+	--signal fifoOut : std_logic_vector((triggerPixelIn'length+1)-1 downto 0);
+	
 begin
 	
+	--fifoIn <= triggerPixelIn & triggerLogicIn;
+	--triggerPixelOut <= fifoOut(fifoOut'length-1 downto 1);
+	--triggerLogicOut <= fifoOut(0);
+	
+	--numberOfDelayCycles <= registerWrite.numberOfDelayCycles when(registerWrite.numberOfDelayCycles < x"00ff") else x"00ff";
+	--registerRead.numberOfDelayCycles <= numberOfDelayCycles;
+	registerRead.numberOfDelayCycles <= registerWrite.numberOfDelayCycles;
+	numberOfDelayCycles <= registerWrite.numberOfDelayCycles;
+
 	delay: entity work.delayFifo port map(
 		clk => registerWrite.clock,
 		srst => fifoReset,
+		--din => fifoIn, --triggerPixelIn & triggerLogicIn,
 		din => triggerPixelIn,
 		wr_en => fifoWriteRequest,
 		rd_en => fifoReadRequest,
+		--dout => fifoOut, --triggerPixelOut & triggerLogicOut,
 		dout => triggerPixelOut,
 		full => open,
 		empty => open
@@ -81,7 +97,5 @@ begin
 		end if;
 	end process P0;
 	
-	numberOfDelayCycles <= registerWrite.numberOfDelayCycles when(registerWrite.numberOfDelayCycles < x"00ff") else x"00ff";
-	registerRead.numberOfDelayCycles <= numberOfDelayCycles;
 
 end behavioral;

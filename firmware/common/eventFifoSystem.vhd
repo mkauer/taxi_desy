@@ -69,7 +69,7 @@ architecture behavioral of eventFifoSystem is
 --	signal dmaLookAheadIsIdle : std_logic := '0';
 	signal s : integer range 0 to 63 := 0;
 	
-	type state1_t is (wait0, idle, writeGps, writeWhiteRabbit, writePixelRateCounter0, writePixelRateCounter1, writePixelRateCounter2, writeHeader, writeDebug, writeTriggerTiming, writeDrs4Sampling, writeDrs4Charge, writeDrs4Baseline, writeDrs4Timing, testDataHeader, testData, waitForRoiData);
+	type state1_t is (wait0, idle, writeGps, writeWhiteRabbit, writePixelRateCounter0, writePixelRateCounter1, writePixelRateCounter2, writeHeader, writeDebug, writeTriggerTiming, writeDrs4Sampling, writeDrs4Charge, writeDrs4Max, writeDrs4Baseline, writeDrs4Timing, testDataHeader, testData, waitForRoiData);
 	signal state1 : state1_t := idle;
 	
 	type state7_t is (wait0, wait1, idle, read0, read1, read2, read3);
@@ -105,6 +105,7 @@ architecture behavioral of eventFifoSystem is
 	constant DATATYPE_TESTDATA_STATICEVENTFIFOHEADER : std_logic_vector(5 downto 0) := x"a" & "00";
 	constant DATATYPE_TESTDATA_COUNTEREVENTFIFOHEADER : std_logic_vector(5 downto 0) := x"b" & "00";
 	constant DATATYPE_TESTDATA_COUNTER : std_logic_vector(5 downto 0) := x"c" & "00";
+	constant DATATYPE_DRS4MAX : std_logic_vector(5 downto 0) := x"d" & "00";
 	constant DATATYPE_DEBUG : std_logic_vector(5 downto 0) := x"f" & "00";
 	
 	signal dataTypeCounter : unsigned(9 downto 0) := (others=>'0');
@@ -115,6 +116,7 @@ architecture behavioral of eventFifoSystem is
 	 alias writeDrs4BaselineToFifo_bit : std_logic is packetConfig(1);
 	 alias writeDrs4ChargeToFifo_bit : std_logic is packetConfig(2);
 	 alias writeDrs4TimingToFifo_bit : std_logic is packetConfig(3);
+	 alias writeDrs4MaxValueToFifo_bit : std_logic is packetConfig(4);
 	 alias writeTriggerTimingToFifo_bit : std_logic is packetConfig(5);
 	 alias testDataEventFifoStatic_bit : std_logic is packetConfig(8);
 	 alias testDataEventFifoCounter_bit : std_logic is packetConfig(9);
@@ -208,8 +210,7 @@ begin
 			
 	triggerEvent <= trigger.triggerNotDelayed or trigger.softTrigger;
 	gpsEvent <= gpsTiming.newData;
---	whiteRabbitEvent <= whiteRabbitTiming.newData;
-	whiteRabbitEvent <= '0';
+	whiteRabbitEvent <= whiteRabbitTiming.newData;
 	pixelRateCounterEvent <= pixelRateCounter.newData;
 	
 P1:process (registerWrite.clock)
@@ -417,10 +418,10 @@ begin
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax)) then
 						eventFifoIn <= (others=>'0');
 						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_WHITERABBIT & "00" & x"00";
-						--eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= whiteRabbitTiming.
-						--eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= whiteRabbitTiming.
-						--eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= whiteRabbitTiming.
-						--eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= whiteRabbitTiming.
+						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= "000000000" & whiteRabbitTiming.irigBinaryYearsLatched;
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= "0000000" & whiteRabbitTiming.irigBinaryDaysLatched;
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= whiteRabbitTiming.irigBinarySecondsLatched;
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= x"dead";
 						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= whiteRabbitTiming.realTimeCounterLatched(63 downto 48);
 						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= whiteRabbitTiming.realTimeCounterLatched(47 downto 32);
 						eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= whiteRabbitTiming.realTimeCounterLatched(31 downto 16);
@@ -579,6 +580,7 @@ begin
 
 				when writeDrs4Charge =>
 					nextState := writeDrs4Timing;
+					--nextState := writeDrs4Max;
 					if(writeDrs4ChargeToFifo_bit = '1') then
 						if(chargeDone = '1') then
 							if(chargePart = '0') then
@@ -616,6 +618,29 @@ begin
 								chargeDone <= '0';
 							end if;
 						end if;
+					else
+						state1 <= nextState;
+					end if;
+
+				when writeDrs4Max =>
+					nextState := writeDrs4Timing;
+					if(writeDrs4MaxValueToFifo_bit = '1') then
+						--if(chargeDone = '1') then
+							eventFifoIn <= (others=>'0');
+							eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_DRS4MAX & "00" & x"00";
+							eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= "00" & drs4Data.maxValue(0)(13 downto 0);
+							eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= "00" & drs4Data.maxValue(1)(13 downto 0);
+							eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= "00" & drs4Data.maxValue(2)(13 downto 0);
+							eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= "00" & drs4Data.maxValue(3)(13 downto 0);
+							eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= "00" & drs4Data.maxValue(4)(13 downto 0);
+							eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= "00" & drs4Data.maxValue(5)(13 downto 0);
+							eventFifoIn(7*SLOT_WIDTH+SLOT_WIDTH-1 downto 7*SLOT_WIDTH) <= "00" & drs4Data.maxValue(6)(13 downto 0);
+							eventFifoIn(8*SLOT_WIDTH+SLOT_WIDTH-1 downto 8*SLOT_WIDTH) <= "00" & drs4Data.maxValue(7)(13 downto 0);
+							eventFifoWriteRequest <= '1'; -- autoreset
+						
+							state1 <= nextState;
+						--	chargeDone <= '0';
+						--end if;
 					else
 						state1 <= nextState;
 					end if;

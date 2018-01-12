@@ -26,6 +26,7 @@ package types is
 	type data8x24Bit_t is array (0 to 7) of std_logic_vector(23 downto 0);
 	type data8x32Bit_t is array (0 to 7) of std_logic_vector(31 downto 0);
 	--subtype dataNumberOfChannels_t is std_logic_vector(numberOfChannels-1 downto 0);
+	--type dataXx16Bit_t is array (natural range <> ) of std_logic_vector(15 downto 0);
 
 	type smc_bus is record
 		clock : std_logic;
@@ -236,12 +237,14 @@ package types is
 		differenceGpsToLocalClock : std_logic_vector(15 downto 0);
 		--tick_ms : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
+		newDataLatched : std_logic;
 	end record;
 	
 	type gpsTiming_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
+		newDataLatchedReset : std_logic;
 	end record;
 	
 	type gpsTiming_t is record
@@ -259,14 +262,20 @@ package types is
 
 	type whiteRabbitTiming_registerRead_t is record
 		counterPeriod : std_logic_vector(15 downto 0);
-		irigDataLatched : std_logic_vector(89 downto 0);
+		irigDataLatched : std_logic_vector(88 downto 0);
 		errorCounter : std_logic_vector(15 downto 0);
+		bitCounter : std_logic_vector(7 downto 0);
+		irigBinaryYearsLatched : std_logic_vector(6 downto 0);
+		irigBinaryDaysLatched : std_logic_vector(8 downto 0);
+		irigBinarySecondsLatched : std_logic_vector(15 downto 0);
+		newDataLatched : std_logic;
 	end record;
 	
 	type whiteRabbitTiming_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
+		newDataLatchedReset : std_logic;
 	end record;
 	
 	type whiteRabbitTiming_t is record
@@ -274,7 +283,10 @@ package types is
 		realTimeCounterLatched : std_logic_vector(63 downto 0);
 		whiteRabbitClockCounterLatched : std_logic_vector(31 downto 0);
 		localClockSubSecondCounterLatched : std_logic_vector(31 downto 0);
-		irigDataLatched : std_logic_vector(89 downto 0);
+		irigDataLatched : std_logic_vector(88 downto 0);
+		irigBinaryYearsLatched : std_logic_vector(6 downto 0);
+		irigBinaryDaysLatched : std_logic_vector(8 downto 0);
+		irigBinarySecondsLatched : std_logic_vector(15 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -289,7 +301,6 @@ package types is
 	type pixelRateCounter_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
-		--tick_ms : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
 		resetCounter : std_logic_vector(15 downto 0);
 	end record;
@@ -339,6 +350,7 @@ package types is
 		roiBuffer : std_logic_vector(9 downto 0);
 		roiBufferReady : std_logic;
 		charge : data8x24Bit_t;
+		maxValue : data8x16Bit_t;
 		chargeDone : std_logic;
 		baseline : data8x24Bit_t;
 		baselineDone : std_logic;
@@ -396,22 +408,21 @@ package types is
 	end record;
 
 -------------------------------------------------------------------------------
-	type triggerLogic_t is record
-		triggerSerdesDelayed : std_logic_vector(7 downto 0);
-		triggerSerdesNotDelayed : std_logic_vector(7 downto 0);
-		triggerDelayed : std_logic;
-		triggerNotDelayed : std_logic;
-		softTrigger : std_logic;
-	end record;
 	
 	type triggerLogic_registerRead_t is record
 		triggerSerdesDelay : std_logic_vector(9 downto 0);
 		triggerMask : std_logic_vector(7 downto 0);
 		singleSeq : std_logic;
-		trigger : triggerLogic_t; -- debug
+		--trigger : triggerLogic_t; -- debug
 		triggerGeneratorEnabled : std_logic;
 		triggerGeneratorPeriod : unsigned(31 downto 0);
+		
+		rate : dataNumberOfChannelsX16Bit_t;
+		rateLatched : dataNumberOfChannelsX16Bit_t;
+		rateDeadTimeLatched : dataNumberOfChannelsX16Bit_t;
+		counterPeriod : std_logic_vector(15 downto 0);
 	end record;
+
 	type triggerLogic_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
@@ -422,6 +433,24 @@ package types is
 		singleSeq : std_logic;
 		triggerGeneratorEnabled : std_logic;
 		triggerGeneratorPeriod : unsigned(31 downto 0);
+		
+		counterPeriod : std_logic_vector(15 downto 0);
+		resetCounter : std_logic_vector(15 downto 0);
+	end record;
+
+	type triggerLogic_t is record
+		triggerSerdesDelayed : std_logic_vector(7 downto 0);
+		triggerSerdesNotDelayed : std_logic_vector(7 downto 0);
+		triggerDelayed : std_logic;
+		triggerNotDelayed : std_logic;
+		softTrigger : std_logic;
+
+		newData : std_logic;
+		counterPeriod : std_logic_vector(15 downto 0);
+		rateLatched : dataNumberOfChannelsX16Bit_t;
+		rateDeadTimeLatched : dataNumberOfChannelsX16Bit_t;
+		realTimeCounterLatched : std_logic_vector(63 downto 0);
+		realTimeDeltaCounterLatched : std_logic_vector(63 downto 0); -- more or less like counterPeriod 
 	end record;
 
 -------------------------------------------------------------------------------
@@ -436,6 +465,8 @@ package types is
 		--rs485FifoFull : dataNumberOfChannels_t;
 		rs485FifoFull : std_logic_vector(7 downto 0);
 		rs485FifoEmpty : std_logic_vector(7 downto 0);
+		softTxEnable : std_logic_vector(7 downto 0);
+		softTxMask : std_logic_vector(7 downto 0);
 	end record;
 	type iceTad_registerWrite_t is record
 		clock : std_logic;
@@ -446,6 +477,8 @@ package types is
 		rs485TxStart : std_logic_vector(7 downto 0);
 		rs485FifoRead : std_logic_vector(7 downto 0);
 		rs485FifoClear : std_logic_vector(7 downto 0);
+		softTxEnable : std_logic_vector(7 downto 0);
+		softTxMask : std_logic_vector(7 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
