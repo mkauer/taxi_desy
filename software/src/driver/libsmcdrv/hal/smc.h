@@ -62,7 +62,7 @@ static inline void IOWR_16DIRECT(unsigned int base, unsigned int offset, unsigne
 
 static inline unsigned short IORD_16DIRECT(unsigned int base, unsigned int offset)
 {
-	smc_rd16(base + offset);
+	return smc_rd16(base + offset);
 }
 
 static inline void IOWR_32DIRECT(unsigned int base, unsigned int offset, unsigned int data)
@@ -72,7 +72,7 @@ static inline void IOWR_32DIRECT(unsigned int base, unsigned int offset, unsigne
 
 static inline unsigned int IORD_32DIRECT(unsigned int base, unsigned int offset)
 {
-	smc_rd32(base + offset);
+	return smc_rd32(base + offset);
 }
 
 #ifdef __cplusplus
