@@ -18,6 +18,10 @@
 #define ICESCINT_NUMBEROFCHANNELS			8
 
 #define BASE_ICESCINT_READOUT										0x0000 // ## rename to BASE_ICESCINT
+
+#define OFFS_ICESCINT_TRIGGER_DELAY_RISINGEDGE						0x0c // small delay for trigger edge timing to work
+#define OFFS_ICESCINT_TRIGGER_DELAY_DATA							0x0e // will get the same value as the serdesDelay
+
 #define OFFS_ICESCINT_READOUT_EVENTFIFO								0x20
 #define OFFS_ICESCINT_READOUT_EVENTFIFOWORDCOUNT					0x2a
 #define OFFS_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG					0x100

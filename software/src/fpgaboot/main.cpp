@@ -23,13 +23,6 @@ int main(int argc, char** argv)
 	std::string filename;
 	std::string device;
 
-	int orbitTriggerDelay;
-	int histOrbitThreshold;
-	int samplingMode;
-	int mode;
-	int testNr;
-	unsigned int mask;
-	bool didSomething = false;
 	std::string defaultMessage = std::string("load the default firmware file (") + std::string(DEFAULT_FIRMWARE) + std::string (")");
 
 	po::options_description desc("Allowed options");
