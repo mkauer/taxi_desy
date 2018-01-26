@@ -7,4 +7,6 @@
 case "$1" in 
 start)		insmod /opt/taxi/bin/smcdrv.ko ;;
 stop)		rmmod smcdrv.ko ;;
+restart)	rmmod smcdrv.ko
+		insmod /opt/taxi/bin/smcdrv.ko ;;
 esac

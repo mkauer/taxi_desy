@@ -12,6 +12,8 @@
 source /opt/taxi/setupenv.sourceme
 
 case "$1" in 
-start)		/opt/taxi/bin/fpgainit -f /opt/firmware/defaultFirmware.bit ;;
+#start)		/opt/taxi/bin/fpgainit -f /opt/firmware/defaultFirmware.bit ;;
+start)		/opt/taxi/bin/fpgainit -d ;;
+restart)	/opt/taxi/bin/fpgainit -d ;;
 stop)		;;
 esac

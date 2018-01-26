@@ -16,8 +16,8 @@ cp ${TAXI_ROOT}/install/profile ~/.profile
 cp ${TAXI_ROOT}/install/desy-feed.conf /etc/opkg/
 
 # create lighttpd conf
-cp ${TAXI_ROOT}/install/lighttpd.conf /etc/
-ln -s ${TAXI_ROOT}/bin/lighttpd.conf /etc/lighttpd-taxi.conf
+#cp ${TAXI_ROOT}/install/lighttpd.conf /etc/
+#ln -s ${TAXI_ROOT}/bin/lighttpd.conf /etc/lighttpd-taxi.conf
 
 disableService()
 {
@@ -48,6 +48,7 @@ enableService()
 enableService smcdrv.d 40
 enableService fpgadrv.d 41
 enableService fpgaboot.d 60
-enableService fpgaconfig.d 61
-enableService daqdrv.d 80
+enableService daqdrv.d 61
+enableService fpgaconfig.d 62
+enableService eventSender.d 90
 #enableService screen.d 90
