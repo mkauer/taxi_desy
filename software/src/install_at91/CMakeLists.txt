@@ -5,7 +5,7 @@ set(PERM600 OWNER_READ OWNER_WRITE )
 
 #install(DIRECTORY scripts DESTINATION .)
 install(DIRECTORY install DESTINATION .)
-install(DIRECTORY www DESTINATION .)
+#install(DIRECTORY www DESTINATION .)
 install(DIRECTORY firmware DESTINATION .)
 
 install(FILES setupenv.sourceme DESTINATION .)
