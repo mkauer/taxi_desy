@@ -224,6 +224,14 @@ static inline void icescint_doRs485SendData(uint8_t _data, uint8_t _panel)
 	icescint_setRs485Data(_data, _panel);
 	icescint_doRs485Send(1<<_panel);
 }
+static inline uint16_t icescint_getRs485SoftTriggerMask(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485SOFTTXMASK);
+}
+static inline void icescint_setRs485SoftTriggerMask(uint16_t _mask)
+{
+	return IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_READOUT_RS485SOFTTXMASK, _mask);
+}
 //uint16_t icescint_getRs485Data(uint8_t _panel)
 //{
 //	_panel = clipValueMax(_panel, ICESCINT_NUMBEROFCHANNELS-1);

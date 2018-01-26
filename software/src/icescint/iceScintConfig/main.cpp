@@ -18,6 +18,7 @@
 #include <boost/thread.hpp>
 
 #include <hal/icescint.h>
+#include <hal/icescint_panelGeneralPurposeBoard.hpp>
 
 //using namespace std;
 namespace po = boost::program_options;
@@ -49,9 +50,9 @@ int main(int argc, char** argv)
 		("setSerdesDelay", po::value<int>(), "[0-1023]")
 		("setDrs4ReadoutMode", po::value<int>(), "") // ## the spike thing...
 		("setDrs4NumberOfSamplesToRead", po::value<int>(), "[10-1024] more than 1024 will reread old samples")
-		("setTriggerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel")
+		("setTriggerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel, '1' will disable and '0' will enable the channel")
 		("setPanelPower", po::value<int>(), "[0-1] needs {channel} (remember: the panel needs some time to boot)")
-		("setPanelPowerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel (remember: the panel needs some time to boot)")
+		("setPanelPowerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel, '1' will power on and '0' will power off a panel (remember: the panel needs some time to boot)")
 		("setIrqEnable", po::value<int>(), "[0-1] interrupt from FPGA to ARM")
 		("setDrs4BaselineStart", po::value<int>(), "[0-1023] needs to be less than {setDrs4NumberOfSamplesToRead}")
 		("setDrs4BaselineStop", po::value<int>(), "[0-1023] needs to be less than {setDrs4NumberOfSamplesToRead}")
@@ -293,15 +294,15 @@ int main(int argc, char** argv)
 		icescint_setPixelTriggerCounterPeriod(1);
 
 		icescint_setEventFifoPacketConfig( 0x0
-//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
-//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4BASELINE
-//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4CHARGE
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4BASELINE
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4CHARGE
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4TIMING
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TRIGGERTIMING
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TEST_DATA1
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TEST_DATA2
 			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_WHITERABBIT
-			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_GPS
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_GPS
 			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_PIXELRATES
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DEBUG
 			);
@@ -309,6 +310,31 @@ int main(int argc, char** argv)
 		icescint_setBaselineStop(10);
 		icescint_setSoftTriggerGeneratorPeriod(0x8000000);
 		icescint_setSoftTriggerGeneratorEnable(0);
+
+		icescint_setRs485SoftTriggerMask(0x0);
+
+		// baseline
+		// -
+
+
+		// panels
+		usleep(1000*6000);
+		for(int i=0;i<7;i++)
+		{
+			icescint_pannelPowerOn(i);
+		}
+		usleep(1000*100);
+
+		for(int i=0;i<7;i++)
+		{
+			icescint_pannelSwitchToHg(i);
+		}
+		usleep(1000*100);
+
+		for(int i=0;i<7;i++)
+		{
+			icescint_pannelSetSipmVoltage(i, 53.0);
+		}
 
 		return EXIT_OK;
 	}

@@ -22,6 +22,9 @@
 #include <bitset>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <ctime>
+#include <time.h>
+
 namespace po = boost::program_options;
 
 #define EXIT_OK 0
@@ -46,6 +49,7 @@ int main(int argc, char** argv)
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help,h", "")
+//		("now,n", "show the actual white rabbit time")
 //		("", po::value<int>(), "")
 		;
 
@@ -53,7 +57,7 @@ int main(int argc, char** argv)
 	po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 	po::notify(vm);
 
-	if (vm.count("help"))
+	if(vm.count("help"))
 	{
 		std::cout << "*** iceScintDebugger | " << __DATE__ << " | " << __TIME__ << " ***" << std::endl;
 		std::cout << desc << std::endl;
@@ -70,6 +74,17 @@ int main(int argc, char** argv)
 	}
 
 	uint16_t data[10] = {1,2,3,4,5,6,7,8,9,0};
+
+	if(vm.count("now"))
+	{
+		if(icescint_isNewIrigData())
+		{
+//			std::cout << std::dec;
+//			std::cout << (int(icescint_getIrigBinaryYear())+30)*;
+//			std::cout << "irigb binary day: " << std::dec << int(icescint_getIrigBinaryDay()) << std::endl;
+//			std::cout << "irigb binary second: " << std::dec << int(icescint_getIrigBinarySecond()) << std::endl;
+		}
+	}
 
 	while(1)
 	{
