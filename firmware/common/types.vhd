@@ -296,6 +296,8 @@ package types is
 		channelLatched : dataNumberOfChannelsX16Bit_t;
 		channelDeadTimeLatched : dataNumberOfChannelsX16Bit_t;
 		counterPeriod : std_logic_vector(15 downto 0);
+		doublePulsePrevention : std_logic;
+		doublePulseTime : std_logic_vector(7 downto 0);
 	end record;
 	
 	type pixelRateCounter_registerWrite_t is record
@@ -303,6 +305,8 @@ package types is
 		reset : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
 		resetCounter : std_logic_vector(15 downto 0);
+		doublePulsePrevention : std_logic;
+		doublePulseTime : std_logic_vector(7 downto 0);
 	end record;
 	
 	type pixelRateCounter_t is record

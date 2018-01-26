@@ -41,6 +41,11 @@ entity pixelRateCounter is
 end pixelRateCounter;
 
 architecture behavioral of pixelRateCounter is
+	signal sameEvent : std_logic_vector(numberOfChannels-1 downto 0) := (others => '0'); -- is like sampling dead time, not readout dead time... trigger that are close will be count as one / same event
+	type counter2_t is array (0 to numberOfChannels-1) of unsigned(7 downto 0);
+	signal sameEventCounter : counter2_t;
+	signal sameEventTime : std_logic_vector(7 downto 0) := x"00";
+	signal doublePulsePrevention : std_logic := '0';
 	signal pixel : std_logic_vector(numberOfChannels-1 downto 0) := (others => '0');
 	signal pixel_old : std_logic_vector(pixel'length-1 downto 0) := (others => '0');
 	type counter_t is array (0 to numberOfChannels-1) of unsigned(15 downto 0);
@@ -58,6 +63,11 @@ begin
 
 	registerRead.counterPeriod <= registerWrite.counterPeriod;
 	pixelRateCounter.counterPeriod <= registerWrite.counterPeriod;
+
+	registerRead.doublePulsePrevention <= registerWrite.doublePulsePrevention;
+	doublePulsePrevention <= registerWrite.doublePulsePrevention;
+	registerRead.doublePulseTime <= registerWrite.doublePulseTime;
+	sameEventTime <= registerWrite.doublePulseTime;
 	
 	pixelRateCounter.realTimeCounterLatched <= realTimeCounterLatched;
 	pixelRateCounter.realTimeDeltaCounterLatched <= realTimeDeltaCounterLatched;
@@ -85,6 +95,9 @@ begin
 				channelDeadTimeLatched <= (others => (others => '0'));
 				realTimeDeltaCounter <= (others => '0');
 				realTimeDeltaCounterLatched <= (others => '0');
+				sameEvent <= (others => '0');
+				sameEventCounter <= (others => (others => '0'));
+				--sameEventTime <= x"30"; -- 0x30 ~ 400ns
 			else
 				pixel_old <= pixel;
 				realTimeDeltaCounter <= realTimeDeltaCounter + 1;
@@ -105,6 +118,20 @@ begin
 					end if;
 					
 					if((pixel_old(i) = '0') and (pixel(i) = '1')) then
+						sameEvent(i) <= '1'; -- ## lag
+						sameEventCounter(i) <= (others => '0');
+					end if;
+					if(sameEvent(i) = '1') then
+						sameEventCounter(i) <= sameEventCounter(i) + 1; -- ## more lag
+					end if;
+					if(sameEventCounter(i) >= unsigned(sameEventTime)) then -- ## even more lag
+						sameEventCounter(i) <= (others => '0'); 
+						sameEvent(i) <= '0';
+					end if;
+					
+						
+					--if((pixel_old(i) = '0') and (pixel(i) = '1')) then
+					if((pixel_old(i) = '0') and (pixel(i) = '1') and ((sameEvent(i) = '0') or (doublePulsePrevention = '0'))) then
 						pixelCounter(i) <= pixelCounter(i) + 1;
 						if(pixelCounter(i) = x"ffff") then
 							pixelCounter(i) <= x"ffff";

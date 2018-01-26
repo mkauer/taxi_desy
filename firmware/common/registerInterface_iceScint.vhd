@@ -238,12 +238,14 @@ g0: if moduleEnabled /= 0 generate
 				--dac088s085_x3_0w.valuesChip2(6) <= x"80";
 				clockConfig_debug_0w.drs4RefClockPeriod <= x"7f";
 				eventFifoWordsDmaSlice_latched <= (others=>'0');
+				pixelRateCounter_0w.doublePulsePrevention <= '0';
+				pixelRateCounter_0w.doublePulseTime <= x"30"; -- 0x30 ~ 400ns
 				pixelRateCounter_0w.counterPeriod <= x"0001"; -- 1 sec
 				whiteRabbitTiming_0w.counterPeriod <= x"0001"; -- 1 sec
 				triggerLogic_0w.counterPeriod <= x"0001"; -- 1 sec
 				iceTad_0w.rs485Data <= (others=>(others=>'0'));
 				iceTad_0w.softTxEnable <= (others=>'0');
-				iceTad_0w.softTxMask <= (others=>'1');
+				iceTad_0w.softTxMask <= (others=>'0');
 			else
 				valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
@@ -271,6 +273,8 @@ g0: if moduleEnabled /= 0 generate
 						when x"000e" => triggerDataDelay_1w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_1w.resetDelay <= '1'; -- autoreset
 						when x"0040" => pixelRateCounter_0w.resetCounter <= dataBusIn; -- autoreset
 						when x"0042" => pixelRateCounter_0w.counterPeriod <= dataBusIn; -- autoreset
+						when x"0044" => pixelRateCounter_0w.doublePulsePrevention <= dataBusIn(0);
+						when x"0046" => pixelRateCounter_0w.doublePulseTime <= dataBusIn(7 downto 0);
 						
 						when x"0048" => dac088s085_x3_0w.init <= '1'; -- autoreset
 						when x"004a" => valuesChangedChip0Temp <= dataBusIn(7 downto 0);
@@ -423,6 +427,8 @@ g0: if moduleEnabled /= 0 generate
 						when x"013e" => readDataBuffer <= pixelRateCounter_0r.channelDeadTimeLatched(7);
 						
 						when x"0042" => readDataBuffer <= pixelRateCounter_0r.counterPeriod;
+						when x"0044" => readDataBuffer <= x"000" & "000" & pixelRateCounter_0r.doublePulsePrevention;
+						when x"0046" => readDataBuffer <= x"00" & pixelRateCounter_0r.doublePulseTime;
 						
 						when x"0048" => readDataBuffer <= x"000" & "000" & dac088s085_x3_0r.dacBusy;
 						when x"004a" => readDataBuffer <= x"00" & valuesChangedChip0Temp;
