@@ -17,7 +17,7 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL AT91SAM)
 	add_subdirectory( icescint_slowcontrol_server )
 	add_subdirectory( icescint_slowcontrol_client )
 	
-	add_subdirectory( iceScintIrigDebuger )
+	add_subdirectory( icescint_debugger )
 	
 else()
 	# compile for x86 
