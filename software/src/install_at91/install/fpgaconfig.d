@@ -14,9 +14,11 @@ source /opt/taxi/setupenv.sourceme
 case "$1" in 
 start)		/opt/taxi/bin/icescint_config -x 
 			/opt/taxi/bin/icescint_drs4BaselineCalibrator -c /home/root/baseline_icetaxi02.csv
+			/home/root/defaultPanel.sh
 			;;
 restart)	/opt/taxi/bin/icescint_config -x 
 			/opt/taxi/bin/icescint_drs4BaselineCalibrator -c /home/root/baseline_icetaxi02.csv
+			/home/root/defaultPanel.sh
 			;;
 stop)		;;
 esac

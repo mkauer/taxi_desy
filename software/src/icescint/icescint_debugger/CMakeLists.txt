@@ -8,6 +8,6 @@ use_library( taxihal LIBS )
 use_library( smcdrv LIBS )
 use_library( boost LIBS )
 
-compile_executable(icescint_irigdebuger "${SRC}" "${LIBS}")
+compile_executable(icescint_debugger "${SRC}" "${LIBS}")
  
-install(TARGETS icescint_irigdebuger RUNTIME DESTINATION ${INSTALL_BIN})
+install(TARGETS icescint_debugger RUNTIME DESTINATION ${INSTALL_BIN})

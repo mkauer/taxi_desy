@@ -294,7 +294,7 @@ int main(int argc, char** argv)
 		icescint_setPixelTriggerCounterPeriod(1);
 
 		icescint_setEventFifoPacketConfig( 0x0
-			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
+//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
 			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4BASELINE
 			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4CHARGE
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4TIMING
@@ -327,14 +327,14 @@ int main(int argc, char** argv)
 
 		for(int i=0;i<7;i++)
 		{
-			icescint_pannelSwitchToHg(i);
+			icescint_pannelSwitchToLg(i);
 		}
-		usleep(1000*100);
-
-		for(int i=0;i<7;i++)
-		{
-			icescint_pannelSetSipmVoltage(i, 53.0);
-		}
+//		usleep(1000*100);
+//
+//		for(int i=0;i<7;i++)
+//		{
+//			icescint_pannelSetSipmVoltage(i, 53.0);
+//		}
 
 		return EXIT_OK;
 	}

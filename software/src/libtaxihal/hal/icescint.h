@@ -364,6 +364,23 @@ static inline uint32_t icescint_getGpsTimeOfWeek_subms(void)
 	return convert_2x_uint16_to_uint32(IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_TIMEOFWEEKSUBMS_H), IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_GPS_TIMEOFWEEKSUBMS_L));
 }
 
+// tmp05
+static inline void icescint_doTmp05StartConversion(void)
+{
+	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TMP05_STARTCONVERSION, 1);
+}
+static inline uint16_t icescint_isTmp05Busy(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TMP05_BUSY);
+}
+static inline float icescint_getTmp05Temperature(void)
+{
+	uint16_t TLcnt= IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TMP05_TL); // first read latched upper 16 bit
+	uint16_t THcnt= IORD_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_TMP05_TH);
+	if (!TLcnt) return 0; // catch devision per zero and return default value
+	return 421 - (751 * ((float)THcnt) / TLcnt);
+}
+
 //static inline void icescint_set(uint16_t _value)
 //{
 //	IOWR_16DIRECT(BASE_ICESCINT_READOUT, OFFS_ICESCINT_XXX, _value);

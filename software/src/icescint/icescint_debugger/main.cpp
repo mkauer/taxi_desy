@@ -49,6 +49,9 @@ int main(int argc, char** argv)
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help,h", "")
+		("irigb,i", "print irig-b information")
+		("gps,g", "print gps information")
+		("temperature,t", po::value<int>(), "print tmp05 temperature in °C")
 //		("now,n", "show the actual white rabbit time")
 //		("", po::value<int>(), "")
 		;
@@ -84,44 +87,64 @@ int main(int argc, char** argv)
 //			std::cout << "irigb binary day: " << std::dec << int(icescint_getIrigBinaryDay()) << std::endl;
 //			std::cout << "irigb binary second: " << std::dec << int(icescint_getIrigBinarySecond()) << std::endl;
 		}
+		return EXIT_OK;
 	}
 
-	while(1)
+	if(vm.count("temperature"))
 	{
-		if(icescint_isNewIrigData())
+		int iter = vm["temperature"].as<int>();
+		if(iter < 1) {iter = 1;}
+		float temp = 0;
+		for(int i=0;i<iter;i++)
 		{
-			icescint_getIrigRawData(data);
-			for(int i=5;i>=0;i--)
+			icescint_doTmp05StartConversion();
+			while(icescint_isTmp05Busy()) {usleep(1000*10);}
+			temp = temp + icescint_getTmp05Temperature();
+		}
+		std::cout << "tmp05: " << temp/iter << "°C" << std::endl;
+		return EXIT_OK;
+	}
+
+
+	if(vm.count("irigb") || vm.count("gps"))
+	{
+		while(1)
+		{
+			if(icescint_isNewIrigData() && vm.count("irigb"))
 			{
-				for(int j=15;j>=0;j--)
+				icescint_getIrigRawData(data);
+				for(int i=5;i>=0;i--)
 				{
-					if((*(data+i) & (1<<j)) == 0) {std::cout << ".";}
-					else {std::cout << "1";}
+					for(int j=15;j>=0;j--)
+					{
+						if((*(data+i) & (1<<j)) == 0) {std::cout << ".";}
+						else {std::cout << "1";}
+					}
+					std::cout << "|";
 				}
-				std::cout << "|";
+				std::cout << std::endl;
+
+				std::cout << std::dec;
+				std::cout << "irigb binary year: " << std::dec << int(icescint_getIrigBinaryYear()) << std::endl;
+				std::cout << "irigb binary day: " << std::dec << int(icescint_getIrigBinaryDay()) << std::endl;
+				std::cout << "irigb binary second: " << std::dec << int(icescint_getIrigBinarySecond()) << std::endl;
+
+				icescint_doResetNewIrigData();
 			}
-			std::cout << std::endl;
 
-			std::cout << std::dec;
-			std::cout << "irigb binary year: " << std::dec << int(icescint_getIrigBinaryYear()) << std::endl;
-			std::cout << "irigb binary day: " << std::dec << int(icescint_getIrigBinaryDay()) << std::endl;
-			std::cout << "irigb binary second: " << std::dec << int(icescint_getIrigBinarySecond()) << std::endl;
+			if(icescint_isNewGpsData() && vm.count("gps"))
+			{
+				std::cout << std::dec;
+				std::cout << "GPS week: " << int(icescint_getGpsWeek()) << std::endl;
+				std::cout << "GPS QuantizationError: " << int(icescint_getGpsQuantizationError()) << std::endl;
+				std::cout << "GPS time of week ms: " << int(icescint_getGpsTimeOfWeek_ms()) << std::endl;
+				std::cout << "GPS time of week sub ms: " << int(icescint_getGpsTimeOfWeek_subms()) << std::endl;
 
-			icescint_doResetNewIrigData();
+				icescint_doResetNewGpsData();
+			}
+
+			usleep(1000*100);
 		}
-
-		if(icescint_isNewGpsData())
-		{
-			std::cout << std::dec;
-			std::cout << "GPS week: " << int(icescint_getGpsWeek()) << std::endl;
-			std::cout << "GPS QuantizationError: " << int(icescint_getGpsQuantizationError()) << std::endl;
-			std::cout << "GPS time of week ms: " << int(icescint_getGpsTimeOfWeek_ms()) << std::endl;
-			std::cout << "GPS time of week sub ms: " << int(icescint_getGpsTimeOfWeek_subms()) << std::endl;
-
-			icescint_doResetNewGpsData();
-		}
-
-		usleep(1000*100);
 	}
 
 

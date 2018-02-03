@@ -16,7 +16,7 @@ namespace po = boost::program_options;
 #define EXIT_OK 0
 #define EXIT_ERROR -1
 
-#define DEFAULT_FIRMWARE "/opt/taxi/firmware/icescint_180112_06.bit"
+#define DEFAULT_FIRMWARE "/opt/taxi/firmware/icescint_180130_02.bit"
 
 int main(int argc, char** argv)
 {
