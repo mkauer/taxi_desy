@@ -33,6 +33,6 @@ else()
 	add_subdirectory( icescint )
 	add_subdirectory( libtaxihal )
 	add_subdirectory( eventReceiver)  # generic event receiver 
-#	add_subdirectory( polarsternEventReceiver )
+#	add_subdirectory( polarstern )
 endif()
 
