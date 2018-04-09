@@ -94,7 +94,7 @@ void printRegister()
 	t.addColumn(8);
 	t.addColumn(10);
 
-	addr_t base=BASE_ICESCINT_READOUT;
+	addr_t base=BASE_ICESCINT;
 
 #define __ROW(NAME, ADDRESS) 	t.nextRow(); \
 		printRegister(t, base + ADDRESS, NAME);
@@ -117,7 +117,8 @@ void printRegister()
 	__ROW("soft trigger generator en", 		OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORENABLE);
 	__ROW("generator period low",	OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORPERIOD_LOW);
 	__ROW("generator period high",	OFFS_ICESCINT_TRIGGERLOGIC_SOFTTRIGGERGENERATORPERIOD_HIGH);
-	__ROW("fifo eventcount thresh",	OFFS_ICESCINT_IRQ_FIFO_EVENTCOUNT_THRESH);
+	__ROW("irq fifo eventcount thresh",	OFFS_ICESCINT_IRQ_ATEVENTCOUNT);
+	__ROW("irq fifo word threshold",	OFFS_ICESCINT_IRQ_ATFIFOWORDS);
 	__ROW("fifo control",	OFFS_ICESCINT_IRQ_CTRL);
 	__RBIT("irq enabled", 	OFFS_ICESCINT_IRQ_CTRL, BIT_ICESCINT_IRQ_CTRL_IRQ_EN);
 

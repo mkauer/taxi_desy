@@ -60,14 +60,16 @@ static int param_stats = _NO_STATS_;
 static int test_data = 0;
 
 static int dma_buffer_count 		= 48;
-static int dma_buffer_size  		= 18*4096*15; // nice 1mb chunks, aligned to 18 bytes (event size)
+static int dma_chunk_size  			= 18*4096*15; // nice 1mb chunks, IF aligned to 18 bytes (event size)
+static int dma_buffer_size_total_mb	= 50;
 
 module_param_named(dma,   s_nDMAtype, int, S_IRUGO | S_IWUSR);
 module_param_named(stats, param_stats, int, S_IRUGO | S_IWUSR);
 module_param_named(testdata, test_data, int, S_IRUGO | S_IWUSR);
 
 module_param_named(dma_buffer_count, dma_buffer_count, int, S_IRUGO | S_IWUSR);
-module_param_named(dma_buffer_size,  dma_buffer_size,  int, S_IRUGO | S_IWUSR);
+module_param_named(dma_chunk_size,  dma_chunk_size,  int, S_IRUGO | S_IWUSR);
+module_param_named(dma_buffer_size_total_mb,  dma_buffer_size_total_mb,  int, S_IRUGO | S_IWUSR);
 
 #ifdef __CDT_PARSER__
 #define __init

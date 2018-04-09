@@ -54,6 +54,8 @@ int main(int argc, char** argv)
 		("setPanelPower", po::value<int>(), "[0-1] needs {channel} (remember: the panel needs some time to boot)")
 		("setPanelPowerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel, '1' will power on and '0' will power off a panel (remember: the panel needs some time to boot)")
 		("setIrqEnable", po::value<int>(), "[0-1] interrupt from FPGA to ARM")
+		("setIrqAtFifoWords", po::value<int>(), "[1-8191] interrupt if fifo has more words")
+		("setIrqAtNumberOfEvents", po::value<int>(), "[0-8192] interrupt if number of events in fifo is greater")
 		("setDrs4BaselineStart", po::value<int>(), "[0-1023] needs to be less than {setDrs4NumberOfSamplesToRead}")
 		("setDrs4BaselineStop", po::value<int>(), "[0-1023] needs to be less than {setDrs4NumberOfSamplesToRead}")
 		("setPixelRatePeriod", po::value<int>(), "[0-65535] in seconds, no counter reset if 0")
@@ -176,6 +178,18 @@ int main(int argc, char** argv)
 		return EXIT_OK;
 	}
 
+	if(vm.count("setIrqAtFifoWords"))
+	{
+		icescint_setIrqAtFifoWords(vm["setIrqAtFifoWords"].as<int>());
+		return EXIT_OK;
+	}
+
+	if(vm.count("setIrqAtNumberOfEvents"))
+	{
+		icescint_setIrqAtEventCount(vm["setIrqAtNumberOfEvents"].as<int>());
+		return EXIT_OK;
+	}
+
 	if(vm.count("setPacketConfigMask"))
 	{
 		icescint_setEventFifoPacketConfig(stringToInt(vm["setPacketConfigMask"].as<std::string>()));
@@ -290,6 +304,8 @@ int main(int argc, char** argv)
 		icescint_setNumberOfSamplesToRead(1024);
 		icescint_setTriggerMask(0x00);
 		icescint_setPanelPowerMask(0xff);
+		icescint_setIrqAtFifoWords(4096);
+		icescint_setIrqAtEventCount(100);
 		icescint_setIrqEnable(1);
 		icescint_setPixelTriggerCounterPeriod(1);
 

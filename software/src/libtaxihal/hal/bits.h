@@ -5,6 +5,8 @@
 	#include <stdint.h>
 #endif
 
+#define __MAKE_BOOL(VAL) ((VAL)?1:0)
+
 // 8 bit manipulation routines
 static inline uint8_t bitValue8(uint8_t index)
 {
@@ -116,6 +118,14 @@ static inline uint16_t clipValueMin(uint16_t _value, uint16_t _minValue)
 	uint16_t ret = 0;
 	if(_value <= _minValue) {ret = _minValue;} // assert here....
 	else {ret = _value;}
+	return ret;
+}
+
+static inline uint16_t clipValueMinMax(uint16_t _value, uint16_t _minValue, uint16_t _maxValue)
+{
+	uint16_t ret = 0;
+	ret = clipValueMin(_value, _minValue);
+	ret = clipValueMax(ret, _maxValue);
 	return ret;
 }
 

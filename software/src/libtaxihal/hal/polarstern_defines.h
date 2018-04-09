@@ -1,0 +1,69 @@
+/*
+ * powerDistributionBox.h
+ *
+ *  Created on: Jan 20, 2015
+ *      Author: marekp
+ */
+
+#ifndef POLARSTERN_HAL_DEFINES_H_
+#define POLARSTERN_HAL_DEFINES_H_
+
+#include "common_defines.h"
+
+#define POLARSTERN_FIFO_WIDTH_WORDS 		23
+#define POLARSTERN_NUMBEROFCHANNELS			16
+
+#define BASE_POLARSTERN												0x0000 // ## soo0 LAZY....
+
+#define OFFS_COMMON_TRIGGER_DELAY_RISINGEDGE						0x100c // small delay for trigger edge timing to work
+#define OFFS_COMMON_TRIGGER_DELAY_DATA								0x100e // will get the same value as the serdesDelay
+
+#define OFFS_POLARSTERN_READOUT_EVENTFIFOPACKETCONFIG				0x2100
+#define MASK_POLARSTERN_READOUT_EVENTFIFOPACKETCONFIG_GPS			(1<<12)
+#define MASK_POLARSTERN_READOUT_EVENTFIFOPACKETCONFIG_PIXELRATES	(1<<13)
+#define MASK_POLARSTERN_READOUT_EVENTFIFOPACKETCONFIG_SECTORRATES	(1<<14)
+#define MASK_POLARSTERN_READOUT_EVENTFIFOPACKETCONFIG_EVENTDATA		(1<<15)
+
+#define OFFS_POLARSTERN_IRQ_ATEVENTCOUNT						0x2102
+#define OFFS_POLARSTERN_IRQ_ATFIFOWORDS							0x2104	// threshold of words in fifo, at which an IRQ is asserted
+#define OFFS_POLARSTERN_IRQ_CONTROL								0x2106	//
+#define BIT_POLARSTERN_IRQ_CONTROL_IRQ_EN						0
+#define OFFS_POLARSTERN_IRQ_FORCE								0x2108	// writing to this address generates a single IRQ, no matter if irq are enabled or not
+#define OFFS_POLARSTERN_CLEAREVENTCOUNTER						0x210a
+
+#define OFFS_POLARSTERN_PIXELTRIGGERRATECOUNTER_PERIOD				0x2380
+#define OFFS_POLARSTERN_PIXELTRIGGERRATECOUNTER_RESET				0x2382
+#define OFFS_POLARSTERN_PIXELTRIGGERRATECOUNTER_RESET2				0x2384 // reset for trigger logic rate counter
+#define OFFS_POLARSTERN_PIXELTRIGGERRATECOUNTER_NEWDATALATCHED		0x2386 // any write will reset the latch
+#define OFFS_POLARSTERN_PIXELTRIGGERRATECOUNTER_RESET3				0x2388 // wo, 2bit (bit0 will reset all counter, bit1 will reset the counter time)
+#define OFFS_POLARSTERN_PIXELTRIGGERRATECOUNTER_VALUE				0x2390
+#define SPAN_POLARSTERN_PIXELTRIGGERRATECOUNTER_VALUE				2
+#define COUNT_POLARSTERN_PIXELTRIGGERRATECOUNTER_VALUE				16
+
+#define OFFS_POLARSTERN_SECTORRATECOUNTER_VALUE					0x23b0
+#define SPAN_POLARSTERN_SECTORRATECOUNTER_VALUE					2
+#define COUNT_POLARSTERN_SECTORRATECOUNTER_VALUE				8
+
+#define MASK_POLARSTERN_DATATYPE										0xf000
+#define VALUE_POLARSTERN_DATATYPE_TRIGGERTIMING							0x1000
+#define VALUE_POLARSTERN_DATATYPE_GPS									0x2000
+#define VALUE_POLARSTERN_DATATYPE_PIXELTRIGGERRATES						0x5000
+#define VALUE_POLARSTERN_DATATYPE_SECTORTRIGGERRATES					0x6000
+//
+//
+//// helper function to determine if a type is valid
+//// returns 1 if header is a valid type
+//// returns 0 otherwise
+//inline static int icescint_isValidHeader(unsigned short  _header)
+//{
+//	switch (_header & MASK_POLARSTERN_DATATYPE) {
+//	case VALUE_ICESCINT_POLARSTERN_HEADER:
+//	case VALUE_ICESCINT_POLARSTERN_DEBUG:
+//		return 1;
+//	default:
+//		return 0;
+//	}
+//}
+
+
+#endif // ICESCINT_HAL_ICESCINT_DEFINES_H_

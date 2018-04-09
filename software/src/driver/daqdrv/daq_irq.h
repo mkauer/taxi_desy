@@ -15,13 +15,13 @@
 #include "smcbus.h"
 
 // address parameter to access the fifo
-static int daqfifo_read_addr 			= 0x20;	// assumes a 16bit register, little endian
+static int daqfifo_read_addr 			= 0x100;	// assumes a 16bit register, little endian
 //static int daqfifo_wordcount_addr 	= 0x22; // assumes a 32bit register, bytes in fifo, little endian
-static int daqfifo_clearcmd_addr 		= 0x22; // a write with any value will clear/reset the fifo
-static int daqfifo_wordcount_addr 		= 0x2A; // assumes a 16bit register, 9 x 16 bit words in fifo, little endian
+static int daqfifo_clearcmd_addr 		= 0x102; // a write with any value will clear/reset the fifo
+static int daqfifo_wordcount_addr 		= 0x104; // assumes a 16bit register, 9 x 16 bit words in fifo, little endian
+static int daqfifo_wordsPerSlice_addr	= 0x106; // assumes a 16bit register
 //static int daqfifo_sub_wordcount_addr 	= 0x28; // assumes a 4bit register, 16 bit words in fifo, little endian
-
-static int daqfifo_irq_stall			= 0x10c; // bit = 1, suppressing irq's
+static int daqfifo_irq_stall			= 0x108; // bit = 1, suppressing irq's
 
 module_param_named(daqfifo_read_addr, daqfifo_read_addr, int, S_IRUGO | S_IWUSR);
 module_param_named(daqfifo_wordcount_addr,  daqfifo_wordcount_addr,  int, S_IRUGO | S_IWUSR);
@@ -156,12 +156,28 @@ static uint32_t daqfifo_readIrqCount(void)
 // may be locking is not needed here
 static uint32_t daqfifo_read16BitWordCount(void)
 {
-	uint32_t a; //,b;
-	a=smcbusrd16(daqfifo_wordcount_addr);
+	uint32_t a;
+	uint16_t w;
+	w = smcbusrd16(daqfifo_wordsPerSlice_addr);
+	a = smcbusrd16(daqfifo_wordcount_addr);
+	if(w == 0xffff)
+	{
+		WRN("event fifo words per slice to high, assuming fpga is unconfigured or currently reconfiguring");
+		return 0;
+	}
+	if(w == 0x0)
+	{
+		ERR("event fifo words per slice is 0: dma for fifo will not work");
+		return 0;
+	}
+	if(w == 0xdead) // fallback for old firmware
+	{
+		return a*9;
+	}
 //	b=smcbusrd16(daqfifo_sub_wordcount_addr);
 //	return a*((b >> 12) & 0xf) + (b & 0xf);
 //	return a*9 + (b & 0xf);
-	return a*9;
+	return a*w;
 }
 
 // ------------------------------------------ IRQ Handling --------------
@@ -461,11 +477,6 @@ static int daqfifo_initialize(void)
 		goto err_data_alloc_shared_info;
 	}
 
-	if (dma_buffer_count>DAQDRV_RING_BUFFER_CHUNK_MAX_COUNT) {
-		INFO("requested dma buffer count to big: limited to %d", DAQDRV_RING_BUFFER_CHUNK_MAX_COUNT);
-		dma_buffer_count = DAQDRV_RING_BUFFER_CHUNK_MAX_COUNT;
-	}
-
 	// check dma requirements
 	if (s_nDMAtype==_DMA_) {
 		if (dma_set_coherent_mask(dev->m_dma_device, DMA_BIT_MASK(32))) {
@@ -475,17 +486,47 @@ static int daqfifo_initialize(void)
 	}
 
 	// align allocated size exactly to sample size
-	dev->shared_data->chunkSize=dma_buffer_size;
+	uint16_t w = smcbusrd16(daqfifo_wordsPerSlice_addr);
+	size_t chunkSize = 0;
+	size_t chunkCount = 0;
+	size_t numberOfChunks = 0;
+
+	if((dma_buffer_size_total_mb <= 0) || (dma_buffer_size_total_mb > 128))
+	{
+		ERR("dma_buffer_size_total_mb: invalid range! value defaults to 50MB\n");
+		dma_buffer_size_total_mb = 50;
+	}
+
+	if(w == 0xffff)
+	{
+		chunkSize = dma_chunk_size;
+		chunkCount = dma_buffer_count;
+	}
+	else
+	{
+		numberOfChunks = (1024*1024 / 4096) / (w*2); // (1MB / pageSize) / fifoWidthBytes ... will lead to slightly less than 1MB
+		chunkSize = w*2 * 4096 * numberOfChunks;
+		chunkCount = (1024*1024 * dma_buffer_size_total_mb) / chunkSize; // will lead to slightly more than dma_buffer_size_total_mb buffer size
+	}
+
+	if (chunkCount > DAQDRV_RING_BUFFER_CHUNK_MAX_COUNT)
+	{
+		INFO("requested dma buffer count to big: limited to %d", DAQDRV_RING_BUFFER_CHUNK_MAX_COUNT);
+		chunkCount = DAQDRV_RING_BUFFER_CHUNK_MAX_COUNT;
+	}
+
+	dev->shared_data->chunkSize = chunkSize;
+
 	// allocating dma buffer
 	dev->m_chunk_count=0;
 	int i;
-	for (i=0;i<dma_buffer_count;i++) {
+	for (i=0;i<chunkCount;i++) {
 		int r=daqfifo_chunk_allocate( &dev->m_chunks[i], dev->shared_data->chunkSize);
 		if (!r) {
 			// OK
 			dev->m_chunk_count++;
 		} else {
-			ERR("could only allocate %d of %d requested buffer", dev->m_chunk_count, dma_buffer_count);
+			ERR("could only allocate %d of %d requested buffer", dev->m_chunk_count, chunkCount);
 			break;
 		}
 	}

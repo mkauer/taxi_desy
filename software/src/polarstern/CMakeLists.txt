@@ -5,6 +5,9 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL AT91SAM)
 
 	add_subdirectory( polarsternEventSender )
 	add_subdirectory( polarsternEventReceiver )
+	
+	add_subdirectory( polarstern_config )
+	add_subdirectory( polarstern_rates )
 
 else()
 	# compile for x86 

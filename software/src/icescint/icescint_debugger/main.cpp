@@ -97,9 +97,9 @@ int main(int argc, char** argv)
 		float temp = 0;
 		for(int i=0;i<iter;i++)
 		{
-			icescint_doTmp05StartConversion();
-			while(icescint_isTmp05Busy()) {usleep(1000*10);}
-			temp = temp + icescint_getTmp05Temperature();
+			common_doTmp05StartConversion();
+			while(common_isTmp05Busy()) {usleep(1000*10);}
+			temp = temp + common_getTmp05Temperature();
 		}
 		std::cout << "tmp05: " << temp/iter << "°C" << std::endl;
 		return EXIT_OK;
@@ -132,15 +132,15 @@ int main(int argc, char** argv)
 				icescint_doResetNewIrigData();
 			}
 
-			if(icescint_isNewGpsData() && vm.count("gps"))
+			if(common_isNewGpsData() && vm.count("gps"))
 			{
 				std::cout << std::dec;
-				std::cout << "GPS week: " << int(icescint_getGpsWeek()) << std::endl;
-				std::cout << "GPS QuantizationError: " << int(icescint_getGpsQuantizationError()) << std::endl;
-				std::cout << "GPS time of week ms: " << int(icescint_getGpsTimeOfWeek_ms()) << std::endl;
-				std::cout << "GPS time of week sub ms: " << int(icescint_getGpsTimeOfWeek_subms()) << std::endl;
+				std::cout << "GPS week: " << int(common_getGpsWeek()) << std::endl;
+				std::cout << "GPS QuantizationError: " << int(common_getGpsQuantizationError()) << std::endl;
+				std::cout << "GPS time of week ms: " << int(common_getGpsTimeOfWeek_ms()) << std::endl;
+//				std::cout << "GPS time of week sub ms: " << int(icescint_getGpsTimeOfWeek_subms()) << std::endl;
 
-				icescint_doResetNewGpsData();
+				common_doResetNewGpsData();
 			}
 
 			usleep(1000*100);

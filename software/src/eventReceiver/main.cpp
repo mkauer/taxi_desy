@@ -18,7 +18,7 @@
 #include <boost/thread.hpp>
 #include "hal/icescint_defines.h"
 
-#include "common/icescint_validator.hpp"
+//#include "common/icescint_validator.hpp"
 #include "common/zmq.hpp"
 
 using namespace std;
@@ -30,18 +30,18 @@ int verbose = 0;
 const int oneDay = 60*60*24;
 
 // read data one-by-one directly from fifo, bypass the driver completly and irq
-void readAndPrintEventsDirect(uint16_t* _data, size_t _words)
+void readAndPrintEventsDirect(uint16_t* _data, size_t _words, int _fifoWidthWords)
 {
-	size_t events = _words / ICESCINT_FIFO_WIDTH_WORDS;
+	size_t events = _words / _fifoWidthWords;
 
 	for (int ev = 0; ev < events; ev++)
 	{
 		std::cout << std::dec << ev << ".event: ";
 		std::cout << "(fifo) [";
 
-		for (int i = 0; i < ICESCINT_FIFO_WIDTH_WORDS; i++)
+		for (int i = 0; i < _fifoWidthWords; i++)
 		{
-			int data = _data[i + ev*ICESCINT_FIFO_WIDTH_WORDS];
+			int data = _data[i + ev * _fifoWidthWords];
 			std::cout << "" << std::setfill('0') << std::setw(4) << std::hex << data << " ";
 		}
 
@@ -51,83 +51,83 @@ void readAndPrintEventsDirect(uint16_t* _data, size_t _words)
 	return;
 }
 
-int getEvent(uint16_t* _data, uint32_t* _eventCounter, size_t* _words)
-{
-	uint32_t eventCounter = 0;
-	int length = 0;
-	int error = 0;
-
-	*_words = 0;
-
-	if(( *(_data+0) == 0x1000) || (*(_data+0) == 0x2000) || (*(_data+0) == 0x3000) || (*(_data+0) == 0x4000) || (*(_data+0) == 0x5000) || (*(_data+0) == 0x6000) || (*(_data+0) == 0x7000))
-	{
-		if( *(_data+0) == 0x1000)
-		{
-			eventCounter = *(_data+1);
-			eventCounter = eventCounter << 16;
-			eventCounter = eventCounter + *(_data+2);
-
-			if(((*_eventCounter+1)%0x100000000) != eventCounter)
-			{
-				std::cout << "eventCounter mismatch: " << int(*_eventCounter) << "+1 != " << int(eventCounter) << std::endl;
-				error += eventCounter - (*_eventCounter+1)%0x100000000;
-			}
-			*_eventCounter = eventCounter;
-		}
-
-		length = 1;// *(_data+3);
-		*_words += ICESCINT_FIFO_WIDTH_WORDS;
-
-//		for(int i=1;i<length;i++)
-//		{
-//			if(*(_data+i*ICESCINT_FIFO_WIDTH_WORDS) != (0xc000+i-1))
-//			{
-////				error++;
-//			}
+//int getEvent(uint16_t* _data, uint32_t* _eventCounter, size_t* _words, size_t _fifoWidthWords)
+//{
+//	uint32_t eventCounter = 0;
+//	int length = 0;
+//	int error = 0;
 //
-//			for (int j=0;j<8;j++)
+//	*_words = 0;
+//
+//	if(( *(_data+0) == 0x1000) || (*(_data+0) == 0x2000) || (*(_data+0) == 0x3000) || (*(_data+0) == 0x4000) || (*(_data+0) == 0x5000) || (*(_data+0) == 0x6000) || (*(_data+0) == 0x7000))
+//	{
+//		if( *(_data+0) == 0x1000)
+//		{
+//			eventCounter = *(_data+1);
+//			eventCounter = eventCounter << 16;
+//			eventCounter = eventCounter + *(_data+2);
+//
+//			if(((*_eventCounter+1)%0x100000000) != eventCounter)
 //			{
-//				if(*(_data+i*ICESCINT_FIFO_WIDTH_WORDS+j+1) != ((i-1)*8+j))
-//				{
-////					error++;
-//				}
+//				std::cout << "eventCounter mismatch: " << int(*_eventCounter) << "+1 != " << int(eventCounter) << std::endl;
+//				error += eventCounter - (*_eventCounter+1)%0x100000000;
 //			}
-//			*_words += ICESCINT_FIFO_WIDTH_WORDS;
+//			*_eventCounter = eventCounter;
 //		}
-	}
-	else
-	{
-		std::cout << "error: unknown packet type" << std::endl;
-	}
+//
+//		length = 1;// *(_data+3);
+//		*_words += _fifoWidthWords;
+//
+////		for(int i=1;i<length;i++)
+////		{
+////			if(*(_data+i*ICESCINT_FIFO_WIDTH_WORDS) != (0xc000+i-1))
+////			{
+//////				error++;
+////			}
+////
+////			for (int j=0;j<8;j++)
+////			{
+////				if(*(_data+i*ICESCINT_FIFO_WIDTH_WORDS+j+1) != ((i-1)*8+j))
+////				{
+//////					error++;
+////				}
+////			}
+////			*_words += ICESCINT_FIFO_WIDTH_WORDS;
+////		}
+//	}
+//	else
+//	{
+//		std::cout << "error: unknown packet type" << std::endl;
+//	}
+//
+//	if(error){error = 1;}
+//
+//	return error;
+//}
 
-	if(error){error = 1;}
-
-	return error;
-}
-
-int readAndValidateEventsDirect(uint16_t* _data, size_t _words, uint32_t* _eventCounter_old, int* _okEvents, int* _errorEvents)
-{
-	int ret = 0;
-	int error = 0;
-	int okEvents = 0;
-	int errorEvents = 0;
-	size_t words = 0;
-	size_t allWords = 0;
-
-	if(_words == 0) {return 0;}
-
-	while(allWords < _words)
-	{
-		ret = getEvent(_data+allWords, _eventCounter_old, &words);
-		if(ret == 0){okEvents++;}
-		else{errorEvents +=ret;}
-		allWords += words;
-	}
-
-	*_okEvents = okEvents;
-	*_errorEvents = errorEvents;
-	return 0;
-}
+//int readAndValidateEventsDirect(uint16_t* _data, size_t _words, uint32_t* _eventCounter_old, int* _okEvents, int* _errorEvents)
+//{
+//	int ret = 0;
+//	int error = 0;
+//	int okEvents = 0;
+//	int errorEvents = 0;
+//	size_t words = 0;
+//	size_t allWords = 0;
+//
+//	if(_words == 0) {return 0;}
+//
+//	while(allWords < _words)
+//	{
+//		ret = getEvent(_data+allWords, _eventCounter_old, &words, words_icescint_9);
+//		if(ret == 0){okEvents++;}
+//		else{errorEvents +=ret;}
+//		allWords += words;
+//	}
+//
+//	*_okEvents = okEvents;
+//	*_errorEvents = errorEvents;
+//	return 0;
+//}
 
 //---------------------------------------------
 std::string getTimeString(struct tm* _time)
@@ -207,6 +207,7 @@ int main(int argc, char** argv)
 	std::string newFilePath;
 	int writeFile = 0;
 	int createDoneFile = 0;
+	int fifoWidthWords = 9;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
@@ -214,14 +215,15 @@ int main(int argc, char** argv)
 //			("verbose,v", "be verbose")
 			("server", po::value<std::string>(&server)->default_value("127.0.0.1"), "server data is send to")
 			("port", po::value<int>(&port)->default_value(10011), "server port data is send to")
-			("newfiletimeout,f", po::value<int>(&newFileTimeout)->default_value(-1), "new file will be created after [sec]")
-			("newfiletime,m", po::value<int>(&newFileTime)->default_value(-1), "new file will be created after [sec] from UTC midnight")
-			("newfilePath,p", po::value<std::string>(&newFilePath)->default_value("/tmp/"), "new file will be created here")
-			("writefile,w", "write to file if true")
-			("createdonefile,d", "create a *.done file")
-			("printrawdata,r", "print the raw data to std::out")
-			("printdebugdata,b", "print debug data to std::out")
-			("validate", "validate data")
+			("newFileTimeout,f", po::value<int>(&newFileTimeout)->default_value(-1), "new file will be created after [sec]")
+			("newFileTime,m", po::value<int>(&newFileTime)->default_value(-1), "new file will be created after [sec] from UTC midnight")
+			("newFilePath,p", po::value<std::string>(&newFilePath)->default_value("/tmp/"), "new file will be created here")
+			("writeFile,w", "write to file if true")
+			("createDoneFile,d", "create a *.done file")
+			("printRawData,r", "print the raw data to std::out")
+			("fifoWidthWords,l", po::value<int>(&fifoWidthWords)->default_value(9), "number of words per line")
+			("printDebugData,b", "print debug data to std::out")
+//			("validate", "validate data")
 			("verbose,v", po::value<int>(&verbose)->default_value(0) ,"verbose level")
 			;
 
@@ -244,9 +246,9 @@ int main(int argc, char** argv)
 	}
 
 //	if (vm.count("verbose")) {verbose = 1;}
-	if (vm.count("createdonefile")) {createDoneFile = 1;}
+	if (vm.count("createDoneFile")) {createDoneFile = 1;}
 
-	writeFile = vm.count("writefile");
+	writeFile = vm.count("writeFile");
 
 	zmq::context_t context(1);
 	zmq::socket_t subscriber(context, ZMQ_SUB);
@@ -292,7 +294,7 @@ int main(int argc, char** argv)
 
 	zmq::message_t message;
 
-	TestDataValidator validator;
+//	TestDataValidator validator;
 
 	while (1)
 	{
@@ -304,13 +306,14 @@ int main(int argc, char** argv)
 
 //			readAndValidateEventsDirect((uint16_t*) message.data(), message.size() / 2, &eventCounter, &okEvents, &errorEvents);
 
-			if(vm.count("validate")) {
-				validator.process(message.data(), message.size());
-			}
+//			if(vm.count("validate")) {
+//				validator.process(message.data(), message.size());
+//			}
 
-			if(vm.count("printrawdata"))
+			if(vm.count("printRawData"))
 			{
-				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2);
+				std::cout << "->  " << std::endl;
+				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords);
 			}
 
 			if(writeFile)
@@ -353,7 +356,7 @@ int main(int argc, char** argv)
 				}
 			}
 
-			if(vm.count("printdebugdata"))
+			if(vm.count("printDebugData"))
 			{
 				okCounter += okEvents;
 				errorCounter += errorEvents;

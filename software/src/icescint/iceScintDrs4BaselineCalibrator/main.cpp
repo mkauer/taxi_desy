@@ -165,8 +165,8 @@ int main(int argc, char** argv)
 	int oldIrqEnabled = icescint_isIrqEnable();
 	icescint_setIrqEnable(1);
 
-	uint16_t oldIrqEventcountThreshold = icescint_getIrqEventcountThreshold();
-	icescint_setIrqEventcountThreshold(drs4MaxSamples); // ??!
+	uint16_t oldIrqEventCountThreshold = icescint_getIrqAtFifoWords();
+	icescint_setIrqAtFifoWords(drs4MaxSamples); // ??!
 
 	uint32_t oldSoftTriggerGeneratorPeriod = icescint_getSoftTriggerGeneratorPeriod();
 	icescint_setSoftTriggerGeneratorPeriod(0x1000000);
@@ -349,7 +349,7 @@ int main(int argc, char** argv)
 	cleanUp:
 		icescint_setSoftTriggerGeneratorPeriod(oldSoftTriggerGeneratorPeriod);
 		icescint_setSoftTriggerGeneratorEnable(oldSoftTriggerGeneratorEnable);
-		icescint_setIrqEventcountThreshold(oldIrqEventcountThreshold);
+		icescint_setIrqAtFifoWords(oldIrqEventCountThreshold);
 		icescint_setIrqEnable(oldIrqEnabled);
 		icescint_setEventFifoPacketConfig(oldFifoConfig);
 		icescint_setNumberOfSamplesToRead(oldNumberOfSamplesToRead);
