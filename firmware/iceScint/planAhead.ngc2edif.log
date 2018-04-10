@@ -107,3 +107,815 @@ WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT<3 :
 Writing EDIF netlist file taxiTop_cs.edif ...
 ngc2edif: Total memory usage is 104956 kilobytes
 
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop.ngc ...
+WARNING:NetListWriters:298 - No output is written to taxiTop.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus x14b/differenceGpsToLocalClock[31 : 0]
+   on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x17/message[16 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy[3 :
+   1] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x8/Result[31 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_134_o_GND_134_o_sub_114_OUT<15:0>_lut[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/state1[4]_eventFifoIn[143]_wide_mux_136_OUT[143 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn[143 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x3/valuesChangedChip1Temp[7]_GND_326_o_mux_434_OUT[6 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14c/Mmux__n0442_rs_lut[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_lut[6 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_A[8 : 4] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/Msub_GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT<31:0>_lut[31 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT[31 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT[3 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[7].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[6].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[5].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[4].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[3].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[2].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[1].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[0].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop.edif ...
+ngc2edif: Total memory usage is 112048 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design rs485fifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to rs485fifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file rs485fifo.edif ...
+ngc2edif: Total memory usage is 77552 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4OffsetCorrectionRam.ngc ...
+WARNING:NetListWriters:298 - No output is written to
+   drs4OffsetCorrectionRam.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/doutb_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/douta_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file drs4OffsetCorrectionRam.edif ...
+ngc2edif: Total memory usage is 77552 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design delayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to delayFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file delayFifo.edif ...
+ngc2edif: Total memory usage is 78576 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4FrontEndFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to drs4FrontEndFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file drs4FrontEndFifo.edif ...
+ngc2edif: Total memory usage is 77872 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design eventFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to eventFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+  finished :Prep
+Writing EDIF netlist file eventFifo.edif ...
+ngc2edif: Total memory usage is 82672 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design triggerLogicDelayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to triggerLogicDelayFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file triggerLogicDelayFifo.edif ...
+ngc2edif: Total memory usage is 77936 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop.ngc ...
+WARNING:NetListWriters:298 - No output is written to taxiTop.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus x14b/differenceGpsToLocalClock[31 : 0]
+   on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x17/message[16 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy[3 :
+   1] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x8/Result[31 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_134_o_GND_134_o_sub_114_OUT<15:0>_lut[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/state1[4]_eventFifoIn[143]_wide_mux_136_OUT[143 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn[143 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14c/Mmux__n0442_rs_lut[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_lut[6 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_A[8 : 4] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/Msub_GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT<31:0>_lut[31 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT[31 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT[3 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[7].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[6].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[5].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[4].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[3].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[2].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[1].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[0].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop.edif ...
+ngc2edif: Total memory usage is 112112 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design rs485fifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to rs485fifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file rs485fifo.edif ...
+ngc2edif: Total memory usage is 77552 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4OffsetCorrectionRam.ngc ...
+WARNING:NetListWriters:298 - No output is written to
+   drs4OffsetCorrectionRam.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/doutb_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/douta_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file drs4OffsetCorrectionRam.edif ...
+ngc2edif: Total memory usage is 77488 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design delayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to delayFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file delayFifo.edif ...
+ngc2edif: Total memory usage is 77872 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4FrontEndFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to drs4FrontEndFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file drs4FrontEndFifo.edif ...
+ngc2edif: Total memory usage is 77936 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design eventFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to eventFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+  finished :Prep
+Writing EDIF netlist file eventFifo.edif ...
+ngc2edif: Total memory usage is 82032 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design triggerLogicDelayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to triggerLogicDelayFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file triggerLogicDelayFifo.edif ...
+ngc2edif: Total memory usage is 77552 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop.ngc ...
+WARNING:NetListWriters:298 - No output is written to taxiTop.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus x14b/differenceGpsToLocalClock[31 : 0]
+   on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x17/message[16 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy[3 :
+   1] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x8/Result[31 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_134_o_GND_134_o_sub_114_OUT<15:0>_lut[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/state1[4]_eventFifoIn[143]_wide_mux_136_OUT[143 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn[143 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14c/Mmux__n0442_rs_lut[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_lut[6 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_A[8 : 4] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/Msub_GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT<31:0>_lut[31 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT[31 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT[3 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[7].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[6].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[5].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[4].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[3].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[2].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[1].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[0].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop.edif ...
+ngc2edif: Total memory usage is 108808 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design rs485fifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to rs485fifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file rs485fifo.edif ...
+ngc2edif: Total memory usage is 74312 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4OffsetCorrectionRam.ngc ...
+WARNING:NetListWriters:298 - No output is written to
+   drs4OffsetCorrectionRam.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/doutb_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/douta_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file drs4OffsetCorrectionRam.edif ...
+ngc2edif: Total memory usage is 74120 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design delayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to delayFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file delayFifo.edif ...
+ngc2edif: Total memory usage is 74440 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4FrontEndFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to drs4FrontEndFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file drs4FrontEndFifo.edif ...
+ngc2edif: Total memory usage is 74568 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design eventFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to eventFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+  finished :Prep
+Writing EDIF netlist file eventFifo.edif ...
+ngc2edif: Total memory usage is 79816 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design triggerLogicDelayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to triggerLogicDelayFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file triggerLogicDelayFifo.edif ...
+ngc2edif: Total memory usage is 74376 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop.ngc ...
+WARNING:NetListWriters:298 - No output is written to taxiTop.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus x14b/differenceGpsToLocalClock[31 : 0]
+   on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x17/message[16 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy[3 :
+   1] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x8/Result[31 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_134_o_GND_134_o_sub_114_OUT<15:0>_lut[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/state1[4]_eventFifoIn[143]_wide_mux_136_OUT[143 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn[143 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14c/Mmux__n0442_rs_lut[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_lut[6 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_98_OUT_rs_A[8 : 4] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/Msub_GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT<31:0>_lut[31 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT[31 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT[3 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[7].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[6].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[5].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[4].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[3].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[2].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[1].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[0].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop.edif ...
+ngc2edif: Total memory usage is 112132 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop.ngc ...
+WARNING:NetListWriters:298 - No output is written to taxiTop.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus x14b/differenceGpsToLocalClock[31 : 0]
+   on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus iceTad_0r_rs485TxBusy[7 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x17/message[16 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy[3 :
+   1] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x8/Result[31 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x8/counter_ms[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_134_o_GND_134_o_sub_115_OUT<15:0>_lut[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/state1[4]_eventFifoIn[143]_wide_mux_137_OUT[143 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn[143 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14c/Mmux__n0430_rs_lut[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_96_OUT_rs_lut[6 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_96_OUT_rs_A[8 : 4] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/Msub_GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT<31:0>_lut[31 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT[31 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14b/counter_ms[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT[3 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x10/timeoutCounter[15 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x12/counter_ms[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[7].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[6].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[5].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[4].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[3].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[2].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[1].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[0].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop.edif ...
+ngc2edif: Total memory usage is 116292 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design rs485fifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to rs485fifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file rs485fifo.edif ...
+ngc2edif: Total memory usage is 77636 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4OffsetCorrectionRam.ngc ...
+WARNING:NetListWriters:298 - No output is written to
+   drs4OffsetCorrectionRam.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/doutb_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/douta_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file drs4OffsetCorrectionRam.edif ...
+ngc2edif: Total memory usage is 77828 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design delayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to delayFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file delayFifo.edif ...
+ngc2edif: Total memory usage is 78660 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4FrontEndFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to drs4FrontEndFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file drs4FrontEndFifo.edif ...
+ngc2edif: Total memory usage is 78660 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design eventFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to eventFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+  finished :Prep
+Writing EDIF netlist file eventFifo.edif ...
+ngc2edif: Total memory usage is 82180 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design triggerLogicDelayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to triggerLogicDelayFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file triggerLogicDelayFifo.edif ...
+ngc2edif: Total memory usage is 77636 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design taxiTop.ngc ...
+WARNING:NetListWriters:298 - No output is written to taxiTop.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus x14b/differenceGpsToLocalClock[31 : 0]
+   on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus iceTad_0r_rs485TxBusy[7 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x17/message[16 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x17/x7/pd_state_machine/Maddsub_pdcounter[4]_pdcounter[4]_mux_32_OUT_cy[3 :
+   1] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x8/Result[31 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x8/counter_ms[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/Msub_GND_134_o_GND_134_o_sub_115_OUT<15:0>_lut[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x11/state1[4]_eventFifoIn[143]_wide_mux_137_OUT[143 : 0] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x11/eventFifoIn[143 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14c/Mmux__n0430_rs_lut[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_96_OUT_rs_lut[6 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14c/Mmux_stateWR3[2]_X_25_o_wide_mux_96_OUT_rs_A[8 : 4] on block taxiTop is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/Msub_GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT<31:0>_lut[31 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus
+   x14b/GND_137_o_localClockSubSecondCounter[31]_sub_14_OUT[31 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x14b/counter_ms[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x10/GND_131_o_GND_131_o_mux_176_OUT[3 :
+   0] on block taxiTop is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus x10/timeoutCounter[15 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x12/counter_ms[15 : 0] on block taxiTop
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[7].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[6].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[5].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[4].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[3].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[2].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[1].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus x18/g1[0].x0/Result[3 : 0] on block
+   taxiTop is not reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file taxiTop.edif ...
+ngc2edif: Total memory usage is 116612 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design rs485fifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to rs485fifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file rs485fifo.edif ...
+ngc2edif: Total memory usage is 77636 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4OffsetCorrectionRam.ngc ...
+WARNING:NetListWriters:298 - No output is written to
+   drs4OffsetCorrectionRam.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/doutb_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].
+   ram.r/s6_init.ram/douta_n<16 : 0> on block drs4OffsetCorrectionRam is not
+   reconstructed, because there are some missing bus signals.
+  finished :Prep
+Writing EDIF netlist file drs4OffsetCorrectionRam.edif ...
+ngc2edif: Total memory usage is 77636 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design delayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to delayFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file delayFifo.edif ...
+ngc2edif: Total memory usage is 78404 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design drs4FrontEndFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to drs4FrontEndFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file drs4FrontEndFifo.edif ...
+ngc2edif: Total memory usage is 78660 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design eventFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to eventFifo.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus
+   U0/xst_fifo_generator/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.rd_rst_reg<2 :
+   0> on block eventFifo is not reconstructed, because there are some missing
+   bus signals.
+  finished :Prep
+Writing EDIF netlist file eventFifo.edif ...
+ngc2edif: Total memory usage is 82756 kilobytes
+
+Release 14.7 - ngc2edif P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design triggerLogicDelayFifo.ngc ...
+WARNING:NetListWriters:298 - No output is written to triggerLogicDelayFifo.xncf,
+   ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file triggerLogicDelayFifo.edif ...
+ngc2edif: Total memory usage is 77636 kilobytes
+

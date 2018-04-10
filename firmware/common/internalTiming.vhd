@@ -29,7 +29,7 @@ use work.types.all;
 
 entity internalTiming is
 	generic(
-		globalClockRate : integer -- := 118750
+		clockRate_kHz : integer -- := 118750
 	);
 	port(
 		internalTiming : out internalTiming_t;
@@ -61,7 +61,7 @@ begin
 			realTimeCounter <= realTimeCounter + 1;
 			
 			counter_clock <= counter_clock + 1;
-			if(counter_clock = globalClockRate) then
+			if(counter_clock = clockRate_kHz) then
 				counter_clock <= 1;
 				tick_ms <= '1'; -- autoreset
 			end if;

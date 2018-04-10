@@ -56,7 +56,8 @@ begin
 	controlBus.reset <= reset(2);
 	controlBus.clock <= busClock;
 
-	P0: process (asyncControlBus.asyncReset, busClock) is
+	--P0: process (asyncControlBus.asyncReset, busClock) is
+	P0: process (busClock) is
 	begin
 		if (asyncControlBus.asyncReset = '1') then
 			resetCounter <= 0;

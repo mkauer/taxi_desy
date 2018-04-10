@@ -54,7 +54,7 @@ entity drs4 is
 		--stopDrs4Serdes : in std_logic_vector(7 downto 0); -- should be truly async later on
 		trigger : in triggerLogic_t;
 		internalTiming : in internalTiming_t;
-		drs4Clocks : in drs4Clocks_t;
+		adcClocks : in adcClocks_t;
 		drs4_to_ltm9007_14 : out drs4_to_ltm9007_14_t;
 		
 		registerRead : out drs4_registerRead_t;
@@ -63,6 +63,7 @@ entity drs4 is
 end drs4;
 
 architecture Behavioral of drs4 is
+	attribute keep : string;
 	constant spiNumberOfBits : integer := 8;
 	constant sclkDivisor : unsigned(3 downto 0) := x"2"; -- ((systemClock / spiClock) / 2) ... 2=~29.7MHz@118.75MHz
 	constant sclkDefaultLevel : std_logic := '0';
@@ -76,7 +77,12 @@ architecture Behavioral of drs4 is
 	signal txBuffer : std_logic_vector(spiNumberOfBits downto 0);
 	signal roiBuffer_66 : std_logic_vector(9 downto 0) := (others=>'0');
 	signal roiBufferLatched_66 : std_logic_vector(9 downto 0) := (others=>'0');
+	signal roiBufferLatched_66_TPTHRU_TIG : std_logic_vector(9 downto 0) := (others=>'0');
+	attribute keep of roiBufferLatched_66_TPTHRU_TIG : signal is "true";
+	signal roiBufferLatched_sync : std_logic_vector(9 downto 0) := (others=>'0');
 	signal roiBufferReady_66 : std_logic := '0';
+	signal roiBufferReady_66_TPTHRU_TIG : std_logic := '0';
+	attribute keep of roiBufferReady_66_TPTHRU_TIG : signal is "true";
 
 	signal busy : std_logic := '0';
 	signal spiTransfer : std_logic := '0';
@@ -93,7 +99,9 @@ architecture Behavioral of drs4 is
 --	signal readoutMode : readoutMode_t := regionOfIntrest;
 	type spiTransferMode_t is (sampleNormalMode, sampleTransparentMode, standby, regionOfIntrest, fullReadout, readShiftRegister_write, writeShiftRegister_write, configRegister_write, writeConfigRegister_write, regionOfIntrest2, fullReadout2, regionOfIntrest3);
 	signal spiTransferMode : spiTransferMode_t := sampleNormalMode;
-	signal bitCounter : integer range 0 to 65535 := 0; --unsigned(15 downto 0) := x"0000";
+	signal bitCounter1 : integer range 0 to 65535 := 0; --unsigned(15 downto 0) := x"0000";
+	signal bitCounter1_TPTHRU_TIG : integer range 0 to 65535 := 0;
+	attribute keep of bitCounter1_TPTHRU_TIG : signal is "true";
 	signal roiCounter : integer range 0 to 15 := 0;
 	signal edgeCounter : integer range 0 to 3 := 0;
 	signal spiDone : std_logic := '0';
@@ -129,6 +137,8 @@ architecture Behavioral of drs4 is
 	signal inhibitAdc : std_logic := '0';
 	signal roiBufferReadySync : std_logic_vector(2 downto 0) := (others=>'0');
 	signal spi2DoneSync : std_logic_vector(2 downto 0) := (others=>'0');
+	signal spi2Done_TPTHRU_TIG : std_logic := '0';
+	attribute keep of spi2Done_TPTHRU_TIG : signal is "true";
 	--signal sclk2 : std_logic := '0';
 	signal sclkPhase : std_logic := '0';
 	signal sclk2Enabled : std_logic := '0';
@@ -147,6 +157,12 @@ architecture Behavioral of drs4 is
 	signal sendFullReadout : std_logic := '0';
 	signal sendRoiReadout : std_logic := '0';
 	signal sendRoiReadout2 : std_logic := '0';
+	signal sendFullReadout_TPTHRU_TIG : std_logic := '0';
+	signal sendRoiReadout_TPTHRU_TIG : std_logic := '0';
+	signal sendRoiReadout2_TPTHRU_TIG : std_logic := '0';
+	attribute keep of sendFullReadout_TPTHRU_TIG : signal is "true";
+	attribute keep of sendRoiReadout_TPTHRU_TIG : signal is "true";
+	attribute keep of sendRoiReadout2_TPTHRU_TIG : signal is "true";
 	
 	signal dwrite_i : std_logic := '0';
 	signal stopDrs4 : std_logic := '0';
@@ -158,6 +174,18 @@ architecture Behavioral of drs4 is
 	
 	
 begin
+	sendFullReadout_TPTHRU_TIG <= sendFullReadout;
+	sendRoiReadout_TPTHRU_TIG <= sendRoiReadout;
+	sendRoiReadout2_TPTHRU_TIG <= sendRoiReadout2;
+
+	roiBufferLatched_66_TPTHRU_TIG <= roiBufferLatched_66;
+	roiBufferLatched_sync <= roiBufferLatched_66_TPTHRU_TIG;
+
+	roiBufferReady_66_TPTHRU_TIG <= roiBufferReady_66;
+
+	bitCounter1_TPTHRU_TIG <= bitCounter1;
+
+	spi2Done_TPTHRU_TIG <= spi2Done;
 	
 	rsrload1 <= sclk_i when enableRsrload = '1' else sclkDefaultLevel;	
 	srclk1 <= sclk_i when inhibitSclk = '0' else sclkDefaultLevel;
@@ -221,13 +249,15 @@ begin
 		end if;
 	end process P0;
 
-	P01:process (drs4Clocks.adcSerdesDivClockPhase) -- ~66MHz
+	--P01:process (registerWrite.globals.adcSerdesDivClockPhase.clock) -- ~66MHz
+	P01:process (adcClocks.serdesDivClockPhase) -- ~66MHz
 	begin
-		if rising_edge(drs4Clocks.adcSerdesDivClockPhase) then
+		--if rising_edge(registerWrite.globals.adcSerdesDivClockPhase.clock) then
+		if rising_edge(adcClocks.serdesDivClockPhase) then
 			roiBufferReady_66 <= '0'; -- autoreset
 			srclk2 <= '0'; -- autoreset
 			rsrload2 <= '0'; -- autoreset
-			if (registerWrite.reset = '1') then
+			if (adcClocks.serdesDivClockPhaseReset = '1') then
 				--sclkPhase <= not(sclkDefaultLevel);
 				sclkPhase <= sclkDefaultLevel;
 				sendFullReadoutSync_66 <= (others=>'0');
@@ -239,9 +269,9 @@ begin
 				misoSync <= '0';
 				drs4_to_ltm9007_14.adcDataStart_66 <= '0';
 			else
-				sendFullReadoutSync_66 <= sendFullReadout & sendFullReadoutSync_66(sendFullReadoutSync_66'length-1 downto 1);
-				sendRoiReadoutSync_66 <= sendRoiReadout & sendRoiReadoutSync_66(sendRoiReadoutSync_66'length-1 downto 1);
-				sendRoiReadout2Sync_66 <= sendRoiReadout2 & sendRoiReadout2Sync_66(sendRoiReadout2Sync_66'length-1 downto 1);
+				sendFullReadoutSync_66 <= sendFullReadout_TPTHRU_TIG & sendFullReadoutSync_66(sendFullReadoutSync_66'length-1 downto 1);
+				sendRoiReadoutSync_66 <= sendRoiReadout_TPTHRU_TIG & sendRoiReadoutSync_66(sendRoiReadoutSync_66'length-1 downto 1);
+				sendRoiReadout2Sync_66 <= sendRoiReadout2_TPTHRU_TIG & sendRoiReadout2Sync_66(sendRoiReadout2Sync_66'length-1 downto 1);
 				sclkPhase <= not sclkPhase;
 				misoSync <= miso;
 				
@@ -251,15 +281,15 @@ begin
 						spi2Done <= '0';
 						inhibitAdc <= '0';
 						roiBuffer_66 <= (others=>'0');
-						if (sendFullReadoutSync_66(0) = '1') then
-							bitCounter2Max <= bitCounter; -- ## sync?!
+						if (sendFullReadoutSync_66(0) = '1') then -- ## edge?
+							bitCounter2Max <= bitCounter1_TPTHRU_TIG; -- ## sync?!
 							stateSpi2 <= syncFull; 
-						elsif (sendRoiReadoutSync_66(0) = '1') then
-							bitCounter2Max <= bitCounter; -- ## sync?!
+						elsif (sendRoiReadoutSync_66(0) = '1') then -- ## edge?
+							bitCounter2Max <= bitCounter1_TPTHRU_TIG; -- ## sync?!
 							stateSpi2 <= syncRoi; 
-						elsif (sendRoiReadout2Sync_66(0) = '1') then
+						elsif (sendRoiReadout2Sync_66(0) = '1') then -- ## edge?
 							inhibitAdc <= '1';
-							bitCounter2Max <= bitCounter; -- ## sync?!
+							bitCounter2Max <= bitCounter1_TPTHRU_TIG; -- ## sync?!
 							stateSpi2 <= syncRoi; 
 						end if;
 
@@ -290,7 +320,7 @@ begin
 							end if;
 							
 							if(roiCounter = 11) then
-								roiBufferLatched_66 <= "00"&x"00";
+								roiBufferLatched_66 <= (others=>'0');
 								roiBufferReady_66 <= '1' and not(inhibitAdc); -- autoreset
 							end if;
 						end if;
@@ -364,13 +394,13 @@ begin
 	P02:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
-			roiBufferReadySync <= roiBufferReady_66 & roiBufferReadySync(roiBufferReadySync'length-1 downto 1);
+			roiBufferReadySync <= roiBufferReady_66_TPTHRU_TIG & roiBufferReadySync(roiBufferReadySync'length-1 downto 1);
 			drs4_to_ltm9007_14.roiBufferReady <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
 				drs4_to_ltm9007_14.roiBuffer <= (others=>'0');
 			else
 				if((roiBufferReadySync(1) = '1') and (roiBufferReadySync(0) = '0')) then
-					drs4_to_ltm9007_14.roiBuffer <= roiBufferLatched_66;
+					drs4_to_ltm9007_14.roiBuffer <= roiBufferLatched_sync;
 					drs4_to_ltm9007_14.roiBufferReady <= '1'; -- autoreset
 				end if;
 			end if;
@@ -398,7 +428,7 @@ begin
 				writeConfigRegister <= "11111111";
 			else
 				spiTransfer_old <= spiTransfer;
-				spi2DoneSync <= spi2Done & spi2DoneSync(spi2DoneSync'length-1 downto 1);
+				spi2DoneSync <= spi2Done_TPTHRU_TIG & spi2DoneSync(spi2DoneSync'length-1 downto 1);
 
 				case stateDrs4Spi is	
 					when idle =>
@@ -406,20 +436,20 @@ begin
 							if(spiTransferMode = readShiftRegister_write) then
 								address <= address_readShiftRegister;
 								stateDrs4Spi <= transfer1;
-								bitCounter <= 1024;
-								--bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								bitCounter1 <= 1024;
+								--bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
 								txBuffer <= "010000000";
 							elsif(spiTransferMode = configRegister_write) then
 								address <= address_configRegister;
 								stateDrs4Spi <= transfer1;
 								--stateDrs4Spi <= transfer2;
-								bitCounter <= 8;
+								bitCounter1 <= 8;
 								txBuffer <= "011111" & configRegister;
 							elsif(spiTransferMode = writeShiftRegister_write) then
 								address <= address_writeShiftRegister;
 								stateDrs4Spi <= transfer1;
 								--stateDrs4Spi <= transfer2;
-								bitCounter <= 8;
+								bitCounter1 <= 8;
 								txBuffer <= "0" & writeShiftRegister;
 							elsif(spiTransferMode = standby) then
 								address <= address_stabdby;
@@ -433,7 +463,7 @@ begin
 							elsif(spiTransferMode = regionOfIntrest) then
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readRegionOfInterest;
-								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
 								--roiCounter <= 0;
 								txBuffer <= "000000000";
 								inhibitSclk <= '1';
@@ -441,25 +471,25 @@ begin
 							elsif(spiTransferMode = fullReadout) then
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readFullChip;
-								--bitCounter <= 999;
-								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								--bitCounter1 <= 999;
+								bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
 							elsif(spiTransferMode = regionOfIntrest2) then
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readRegionOfInterest2;
-								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
 							elsif(spiTransferMode = regionOfIntrest3) then
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readRegionOfInterest3;
-								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
-								--bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead)/2);
+								bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								--bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead)/2);
 							elsif(spiTransferMode = fullReadout2) then
 								address <= address_enableAllOutputs;
 								stateDrs4Spi <= readFullChip2;
-								bitCounter <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
+								bitCounter1 <= to_integer(unsigned(registerWrite.numberOfSamplesToRead));
 							elsif(spiTransferMode = writeConfigRegister_write) then
 								address <= address_writeConfigRegister;
 								stateDrs4Spi <= transfer1;
-								bitCounter <= 8;
+								bitCounter1 <= 8;
 								txBuffer <= "0" & writeConfigRegister;
 							end if;
 						end if;
@@ -469,22 +499,22 @@ begin
 						busy <= '1'; -- autoreset
 						if (sclkEdgeRising = '1') then
 							if(spiTransferMode = readShiftRegister_write) then
-								if(bitCounter <= 1) then
+								if(bitCounter1 <= 1) then
 									txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
 									--txBuffer(txBuffer'length-1) <= '1';
 								end if;
 							else
-								if(bitCounter /= 0) then
+								if(bitCounter1 /= 0) then
 									txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
 								end if;
 							end if;
-							bitCounter <= bitCounter - 1;
-							if (bitCounter = 0) then
+							bitCounter1 <= bitCounter1 - 1;
+							if (bitCounter1 = 0) then
 								stateDrs4Spi <= transferEnd;
-								bitCounter <= 0;
+								bitCounter1 <= 0;
 							end if;
 						end if;
-						if ((sclkEdgeFalling = '1') and (bitCounter = 0)) then
+						if ((sclkEdgeFalling = '1') and (bitCounter1 = 0)) then
 							inhibitSclk <= '1';
 						end if;
 						
@@ -521,17 +551,17 @@ begin
 							--	roiCounter <= roiCounter + 1;
 							--end if;
 							
-							if(bitCounter > 0) then
-								bitCounter <= bitCounter - 1;
+							if(bitCounter1 > 0) then
+								bitCounter1 <= bitCounter1 - 1;
 							end if;
 							
 							--if(roiCounter = 9) then
 							--	registerRead.regionOfInterest <= roiBuffer;
 							--	drs4_to_ltm9007_14.roiBuffer <= roiBuffer;
 							--	drs4_to_ltm9007_14.roiBufferReady <= '1'; -- autoreset
-								if(bitCounter = 0) then
+								if(bitCounter1 = 0) then
 									stateDrs4Spi <= transferEnd;
-									bitCounter <= 0;
+									bitCounter1 <= 0;
 								end if;
 							--end if;
 
@@ -548,22 +578,22 @@ begin
 						sclkEnable <= '1'; -- autoreset
 						busy <= '1'; -- autoreset
 						if (sclkEdgeRising = '1') then
-							if(bitCounter > 0) then
-								bitCounter <= bitCounter - 1;
+							if(bitCounter1 > 0) then
+								bitCounter1 <= bitCounter1 - 1;
 							else
 								stateDrs4Spi <= transferEnd;
-								bitCounter <= 0;
+								bitCounter1 <= 0;
 							end if;
 						end if;
 										
 					when transferEnd =>
 						busy <= '1'; -- autoreset
-						bitCounter <= bitCounter + 1;
+						bitCounter1 <= bitCounter1 + 1;
 						--sclkEnable <= '1'; -- autoreset
 						--if (sclkEdgeFalling = '1') then
 						--	inhibitSclk <= '1';
 						--end if;
-						if(bitCounter >= 4) then -- ## may be we dont have to wait at all ...
+						if(bitCounter1 >= 4) then -- ## may be we dont have to wait at all ...
 						--if (sclkEdgeRising = '1') then
 							--registerRead.regionOfInterest <= roiBuffer;
 							stateDrs4Spi <= idle;

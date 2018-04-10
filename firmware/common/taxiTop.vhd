@@ -172,7 +172,7 @@ entity taxiTop is
 		TEST_GATE      : out std_logic_vector(1 to 3);    -- 2.5V CMOS, to discharge the capacitor used for the chain saw signal
 		TEST_PDn       : out std_logic;    -- 2.5V CMOS, to power down the test circuitry
 
-		TEMPERATURE    : out std_logic;    -- 2.5V CMOS, inout , one wire temp. sensor
+		TEMPERATURE    : inout std_logic;    -- bidir, tmp05 sensor
 
 	  -- test signals, NOT AVAILABLE for XC6SLX100FGG484-2 !!! 
 		LVDS_IO_P    : inout std_logic_vector(5 downto 0); -- LVDS bidir. test port 
@@ -185,7 +185,7 @@ architecture behaviour of taxiTop is
 
 	attribute keep : string;
 
-	signal asyncAddressAndControlBus : std_logic_vector(27 downto 0);
+	--signal asyncAddressAndControlBus : std_logic_vector(27 downto 0);
 	signal addressAndControlBus : std_logic_vector(31 downto 0);
 	signal clock0 : std_logic := '0';
 	signal notClock0 : std_logic := '1';
@@ -213,7 +213,7 @@ architecture behaviour of taxiTop is
 	--	signal serdesIoClock_2 : std_logic := '0';
 	--	signal serdesStrobe_1 : std_logic := '0';
 	--	signal serdesStrobe_2 : std_logic := '0';
-	signal reset : std_logic := '0';
+	--signal reset : std_logic := '0';
 	signal discriminatorSerdes : std_logic_vector(8*8-1 downto 0) := (others=>'0');
 	signal discriminatorSerdesDelayed : std_logic_vector(discriminatorSerdes'length-1 downto 0) := (others=>'0');
 	signal discriminatorSerdesDelayed2 : std_logic_vector(discriminatorSerdes'length-1 downto 0) := (others=>'0');
@@ -255,6 +255,8 @@ architecture behaviour of taxiTop is
 	signal iceTad_0w : iceTad_registerWrite_t;
 	signal panelPower_0r : panelPower_registerRead_t;
 	signal panelPower_0w : panelPower_registerWrite_t;
+	signal tmp05_0r : tmp05_registerRead_t;
+	signal tmp05_0w : tmp05_registerWrite_t;
 	--signal _0r : _registerRead_t;
 	--signal _0w : _registerWrite_t;
 
@@ -264,7 +266,7 @@ architecture behaviour of taxiTop is
 	signal gpsTiming : gpsTiming_t := (newData => '0', others => (others=>'0'));
 	signal internalTiming : internalTiming_t := (tick_ms => '0', others => (others=>'0'));
 	signal whiteRabbitTiming : whiteRabbitTiming_t := (newData => '0', others => (others=>'0'));
-	signal drs4Clocks : drs4Clocks_t := (others=>'0');
+	--signal drs4Clocks : drs4Clocks_t := (others=>'0');
 	signal adcFifo : adcFifo_t := (channel=>(others=>(others=>'0')) ,others=>(others=>'0'));
 	signal adcClocks : adcClocks_t := (others=>'0');
 	signal trigger : triggerLogic_t; -- := (triggerNotDelayed => '0', triggerDelayed => '0', softTrigger => '0', others=>(others=>'0'));
@@ -322,6 +324,7 @@ architecture behaviour of taxiTop is
 	signal whiteRabbitClockIn : std_logic := '0';
 	
 	signal deadTime : std_logic := '0'; 
+	signal rateCounterTimeOut : std_logic := '0'; 
 	
 begin
 	
@@ -466,7 +469,7 @@ begin
 
 	g14: for i in 1 to 3 generate k: OBUF port map(O => TEST_GATE(i), I => '0'); end generate;
 	i43: OBUF port map(O => TEST_PDn, I => '0');
-	i44: OBUF port map(O => TEMPERATURE, I => '0');
+	--i44: IBUF port map(I => TEMPERATURE, O => tmp05In);
 
 	i45: IOBUF port map(O => open, IO => ADDR_64BIT, I => '0', T => '1');
 
@@ -479,11 +482,11 @@ begin
 
 	vcxoQ2Enable <= '0'; -- Q2 not mounted
 
-	drs4RefClock <= drs4Clocks.drs4RefClock;
-
-	x0: entity work.clockConfig port map(QOSC2_OUT, "not"(PON_RESETn), reset, triggerSerdesClocks, drs4Clocks, adcClocks, clockValid,clockConfig_debug );
+	x0: entity work.clockConfig port map(QOSC2_OUT, "not"(PON_RESETn), triggerSerdesClocks, adcClocks, clockValid, clockConfig_debug, drs4RefClock );
+	x1: entity work.smcBusWrapper port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), triggerSerdesClocks.serdesDivClockReset, triggerSerdesClocks.serdesDivClock, addressAndControlBus);
+	--x2: entity work.smcBusEntry port map(triggerSerdesClocks.serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
 	
-	x6: entity work.serdesIn_1to8 port map('0', DISCR_OUT_1P, DISCR_OUT_1N, reset, triggerSerdesClocks, '0', "00", discriminatorSerdes, open);	
+	x6: entity work.serdesIn_1to8 port map('0', DISCR_OUT_1P, DISCR_OUT_1N, triggerSerdesClocks, '0', "00", discriminatorSerdes, open);	
 --	x7a: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(7 downto 0), LVDS_IO_P(5 downto 5), LVDS_IO_N(5 downto 5));
 --	x7b: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(15 downto 8), LVDS_IO_P(0 downto 0), LVDS_IO_N(0 downto 0));
 
@@ -494,9 +497,9 @@ begin
 
 	x10: entity work.triggerTimeToRisingEdge generic map(8) port map(discriminatorSerdesDelayed, trigger.triggerNotDelayed, edgeData, edgeDataReady, triggerTimeToRisingEdge_0r, triggerTimeToRisingEdge_0w, triggerTiming);
 
-	x12: entity work.pixelRateCounter port map(discriminatorSerdesDelayed2, deadTime, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
+	x12: entity work.pixelRateCounter port map(discriminatorSerdesDelayed2, deadTime, trigger.sumTriggerSameEvent, rateCounterTimeOut, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 
-	x11: entity work.eventFifoSystem port map(trigger,'0',irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut,irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
 
 	drs4Denable(1) <= drs4Denable(0);
 	drs4Dwrite(1) <= drs4Dwrite(0);
@@ -515,11 +518,11 @@ begin
 	lvdsDebugOut(1) <= trigger.triggerDelayed;
 	lvdsDebugOut(2) <= trigger.triggerNotDelayed;
 
-	x14a: entity work.internalTiming generic map(globalClockRate_platformSpecific) port map(internalTiming, internalTiming_0r, internalTiming_0w);
+	x14a: entity work.internalTiming generic map(globalClockRate_kHz) port map(internalTiming, internalTiming_0r, internalTiming_0w);
 	x14b: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, internalTiming, gpsTiming, gpsTiming_0r, gpsTiming_0w);
 	x14c: entity work.whiteRabbitTiming port map(whiteRabbitPpsIregbIn, whiteRabbitClockIn, internalTiming, whiteRabbitTiming, whiteRabbitTiming_0r, whiteRabbitTiming_0w);
 	
-	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), deadTime, trigger, internalTiming, drs4Clocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), deadTime, trigger, internalTiming, adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
 	
 	--x7: entity work.serdesOut_8to1 generic map(4,1,"PER_CHANL","SINGLEENDED") port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, (drs4DwriteSerdes(0)(6),drs4DwriteSerdes(0)(4),drs4DwriteSerdes(0)(2),drs4DwriteSerdes(0)(0)), DRS4_DWRITE(1 to 1), open);
 	--x17: entity work.ltm9007_14 port map(ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1), ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1), ADC_DCOA_P(1), ADC_DCOA_N(1), ADC_DCOB_P(1), ADC_DCOB_N(1), adcNcsA(0), adcNcsB(0), adcSdi, adcSck, '1', drs4Clocks, adcFifo, ltm9007_14_0r, ltm9007_14_0w);
@@ -540,9 +543,9 @@ begin
 	x18: entity work.iceTad port map(nP24VOn, nP24VOnTristate, rs485DataIn, rs485DataOut, rs485DataTristate, rs485DataEnable, iceTad_0r, iceTad_0w);
 	
 	x19: entity work.panelPower port map(nPanelPowerOn, panelPower_0r, panelPower_0w);
+	
+	x20: entity work.tmp05 port map(TEMPERATURE, tmp05_0r, tmp05_0w);
 
-	x1: entity work.smcBusCollector port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), asyncReset, asyncAddressAndControlBus);
-	x2: entity work.smcBusEntry port map(triggerSerdesClocks.serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
 	x3: entity work.registerInterface_iceScint port map(addressAndControlBus, ebiDataIn, ebiDataOut, 
 		triggerTimeToRisingEdge_0r,
 		triggerTimeToRisingEdge_0w,
@@ -574,6 +577,8 @@ begin
 		iceTad_0w,
 		panelPower_0r,
 		panelPower_0w,
+		tmp05_0r,
+		tmp05_0w,
 		clockConfig_debug
 	);
 

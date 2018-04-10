@@ -42,12 +42,8 @@ entity whiteRabbitTiming is
 end whiteRabbitTiming;
 
 architecture behavioral of whiteRabbitTiming is
-	signal localClockSubSecondCounter : signed(31 downto 0) := (others => '0');
-	signal localClockSubSecondCounterLatched : std_logic_vector(31 downto 0) := (others => '0');
 	signal realTimeCounter : std_logic_vector(63 downto 0) := (others => '0');
 	signal realTimeCounterLatched : std_logic_vector(63 downto 0) := (others => '0');
-	signal whiteRabbitClockCounter : unsigned(31 downto 0) := (others => '0');
-	signal whiteRabbitClockCounterLatched : std_logic_vector(31 downto 0) := (others => '0');
 	
 	signal newData : std_logic := '0';
 	signal newDataLatched : std_logic := '0';
@@ -91,7 +87,7 @@ architecture behavioral of whiteRabbitTiming is
 	signal dayCounter : unsigned(8 downto 0) := (others => '0');
 	signal irigBinaryYearsLatched : std_logic_vector(6 downto 0) := (others => '0');
 	signal irigBinaryDaysLatched : std_logic_vector(8 downto 0) := (others => '0');
-	signal irigBinarySecondsLatched : std_logic_vector(15 downto 0) := (others => '0');
+	signal irigBinarySecondsLatched : std_logic_vector(16 downto 0) := (others => '0');
 	signal calcData : std_logic := '0';
 	
 	signal counterPeriod : std_logic_vector(15 downto 0) := (others => '0');
@@ -101,8 +97,6 @@ begin
 
 whiteRabbitTiming.newData <= newData;
 whiteRabbitTiming.realTimeCounterLatched <= realTimeCounterLatched;
-whiteRabbitTiming.localClockSubSecondCounterLatched <= localClockSubSecondCounterLatched;
-whiteRabbitTiming.whiteRabbitClockCounterLatched <= whiteRabbitClockCounterLatched;
 whiteRabbitTiming.irigDataLatched <= irigDataLatched;
 whiteRabbitTiming.irigBinaryYearsLatched <= irigBinaryYearsLatched;
 whiteRabbitTiming.irigBinaryDaysLatched <= irigBinaryDaysLatched;
@@ -128,12 +122,8 @@ begin
 		newSymbol <= '0'; -- autoreset
 		id <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
-			localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
 			realTimeCounterLatched <= (others=>'0');
 			realTimeCounter <= (others=>'0');
-			localClockSubSecondCounterLatched <= (others=>'0');
-			whiteRabbitClockCounterLatched <= (others=>'0');
-			whiteRabbitClockCounter <= (others=>'0');
 			symbolValue <= '0';
 			irigData <= (others=>'0');
 			irigDataLatched <= (others=>'0');
@@ -292,7 +282,7 @@ begin
 					end if;
 					irigBinaryYearsLatched <= std_logic_vector(yearCounter);
 					irigBinaryDaysLatched <= std_logic_vector(dayCounter);
-					irigBinarySecondsLatched <= irigDataLatched(86 downto 71);
+					irigBinarySecondsLatched <= irigDataLatched(87 downto 71);
 					stateWR3 <= idle;
 
 			end case;

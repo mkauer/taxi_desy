@@ -29,13 +29,11 @@ entity clockConfig is
 	port(
 		clockPin : in std_logic;
 		asyncReset : in std_logic;
-		reset : out std_logic;
 		triggerSerdesClocks : out triggerSerdesClocks_t;
-		drs4Clocks : out drs4Clocks_t;
 		adcClocks : out adcClocks_t;
 		clockValid : out std_logic;
-		debug : in clockConfig_debug_t
---		locked : out std_logic_vector(3 downto 0)
+		debug : in clockConfig_debug_t;
+		drs4RefClock : out std_logic
 	);
 end clockConfig;
 
@@ -49,7 +47,7 @@ architecture Behavioral of clockConfig is
 	signal dcm1Reset : std_logic := '0';
 	signal pllFeedBack1 : std_logic := '0';
 	--signal pllReset1 : std_logic := '0';
-	signal pllLocked1 : std_logic := '0';
+	signal pllLocked1 : std_logic := '1';
 	signal discriminatorSerdesFastClock : std_logic := '0';
 	signal discriminatorSerdesSlowClock : std_logic := '0';
 	signal discriminatorSerdesSlowClockGlobal : std_logic := '0';
@@ -60,17 +58,21 @@ architecture Behavioral of clockConfig is
 	signal dcm3Reset : std_logic := '0';
 	signal pllFeedBack3 : std_logic := '0';
 	--signal pllReset3 : std_logic := '0';
-	signal pllLocked3 : std_logic := '0';
+	signal pllLocked3 : std_logic := '1';
 	signal adcSerdesFastClock : std_logic := '0';
 	signal adcSerdesSlowClock : std_logic := '0';
 	signal adcSerdesSlowClockPhase : std_logic := '0';
 	signal adcSerdesSlowClockGlobal : std_logic := '0';
 	
-	signal bufpllLocked1 : std_logic := '0';
-	signal bufpllLocked3 : std_logic := '0';
+	signal bufpllLocked1 : std_logic := '1';
+	signal bufpllLocked3 : std_logic := '1';
 --	signal serdesStrobe_i : std_logic := '0';
-	signal reset_i : std_logic_vector(7 downto 0) := x"00";
-	signal error : std_logic := '1';
+	signal reset_i0 : std_logic_vector(7 downto 0) := x"ff";
+	signal reset_i1 : std_logic_vector(7 downto 0) := x"ff";
+	signal reset_i2 : std_logic_vector(7 downto 0) := x"ff";
+	signal clockErrorTrigger : std_logic := '0';
+	signal clockErrorAdc : std_logic := '0';
+	signal clockErrorAll : std_logic := '0';
 	
 --	signal pllFeedBack2 : std_logic := '0';
 --	signal pllReset2 : std_logic := '0';
@@ -91,13 +93,11 @@ architecture Behavioral of clockConfig is
 	
 begin
 
-	--drs4Clocks <= (others=>'0');
-	drs4Clocks.drs4Clock_125MHz <= dcm2FxClock;
-	drs4Clocks.drs4RefClock <= refClock;
+	--drs4Clocks.drs4Clock_125MHz <= dcm2FxClock;
+	drs4RefClock <= refClock;
 	--drs4Clocks.adcSerdesDivClockPhase <= adcSerdesSlowClockGlobal;
-	drs4Clocks.adcSerdesDivClockPhase <= adcSerdesSlowClockPhase;
+	--drs4Clocks.adcSerdesDivClockPhase <= adcSerdesSlowClockPhase;
 	
---	locked <= error;
 --	locked <= dcm1Locked & bufpllLocked1_1 & bufpllLocked1_2 & pllLocked1;
 	clockValid <= dcm1Locked and bufpllLocked1 and pllLocked1;
 
@@ -206,7 +206,6 @@ begin
       serdesstrobe		=> triggerSerdesClocks.serdesStrobe	 	-- Output SERDES strobe
 	);
 	
-	triggerSerdesClocks.serdesDivClock <= discriminatorSerdesSlowClockGlobal;
 	dcm1Reset <= ((not(dcm1Locked) and  dcm1Status(2)) or asyncReset);
 	
 --	p1: process(clockDcm1ToPll)
@@ -225,19 +224,13 @@ begin
 --		end if;
 --	end process;
 	
-	error <= '1' when ((dcm1Locked = '0') or (dcm2Locked = '0') or (dcm3Locked = '0') or (bufpllLocked1 = '0') or (pllLocked1 = '0') or (bufpllLocked3 = '0') or (pllLocked3 = '0')) else '0';
---	error <= '1' when ((dcm1Locked = '0') or (bufpllLocked1 = '0') or (bufpllLocked2 = '0') or (pllLocked1 = '0') or (pllLocked2 = '0')) else '0';
-	reset <= reset_i(reset_i'length-1);
-	
-	p2: process(discriminatorSerdesSlowClockGlobal, error)
-	begin
-		if(rising_edge(clockDcm1ToPll)) then
-			reset_i <= reset_i(reset_i'length-2 downto 0) & '0';
-		end if;
-		if(error = '1') then
-			reset_i(reset_i'length-2 downto 0) <= (others => '1');
-		end if;
-	end process;
+	--clockError <= '1' when ((dcm1Locked = '0') or (dcm2Locked = '0') or (dcm3Locked = '0') or (bufpllLocked1 = '0') or (pllLocked1 = '0') or (bufpllLocked3 = '0') or (pllLocked3 = '0') or (asyncReset = '1')) else '0';
+	--clockErrorTrigger <= '1' when ((bufpllLocked1 = '0') or (pllLocked1 = '0') or (asyncReset = '1')) else '0';
+	clockErrorTrigger <= '1' when ((pllLocked1 = '0') or (asyncReset = '1')) else '0';
+	--clockErrorAdc <= '1' when ((bufpllLocked3 = '0') or (pllLocked3 = '0') or (asyncReset = '1')) else '0';
+	clockErrorAdc <= '1' when ((pllLocked3 = '0') or (asyncReset = '1')) else '0';
+	clockErrorAll <= clockErrorTrigger or clockErrorAdc;
+--	clockError <= '1' when ((dcm1Locked = '0') or (bufpllLocked1 = '0') or (bufpllLocked2 = '0') or (pllLocked1 = '0') or (pllLocked2 = '0')) else '0';
 	
 -------------------------------------------------------------------------------
 
@@ -281,7 +274,7 @@ DCM_SP_inst3 : DCM_SP
         BANDWIDTH            => "OPTIMIZED",
         CLK_FEEDBACK         => "CLKFBOUT",
         COMPENSATION         => "DCM2PLL",
-        CLKIN_PERIOD         => 33.333,
+        CLKIN_PERIOD         => 33.3333333,
         REF_JITTER           => 0.100,
         DIVCLK_DIVIDE        => 1,
         CLKFBOUT_MULT        => 14,
@@ -334,8 +327,6 @@ DCM_SP_inst3 : DCM_SP
       serdesstrobe		=> adcClocks.serdesStrobe	 	-- Output SERDES strobe
 	);
 	
-	adcClocks.serdesDivClock <= adcSerdesSlowClockGlobal;
-	adcClocks.serdesDivClockPhase <= adcSerdesSlowClockPhase;
 	dcm3Reset <= ((not(dcm3Locked) and  dcm3Status(2)) or asyncReset);
 
 -------------------------------------------------------------------------------
@@ -380,7 +371,7 @@ DCM_SP_inst3 : DCM_SP
 		if(rising_edge(dcm2FxClock)) then
 			debugSync1 <= debug;
 			debugSync2 <= debugSync1;
-			if(error = '0') then
+			if(clockErrorAdc = '0') then
 				refClockCounter <= refClockCounter + 1;
 				--if(refClockCounter >= 127) then
 				if(refClockCounter >= unsigned(debugSync2.drs4RefClockPeriod)) then
@@ -393,5 +384,50 @@ DCM_SP_inst3 : DCM_SP
 			end if;
 		end if;
 	end process;
+
+-------------------------------------------------------------------------------
+
+	
+	process(discriminatorSerdesSlowClockGlobal, clockErrorTrigger)
+	begin
+		if(rising_edge(discriminatorSerdesSlowClockGlobal)) then
+			reset_i0 <= '0' & reset_i0(reset_i0'length-1 downto 1);
+		end if;
+		if(clockErrorTrigger = '1') then
+			reset_i0(reset_i0'length-1 downto 3) <= (others => '1');
+		end if;
+	end process;
+
+	process(adcSerdesSlowClockGlobal, clockErrorAdc)
+	begin
+		if(rising_edge(adcSerdesSlowClockGlobal)) then
+			reset_i1 <= '0' & reset_i1(reset_i1'length-1 downto 1);
+		end if;
+		if(clockErrorAdc = '1') then
+			reset_i1(reset_i1'length-1 downto 3) <= (others => '1');
+		end if;
+	end process;
+
+	process(adcSerdesSlowClockPhase, clockErrorAdc)
+	begin
+		if(rising_edge(adcSerdesSlowClockPhase)) then
+			reset_i2 <= '0' & reset_i2(reset_i2'length-1 downto 1);
+		end if;
+		if(clockErrorAdc = '1') then
+			reset_i2(reset_i2'length-1 downto 3) <= (others => '1');
+		end if;
+	end process;
+	
+	adcClocks.serdesDivClock <= adcSerdesSlowClockGlobal;
+	adcClocks.serdesDivClockPhase <= adcSerdesSlowClockPhase;
+	adcClocks.serdesDivClockReset <= reset_i1(0);
+	adcClocks.serdesDivClockPhaseReset <= reset_i2(0);
+
+	
+	triggerSerdesClocks.serdesDivClock <= discriminatorSerdesSlowClockGlobal;
+	triggerSerdesClocks.serdesDivClockReset <= reset_i0(0);
+	--triggerSerdesClocks.asyncReset <= clockErrorAll;
+	triggerSerdesClocks.asyncReset <= clockErrorTrigger;
+
 
 end Behavioral;

@@ -60,6 +60,8 @@ entity ltm9007_14 is
 end ltm9007_14;
 
 architecture Behavioral of ltm9007_14 is
+	attribute keep : string;
+	
 	signal ioClockA_p : std_logic := '0';
 	signal ioClockA_n : std_logic := '0';
 	signal ioClockB_p : std_logic := '0';
@@ -95,8 +97,11 @@ architecture Behavioral of ltm9007_14 is
 	signal fifoWriteEnableB : std_logic := '0';
 	signal fifoReadEnableA : std_logic := '0';
 	signal fifoReadEnableB : std_logic := '0';
-	signal fifoResetA : std_logic := '0';
-	signal fifoResetB : std_logic := '0';
+	signal fifoReset : std_logic := '0';
+	signal fifoReset_TPTHRU_TIG : std_logic := '0';
+	attribute keep of fifoReset_TPTHRU_TIG: signal is "true";
+	signal fifoReset_sync : std_logic := '0';
+	--signal fifoResetB : std_logic := '0';
 	
 	signal fifoEmptyA : std_logic := '0';
 	signal fifoEmptyB : std_logic := '0';
@@ -104,10 +109,12 @@ architecture Behavioral of ltm9007_14 is
 	signal fifoValidB : std_logic := '0';
 
 	signal eventFifoOverflowA : std_logic := '0';
-	signal eventFifoOverflowB : std_logic := '0';
+	signal eventFifoOverflowA_66 : std_logic := '0';
+	--signal eventFifoOverflowB : std_logic := '0';
 	signal eventFifoUnderflowA : std_logic := '0';
-	signal eventFifoUnderflowB : std_logic := '0';
+	--signal eventFifoUnderflowB : std_logic := '0';
 	signal eventFifoFullA : std_logic := '0';
+	signal eventFifoFullA_TPTHRU_TIG : std_logic := '0';
 	signal eventFifoFullB : std_logic := '0';
 	
 	signal eventFifoFullA_old : std_logic := '0';
@@ -162,12 +169,23 @@ architecture Behavioral of ltm9007_14 is
 	type stateAdc_t is (idle,init1,init2,init3,init4,init5,init6,init7,init8,init9,init10,init11,init12,init13,init14,init15,init16,init17);
 	signal stateAdc : stateAdc_t := init1;
 	
-	signal bitslipStart : std_logic := '0';
+	signal bitslipStart1 : std_logic := '0';
+	signal bitslipStartLatched : std_logic := '0';
+	signal bitslipStartLatched_TPTHRU_TIG : std_logic := '0';
+	attribute keep of bitslipStartLatched_TPTHRU_TIG: signal is "true";
+	signal bitslipStartLatched_sync : std_logic := '0';
 	signal bitslipStart2 : std_logic := '0';
 	signal bitslipFailed : std_logic_vector(1 downto 0) := (others=>'0');
+	signal bitslipFailed_TPTHRU_TIG : std_logic_vector(1 downto 0) := (others=>'0');
+	attribute keep of bitslipFailed_TPTHRU_TIG: signal is "true";
+	signal bitslipFailed_sync : std_logic_vector(1 downto 0) := (others=>'0');
 	signal bitslipPattern : std_logic_vector(6 downto 0);
+	signal bitslipPattern_TPTHRU_TIG : std_logic_vector(6 downto 0);
 	signal bitslipPatternOverride :  std_logic := '0';
 	signal bitslipDone : std_logic_vector(1 downto 0) := (others=>'0');
+	signal bitslipDone_TPTHRU_TIG : std_logic_vector(1 downto 0) := (others=>'0');
+	attribute keep of bitslipDone_TPTHRU_TIG: signal is "true";
+	--signal bitslipDone_sync : std_logic_vector(1 downto 0) := (others=>'0');
 	signal bitslipDoneSync1 : std_logic_vector(4 downto 0);
 	signal bitslipDoneSync2 : std_logic_vector(4 downto 0);
 	signal bitslipDoneSyncLatched1 : std_logic := '0';
@@ -180,9 +198,12 @@ architecture Behavioral of ltm9007_14 is
 	signal adcDataValidCounter : unsigned(15 downto 0) := (others=>'0');
 	signal adcDataStart_old : std_logic := '0';
 	
-	signal numberOfSamplesToRead1 : std_logic_vector(15 downto 0);
-	signal numberOfSamplesToRead2 : std_logic_vector(15 downto 0);
-	signal numberOfSamplesToRead3 : std_logic_vector(15 downto 0);
+	signal numberOfSamplesToRead : std_logic_vector(15 downto 0);
+	signal numberOfSamplesToRead_TPTHRU_TIG : std_logic_vector(15 downto 0);
+	attribute keep of numberOfSamplesToRead_TPTHRU_TIG: signal is "true";
+	signal numberOfSamplesToRead_sync : std_logic_vector(15 downto 0);
+--	signal numberOfSamplesToRead2 : std_logic_vector(15 downto 0);
+	signal numberOfSamplesToReadLatched : std_logic_vector(15 downto 0);
 	signal adcDataFifoCounter : unsigned(15 downto 0) := (others=>'0');
 	
 	signal offsetCorrectionRamAddress : std_logic_vector(9 downto 0);
@@ -195,6 +216,9 @@ architecture Behavioral of ltm9007_14 is
 	signal adcDataStartLatched : std_logic := '0';
 	signal roiBufferReadyLatched : std_logic := '0';
 	signal adcDataStart : std_logic := '0';
+	signal adcDataStart_66 : std_logic := '0';
+	signal adcDataStart_66_TPTHRU_TIG : std_logic := '0';
+	attribute keep of adcDataStart_66_TPTHRU_TIG: signal is "true";
 	
 	signal chargeBuffer : data8x24Bit_t;
 	signal baselineBuffer : data8x24Bit_t;
@@ -202,6 +226,28 @@ architecture Behavioral of ltm9007_14 is
 	signal baselineEnd : std_logic_vector(9 downto 0);
 	
 begin
+
+	process (registerWrite.clock) begin
+	if rising_edge(registerWrite.clock) then
+	numberOfSamplesToRead_TPTHRU_TIG <= registerWrite.numberOfSamplesToRead;
+	end if;
+	end process;
+	numberOfSamplesToRead_sync <= numberOfSamplesToRead_TPTHRU_TIG;
+
+	fifoReset_TPTHRU_TIG <= fifoReset; 
+	fiforeset_sync <= fifoReset_TPTHRU_TIG; 
+	
+	bitslipFailed_TPTHRU_TIG <= bitslipFailed;
+	bitslipFailed_sync <= bitslipFailed_TPTHRU_TIG;
+	
+	bitslipDone_TPTHRU_TIG <= bitslipDone; 
+	--bitslipDone_sync <= bitslipDone_TPTHRU_TIG; 
+	
+	bitslipStartLatched_TPTHRU_TIG <= bitslipStartLatched;
+	bitslipStartLatched_sync <= bitslipStartLatched_TPTHRU_TIG;
+
+	adcDataStart_66_TPTHRU_TIG <= drs4_to_ltm9007_14.adcDataStart_66;
+	adcDataStart_66 <= drs4_to_ltm9007_14.adcDataStart_66;
 	
 	adcDataGroupA_p <= adcDataA_p(6) & adcDataA_p(4) & adcDataA_p(2) & adcDataA_p(0);
 	adcDataGroupA_n <= adcDataA_n(6) & adcDataA_n(4) & adcDataA_n(2) & adcDataA_n(0);
@@ -210,8 +256,8 @@ begin
 	
 	reset <= registerWrite.reset;
 	bitslipPattern <= registerWrite.bitslipPattern when (bitslipPatternOverride = '0') else "1100101";
-	bitslipStart <= registerWrite.bitslipStart or bitslipStart2;
-	registerRead.bitslipFailed <= bitslipFailed; --(0) or bitslipFailed(1);
+	bitslipStart1 <= registerWrite.bitslipStart or bitslipStart2;
+	--registerRead.bitslipFailed <= bitslipFailed; -- ## sync
 	registerRead.bitslipPattern <= registerWrite.bitslipPattern;
 	
 	registerRead.testMode <= registerWrite.testMode;
@@ -228,39 +274,31 @@ begin
 
 	sclk <= sclk_i;
 
-	--x100: entity work.serdes_1_to_n_clk_ddr_s8_diff generic map(7, false) port map(dataClockA_p, dataClockA_n, ioClockA_p, ioClockA_n, serdesStrobeA, serdesDivClockA);
-	--x101: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, ioClockA_p, ioClockA_n, serdesStrobeA, reset, serdesDivClockA, '0', dataOutGroupA, "00", open);
-	--x101: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, ioClockA_p, ioClockA_n, adcClocks.serdesStrobe, reset, adcClocks.serdesDivClock, '0', dataOutGroupA, "00", open);
-	--x102: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,1,false,"PER_CHANL") port map('1', frameA_p, frameA_n, ioClockA_p, ioClockA_n, serdesStrobeA, reset, serdesDivClockA, '0', frameOutGroupA, "00", open);
-
-	--x104: entity work.serdes_1_to_n_clk_ddr_s8_diff generic map(7, false) port map(dataClockB_p, dataClockB_n, ioClockB_p, ioClockB_n, serdesStrobeB, serdesDivClockB);
-	--x105: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, ioClockB_p, ioClockB_n, serdesStrobeB, reset, serdesDivClockB, '0', dataOutGroupB, "00", open);
-	--x105: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,4,false,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, ioClockB_p, ioClockB_n, adcClocks.serdesStrobe, reset, adcClocks.serdesDivClock, '0', dataOutGroupB, "00", open);
-	--x106: entity work.serdes_1_to_n_data_ddr_s8_diff generic map(7,1,false,"PER_CHANL") port map('1', frameB_p, frameB_n, ioClockA_p, ioClockA_n, serdesStrobeA, reset, serdesDivClockA, '0', frameOutGroupB, "00", open);
-	
-	x6: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, reset, adcClocks, bitslipStart, bitslipDone(0), bitslipFailed(0), bitslipPattern, "00", dataOutGroupA, open);
-	x7: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, reset, adcClocks, bitslipStart, bitslipDone(1), bitslipFailed(1), bitslipPattern, "00", dataOutGroupB, open);
+	x6: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, adcClocks, bitslipStartLatched_sync, bitslipDone(0), open, "1100101", "00", dataOutGroupA, open);
+	x7: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, adcClocks, bitslipStartLatched_sync, bitslipDone(1), open, "1100101", "00", dataOutGroupB, open);
+	--x6: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupA_p, adcDataGroupA_n, adcClocks, bitslipStartLatched_sync, bitslipDone(0), bitslipFailed(0), bitslipPattern_TPTHRU_TIG, "00", dataOutGroupA, open);
+	--x7: entity work.serdesIn_1to7 generic map(7,4,true,"PER_CHANL") port map('1', adcDataGroupB_p, adcDataGroupB_n, adcClocks, bitslipStartLatched_sync, bitslipDone(1), bitslipFailed(1), bitslipPattern_TPTHRU_TIG, "00", dataOutGroupB, open);
 
 	x107: OBUFDS port map(O => enc_p, OB => enc_n, I => enc);
 	
 	x108: entity work.drs4FrontEndFifo port map(
-		rst => fifoResetA,
-		wr_clk => adcClocks.serdesDivClock, --serdesDivClockA,
-		rd_clk => fifoReadClock,
-		din => dataOutGroupA_buffer,
-		wr_en => fifoWriteEnableA,
-		rd_en => fifoReadEnableA,
-		dout => fifoOutA,
-		full => eventFifoFullA,
-		overflow => eventFifoOverflowA,
-		empty => fifoEmptyA,
-		valid => fifoValidA,
-		underflow => eventFifoUnderflowA,
-		rd_data_count => fifoWordsA(3 downto 0),
-		wr_data_count => registerRead.fifoWordsA2(3 downto 0)
+		rst => fifoReset_sync, -- 66 ??
+		wr_clk => adcClocks.serdesDivClock, -- 66 ok --serdesDivClockA,
+		rd_clk => fifoReadClock, -- 125 ok
+		din => dataOutGroupA_buffer, -- 66 ok
+		wr_en => fifoWriteEnableA, -- 66 ok
+		rd_en => fifoReadEnableA, -- 125 ok
+		dout => fifoOutA, -- 125 ok 
+		full => eventFifoFullA_TPTHRU_TIG, -- 125 xx
+		overflow => eventFifoOverflowA_66, -- 125 xx
+		empty => fifoEmptyA, -- 125 ok
+		valid => fifoValidA, -- 125 ok
+		underflow => eventFifoUnderflowA, -- 125 ok
+		rd_data_count => fifoWordsA(3 downto 0), -- 125 ok
+		wr_data_count => open --registerRead.fifoWordsA2(3 downto 0) -- 125 xx
 	);
 	x109: entity work.drs4FrontEndFifo port map(
-		rst => fifoResetB,
+		rst => fifoReset_sync,
 		wr_clk => adcClocks.serdesDivClock, --serdesDivClockB,
 		rd_clk => fifoReadClock,
 		din => dataOutGroupB_buffer,
@@ -268,10 +306,10 @@ begin
 		rd_en => fifoReadEnableB,
 		dout => fifoOutB,
 		full => eventFifoFullB,
-		overflow => eventFifoOverflowB,
+		overflow => open, --eventFifoOverflowB,
 		empty => fifoEmptyB, --open,
 		valid => fifoValidB, --open,
-		underflow => eventFifoUnderflowB,
+		underflow => open, --eventFifoUnderflowB,
 		rd_data_count => fifoWordsB(3 downto 0),
 		wr_data_count => open
 	);
@@ -279,7 +317,7 @@ begin
 	fifoReadClock <= registerWrite.clock;
 	--adcFifo.fifoOutA <= fifoOutA;
 	--adcFifo.fifoOutB <= fifoOutB;
-	fifoWordsA(4) <= eventFifoFullA;
+	fifoWordsA(4) <= eventFifoFullA_TPTHRU_TIG;
 	fifoWordsB(4) <= eventFifoFullB;
 	--adcFifo.fifoWordsA <= fifoWordsA;
 	--adcFifo.fifoWordsB <= fifoWordsB;
@@ -288,7 +326,14 @@ begin
 	registerRead.baselineStart <= registerWrite.baselineStart;
 	registerRead.baselineEnd <= registerWrite.baselineEnd;
 
-	registerRead.fifoWordsA <= "000" & fifoWordsA;
+	--registerRead.fifoWordsA <= "000" & fifoWordsA; -- now sync
+
+	--process (registerWrite.clock)
+	--begin
+	--	if rising_edge(registerWrite.clock) then
+	--		fiforeset_sync <= fifoReset_TPTHRU_TIG; 
+	--	end if;
+	--end process;
 
 	g110: for i in 0 to 7 generate
 		x110: entity work.drs4OffsetCorrectionRam port map(
@@ -297,7 +342,7 @@ begin
 			registerWrite.offsetCorrectionRamWrite(i downto i),
 			registerWrite.offsetCorrectionRamAddress,
 			registerWrite.offsetCorrectionRamData,
-			registerRead.offsetCorrectionRamData(i),
+			registerRead.offsetCorrectionRamData(i), -- ## implement mux here....
 			registerWrite.clock,
 			'0',
 			"0",
@@ -315,6 +360,8 @@ begin
 			sclkEnable <= '0'; -- autoreset
 			spiDone <= '0'; -- autoreset
 			spiBusy <= '0'; -- autoreset
+			registerRead.fifoWordsA <= "000" & fifoWordsA;
+			registerRead.bitslipFailed <= bitslipFailed_sync;
 			if (registerWrite.reset = '1') then
 				sclkDivisorCounter <= to_unsigned(0, sclkDivisorCounter'length);
 				sclk_i <= sclkDefaultLevel;
@@ -396,6 +443,8 @@ begin
 		if rising_edge(registerWrite.clock) then
 			spiTransfer <= '0'; -- autoreset
 			bitslipStart2 <= '0'; -- autoreset	
+			bitslipStartLatched <= bitslipStart1;
+			bitslipPattern_TPTHRU_TIG <= bitslipPattern;
 			if (registerWrite.reset = '1') then				
 				stateAdc <= init1;
 				message <= (others=>'0');
@@ -406,8 +455,8 @@ begin
 				bitslipDoneSyncLatched2 <= '0';
 				bitslipPatternOverride <= '0';
 			else
-				bitslipDoneSync1 <= bitslipDone(0) & bitslipDoneSync1(bitslipDoneSync1'length-1 downto 1);
-				bitslipDoneSync2 <= bitslipDone(1) & bitslipDoneSync2(bitslipDoneSync2'length-1 downto 1);
+				bitslipDoneSync1 <= bitslipDone_TPTHRU_TIG(0) & bitslipDoneSync1(bitslipDoneSync1'length-1 downto 1);
+				bitslipDoneSync2 <= bitslipDone_TPTHRU_TIG(1) & bitslipDoneSync2(bitslipDoneSync2'length-1 downto 1);
 				
 				bitslipDoneSyncLatched1 <= bitslipDoneSync1(0) or bitslipDoneSyncLatched1;
 				bitslipDoneSyncLatched2 <= bitslipDoneSync2(0) or bitslipDoneSyncLatched2;
@@ -583,11 +632,11 @@ begin
 			end if;
 		end if;
 	end process P1;
-
+	
 	P02:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
-			adcDataStartSync <= drs4_to_ltm9007_14.adcDataStart_66 & adcDataStartSync(adcDataStartSync'length-1 downto 1);
+			adcDataStartSync <= adcDataStart_66_TPTHRU_TIG & adcDataStartSync(adcDataStartSync'length-1 downto 1);
 			if (registerWrite.reset = '1') then
 				adcDataStart <= '0';
 			else
@@ -604,20 +653,21 @@ P9:process (adcClocks.serdesDivClock) -- ~66 MHz
 begin
 	if rising_edge(adcClocks.serdesDivClock) then
 		adcDataValid <= '0'; -- autoreset
-		if (registerWrite.reset = '1') then -- ## sync?!
+		--if (registerWrite.reset = '1') then -- ## sync?!
+		if (adcClocks.serdesDivClockReset = '1') then
 			stateAdcFifoData <= idle;
 			adcDataStart_old <= '0';
-			numberOfSamplesToRead1 <= (others=>'0'); 
-			numberOfSamplesToRead2 <= (others=>'0'); 
+			numberOfSamplesToRead <= (others=>'0'); 
+			--numberOfSamplesToRead2 <= (others=>'0'); 
 		else
-			adcDataStart_old <= drs4_to_ltm9007_14.adcDataStart_66;
-			numberOfSamplesToRead1 <= registerWrite.numberOfSamplesToRead; 
-			numberOfSamplesToRead2 <= numberOfSamplesToRead1; 
+			adcDataStart_old <= adcDataStart_66;
+			numberOfSamplesToRead <= numberOfSamplesToRead_sync; -- ## inconsistent naming... 
+			--numberOfSamplesToRead2 <= numberOfSamplesToRead1;
 			
 			case stateAdcFifoData is
 				when idle =>
 					adcDataSkipCounter <= 1;
-					if(adcDataStart_old = '0' and drs4_to_ltm9007_14.adcDataStart_66 = '1') then
+					if(adcDataStart_old = '0' and adcDataStart_66 = '1') then
 						stateAdcFifoData <= skip;
 					end if;
 					
@@ -625,7 +675,7 @@ begin
 					adcDataSkipCounter <= adcDataSkipCounter + 1;
 					if(adcDataSkipCounter >= 6) then
 						stateAdcFifoData <= valid1;
-						adcDataValidCounter <= unsigned(numberOfSamplesToRead2); 
+						adcDataValidCounter <= unsigned(numberOfSamplesToRead); 
 					end if;
 
 				when valid1 =>
@@ -653,17 +703,18 @@ begin
 	if rising_edge(adcClocks.serdesDivClock) then
 		fifoWriteEnableA <= '0'; -- autoreset
 		fifoWriteEnableB <= '0'; -- autoreset
-		fifoResetA <= '0'; -- autoreset
-		fifoResetB <= '0'; -- autoreset
-		if (registerWrite.reset = '1') then -- ## sync?!
+		fifoReset <= '0'; -- autoreset
+		--fifoResetB <= '0'; -- autoreset
+		--if (registerWrite.reset = '1') then -- ## sync?!
+		if (adcClocks.serdesDivClockReset = '1') then
 			stateAdcFifo <= sync1;
 		else
 			case stateAdcFifo is				
 				when sync1 =>
 					-- set testbytes in adc ?!
 					-- find start of values ?!
-					fifoResetA <= '1'; -- autoreset
-					fifoResetB <= '1'; -- autoreset
+					fifoReset <= '1'; -- autoreset
+					--fifoResetB <= '1'; -- autoreset
 					stateAdcFifo <= sync2;
 					
 				when sync2 =>
@@ -713,8 +764,10 @@ begin
 			adcDataStartLatched <= '0';
 			roiBufferReadyLatched <= '0';
 		else
+			eventFifoOverflowA <= eventFifoOverflowA_66;
 			eventFifoOverflowA_old <= eventFifoOverflowA;
 			eventFifoUnderflowA_old <= eventFifoUnderflowA;
+			eventFifoFullA <= eventFifoFullA_TPTHRU_TIG;
 			eventFifoFullA_old <= eventFifoFullA;
 			
 			if((eventFifoOverflowA_old = '0') and (eventFifoOverflowA = '1')) then
@@ -754,7 +807,7 @@ begin
 				when idle =>
 					if((adcDataStartLatched = '1') and (roiBufferReadyLatched = '1')) then
 						stateFifoRead <= read1;
-						numberOfSamplesToRead3 <= registerWrite.numberOfSamplesToRead;
+						numberOfSamplesToReadLatched <= registerWrite.numberOfSamplesToRead;
 						offsetCorrectionRamAddress <= drs4_to_ltm9007_14.roiBuffer;
 						adcDataFifoCounter <= (others=>'0');
 						chargeBuffer <= (others=>(others=>'0'));
@@ -771,14 +824,14 @@ begin
 						stateFifoRead <= read2;
 					end if;
 					
-					if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
+					if(adcDataFifoCounter >= unsigned(numberOfSamplesToReadLatched)) then
 						stateFifoRead <= done;
 					end if;
 					
-					if(adcDataFifoCounter > unsigned(baselineEnd)) then
-						ltm9007_14_to_eventFifoSystem.baseline <= baselineBuffer;
-						ltm9007_14_to_eventFifoSystem.baselineDone <= '1'; -- autoreset
-					end if;	
+					--if(adcDataFifoCounter > unsigned(baselineEnd)) then
+					--	ltm9007_14_to_eventFifoSystem.baseline <= baselineBuffer;
+					--	ltm9007_14_to_eventFifoSystem.baselineDone <= '1'; -- autoreset
+					--end if;	
 			
 				when read2 =>
 					if(fifoValidA = '1') then -- ## fifo B is allways the same...
@@ -803,7 +856,7 @@ begin
 						stateFifoRead <= read1;
 					end if;
 
-					--if(adcDataFifoCounter >= unsigned(numberOfSamplesToRead3)) then
+					--if(adcDataFifoCounter >= unsigned(numberOfSamplesToReadLatched)) then
 					--	stateFifoRead <= done;
 					--end if;
 					
@@ -814,6 +867,8 @@ begin
 					ltm9007_14_to_eventFifoSystem.samplingDone <= '1'; -- autoreset
 					ltm9007_14_to_eventFifoSystem.charge <= chargeBuffer;
 					ltm9007_14_to_eventFifoSystem.chargeDone <= '1'; -- autoreset
+					ltm9007_14_to_eventFifoSystem.baseline <= baselineBuffer;
+					ltm9007_14_to_eventFifoSystem.baselineDone <= '1'; -- autoreset
 					
 				when others => null;
 			end case;
@@ -826,7 +881,7 @@ end process P4;
 P5:process (adcClocks.serdesDivClock) -- 66MHz
 begin
 	if rising_edge(adcClocks.serdesDivClock) then
-		if (registerWrite.reset = '1') then -- ## hack
+		if (adcClocks.serdesDivClockReset = '1') then -- ## sync?!
 			enc <= '0';
 		else
 			enc <= not(enc);

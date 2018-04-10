@@ -27,19 +27,21 @@ use work.types.all;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity eventFifoSystem is
+entity eventFifoSystem_polarstern is
 	port(
 		newEvent : in std_logic;
-		triggerTiming : in triggerTiming_t;
-		pixelRateCounter : in pixelRateCounter_t;
-		triggerRateCounter : in triggerRateCounter_t;
+		irq2arm : out std_logic;
+		triggerTiming : in triggerTimeToEdge_t;
+		pixelRateCounter : in pixelRateCounter_polarstern_t;
+		triggerRateCounter : in p_triggerRateCounter_t;
+		internalTiming : in internalTiming_t;
 		gpsTiming : in gpsTiming_t;
 		registerRead : out eventFifoSystem_registerRead_t;
 		registerWrite : in eventFifoSystem_registerWrite_t	
 		);
-end eventFifoSystem;
+end eventFifoSystem_polarstern;
 
-architecture behavioral of eventFifoSystem is
+architecture behavioral of eventFifoSystem_polarstern is
 
 	constant SLOTS : integer := 23;
 	constant SLOT_WIDTH : integer := 16;
@@ -61,7 +63,9 @@ architecture behavioral of eventFifoSystem is
 	
 	signal dmaBuffer : std_logic_vector(15 downto 0) := (others=>'0');
 	signal eventFifoWordsDma : std_logic_vector(15 downto 0) := (others=>'0');
---	signal dmaLookAheadIsIdle : std_logic := '0';
+	signal eventFifoWordsDmaAligned : std_logic_vector(15 downto 0) := (others=>'0');
+	signal eventFifoWordsDmaSlice : std_logic_vector(3 downto 0) := (others=>'0');
+	signal eventFifoWordsDma32 : std_logic_vector(31 downto 0) := (others=>'0');
 	signal s : integer range 0 to 63 := 0;
 	
 	type state1_t is (wait0, idle, writePPSInfo, writeTiming, writeSlowControlConfig, writeTriggerRates, writeTriggerRatesSector, writeError);
@@ -75,9 +79,6 @@ architecture behavioral of eventFifoSystem is
 	constant eventFifoWordsMax : unsigned(15 downto 0) := to_unsigned(4096,16);
 	
 	signal eventCount : unsigned(32 downto 0) := (others=>'0');
-	signal counterSecounds : unsigned(32 downto 0) := (others=>'0'); -- move
-	signal realTimeCounterSecounds : unsigned(32 downto 0) := (others=>'0'); -- move
-	signal realTimeCounterSubSecounds : unsigned(32 downto 0) := (others=>'0'); -- move
 
 	--constant eventLength : unsigned(15 downto 0) := x"0001";
 	signal eventFifoFull_old : std_logic := '0';
@@ -88,7 +89,7 @@ architecture behavioral of eventFifoSystem is
 	signal eventFifoFullCounter : unsigned(15 downto 0) := (others=>'0');
 	
 	constant DATATYPE_TIMING : std_logic_vector(5 downto 0) := x"1" & "00";
-	constant DATATYPE_PPSINFO : std_logic_vector(5 downto 0) := x"2" & "00";
+	constant DATATYPE_GPS : std_logic_vector(5 downto 0) := x"2" & "00";
 	constant DATATYPE_DEBUG : std_logic_vector(5 downto 0) := x"3" & "00";
 	constant DATATYPE_SLOWCONTROLCONFIG : std_logic_vector(5 downto 0) := x"4" & "00";
 	constant DATATYPE_TRIGGERRATES : std_logic_vector(5 downto 0) := x"5" & "00";
@@ -118,7 +119,7 @@ architecture behavioral of eventFifoSystem is
 	alias ratesSectorData_bit : std_logic is packetConfig(14);
 	alias eventData_bit : std_logic is packetConfig(15);
 	
-	signal registerSamplesToRead : std_logic_vector(15 downto 0) := x"0000";
+--	signal numberOfSamplesToRead : std_logic_vector(15 downto 0) := x"0000";
 	signal registerDeviceId : std_logic_vector(15 downto 0) := x"a5a5"; -- ## dummy
 --	signal packetConfig : std_logic_vector(15 downto 0) := x"0000";
 	
@@ -130,10 +131,26 @@ architecture behavioral of eventFifoSystem is
 	signal softPps : std_logic := '0'; 
 	signal pixelRateNewData : std_logic := '0';
 	signal pixelRateSectorNewData : std_logic := '0';
+
+	signal eventsPerIRQcounter : unsigned(15 downto 0) := (others=>'0');
+	signal irqCounter : integer range 0 to 65500 := 0;
+	signal irqTimeoutCounter : integer range 0 to 8100 := 0;
+	signal irqRequest : std_logic := '0';
+	signal irqRequest_eventsPerCount : std_logic := '0';
+	signal irqRequest_eventFifoWords : std_logic := '0';
+	signal irqRequest_timeout : std_logic := '0';
+	signal irqRequest_eventsPerCount_old : std_logic := '0';
+	signal irqRequest_eventFifoWords_old : std_logic := '0';
+	signal irqRequest_timeout_old : std_logic := '0';
+	signal increaseEventCounter : std_logic := '0';
+	
+	type stateIrq_t is (idle, irqBlock);
+	signal stateIrq : stateIrq_t := idle;
 	
 begin
 
-	l: entity work.eventFifoPolarstern
+	-- fifo: 368x4096
+	l0: entity work.eventFifoPolarstern
 	port map (
 		clk => registerWrite.clock,
 		srst => eventFifoClear,
@@ -153,30 +170,34 @@ begin
 	
 	registerRead.dmaBuffer <= dmaBuffer;
 	registerRead.eventFifoWordsDma <= eventFifoWordsDma;
+	registerRead.eventFifoWordsDmaAligned <= eventFifoWordsDmaAligned;
+	registerRead.eventFifoWordsDmaSlice <= eventFifoWordsDmaSlice;
+	registerRead.eventFifoWordsDma32 <= eventFifoWordsDma32;
+	registerRead.eventFifoWordsPerSlice <= std_logic_vector(to_unsigned(SLOTS,16));
 	nextWord <= registerWrite.nextWord;
-	
+
 	packetConfig <= registerWrite.packetConfig;
 	registerRead.packetConfig <= registerWrite.packetConfig;
+	registerRead.eventsPerIrq <= registerWrite.eventsPerIrq;
+	registerRead.irqAtEventFifoWords <= registerWrite.irqAtEventFifoWords;
+	registerRead.enableIrq <= registerWrite.enableIrq;
+	registerRead.irqStall <= registerWrite.irqStall;
 	registerRead.eventFifoErrorCounter <= std_logic_vector(eventFifoErrorCounter);
 	
-	registerSamplesToRead <= registerWrite.registerSamplesToRead;
-	registerRead.registerSamplesToRead <= registerWrite.registerSamplesToRead;
+--	numberOfSamplesToRead <= registerWrite.numberOfSamplesToRead;
+--	registerRead.numberOfSamplesToRead <= registerWrite.numberOfSamplesToRead;
 	
 P1:process (registerWrite.clock)
-	--constant HEADER_LENGTH : integer := 1;
-	--constant CHARGE_LENGTH : integer := 1;
-	--constant TXT_LENGTH : integer := 1;
-	--variable tempLength : unsigned(15 downto 0);
 begin
 	if rising_edge(registerWrite.clock) then
 		eventFifoWriteRequest <= '0'; -- autoreset
+		increaseEventCounter <= '0'; -- autoreset
 	
 		if (registerWrite.reset = '1') then
 			eventFifoClear <= '1';
 			state1 <= idle;
 		--	eventLength <= to_unsigned(0,eventLength'length);
 			eventFifoErrorCounter <= to_unsigned(0,eventFifoErrorCounter'length);
-			eventCount <= (others=>'0');
 			softPps <= '0';
 			pixelRateNewData <= '0';
 			pixelRateSectorNewData <= '0';
@@ -237,7 +258,7 @@ begin
 	--				state1 <= testData;
 
 	--			when testData =>
-	--				if(testDataWords < unsigned(registerSamplesToRead))then
+	--				if(testDataWords < unsigned(numberOfSamplesToRead))then
 	--					eventFifoIn <= (others=>'0');
 	--					eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TESTDATA_COUNTER & std_logic_vector(testDataWords(9 downto 0));
 	--					eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(testDataCounter) & "000";
@@ -266,8 +287,8 @@ begin
 				when writePPSInfo =>
 					state1 <= idle;
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax - 1)) then
-						--eventFifoIn <= (others=>'0');
-						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_PPSINFO & "00" & x"00";
+						eventFifoIn <= (others=>'0');
+						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_GPS & "00" & x"00";
 						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= gpsTiming.week;
 						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= gpsTiming.timeOfWeekMilliSecond(31 downto 16);
 						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= gpsTiming.timeOfWeekMilliSecond(15 downto 0);
@@ -288,18 +309,16 @@ begin
 					
 				when writeTiming =>
 					state1 <= idle;
-					eventCount <= eventCount + 1;
+					increaseEventCounter <= '1'; -- autoreset
 					if(unsigned(eventFifoWords) < (eventFifoWordsMax - 1)) then
-						--eventFifoIn <= (others=>'0');
+						eventFifoIn <= (others=>'0');
 						eventFifoIn(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH) <= DATATYPE_TIMING & "00" & x"00";
 						eventFifoIn(1*SLOT_WIDTH+SLOT_WIDTH-1 downto 1*SLOT_WIDTH) <= std_logic_vector(eventCount(31 downto 16));
-						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventCount(15 downto 0));						
-						--eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= std_logic_vector(realTimeCounterSubSecounds(31 downto 16)); -- not 1ns but ~1.05263ns per tick
-						--eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= std_logic_vector(realTimeCounterSubSecounds(15 downto 0));
-						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= gpsTiming.realTimeCounter(63 downto 48); -- not 1ns but ~1.05263ns per tick
-						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= gpsTiming.realTimeCounter(47 downto 32);
-						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= gpsTiming.realTimeCounter(31 downto 16);
-						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= gpsTiming.realTimeCounter(15 downto 0);
+						eventFifoIn(2*SLOT_WIDTH+SLOT_WIDTH-1 downto 2*SLOT_WIDTH) <= std_logic_vector(eventCount(15 downto 0));
+						eventFifoIn(3*SLOT_WIDTH+SLOT_WIDTH-1 downto 3*SLOT_WIDTH) <= triggerTiming.realTimeCounterLatched(63 downto 48);
+						eventFifoIn(4*SLOT_WIDTH+SLOT_WIDTH-1 downto 4*SLOT_WIDTH) <= triggerTiming.realTimeCounterLatched(47 downto 32);
+						eventFifoIn(5*SLOT_WIDTH+SLOT_WIDTH-1 downto 5*SLOT_WIDTH) <= triggerTiming.realTimeCounterLatched(31 downto 16);
+						eventFifoIn(6*SLOT_WIDTH+SLOT_WIDTH-1 downto 6*SLOT_WIDTH) <= triggerTiming.realTimeCounterLatched(15 downto 0);
 						
 						for i in 0 to numberOfChannels-1 loop
 							eventFifoIn((7+i)*SLOT_WIDTH+SLOT_WIDTH-1 downto (7+i)*SLOT_WIDTH) <= capValue(triggerTiming.timeToRisingEdge(i),8) & capValue(triggerTiming.timeToFallingEdge(i),8);
@@ -389,10 +408,20 @@ begin
 			state7 <= wait0;
 			dmaBuffer <= x"0000";
 			lookAheadWord := '0';
-			eventFifoWordsDma <= x"0000";
---			dmaLookAheadIsIdle <= '1';
+			eventFifoWordsDma <= (others=>'0');
+			eventFifoWordsDmaAligned <= (others=>'0');
+			eventFifoWordsDmaSlice <= (others=>'0');
+			eventFifoWordsDma32 <= (others=>'0');
 			s <= 0;
-		else		
+		else
+			if(registerWrite.eventFifoClear = '1') then
+				eventFifoWordsDma <= (others=>'0');
+				eventFifoWordsDmaAligned <= (others=>'0');
+				eventFifoWordsDmaSlice <= (others=>'0');
+				eventFifoWordsDma32 <= (others=>'0');
+				state7 <= wait0;
+			end if;
+
 			case state7 is
 				when wait0 =>
 					state7 <= wait1;
@@ -404,15 +433,18 @@ begin
 					if (eventFifoWords /= x"0000") then
 						state7 <= read0;
 						eventFifoReadRequest <= '1'; -- autoreset
+						eventFifoWordsDmaSlice <= std_logic_vector(to_unsigned(SLOTS,eventFifoWordsDmaSlice'length));
 					else
 						dmaBuffer <= x"0000";
-						lookAheadWord := '0';
+						lookAheadWord := '0'; -- ## ?!?!?!?!?! variable?
+						eventFifoWordsDmaSlice <= (others=>'0');
 					end if;
 					
 				when read0 =>
 					state7 <= read1;
 					
 				when read1 =>
+					--dmaBuffer <= eventFifoOut(eventFifoOut'length-1 downto eventFifoOut'length-16);
 					dmaBuffer <= eventFifoOut(0*SLOT_WIDTH+SLOT_WIDTH-1 downto 0*SLOT_WIDTH);
 					s <= 1;
 					lookAheadWord := '1';
@@ -420,6 +452,7 @@ begin
 					
 				when read2 =>
 					if (nextWord = '1') then
+						eventFifoWordsDmaSlice <= std_logic_vector(unsigned(eventFifoWordsDmaSlice) - 1);
 						dmaBuffer <= eventFifoOut(s*SLOT_WIDTH+SLOT_WIDTH-1 downto s*SLOT_WIDTH);
 						s <= s + 1;
 						state7 <= read3;
@@ -432,8 +465,10 @@ begin
 							if (eventFifoWords /= x"0000") then
 								state7 <= read0;
 								eventFifoReadRequest <= '1'; -- autoreset
+								eventFifoWordsDmaSlice <= std_logic_vector(to_unsigned(SLOTS,eventFifoWordsDmaSlice'length));
 							else
 								state7 <= idle;
+								eventFifoWordsDmaSlice <= (others=>'0');
 							end if;
 						end if;
 					end if;
@@ -442,36 +477,23 @@ begin
 			end case;
 			
 			if (lookAheadWord = '1') then
-				eventFifoWordsDma <= std_logic_vector(unsigned(eventFifoWords) + 1);
-				--dmaLookAheadIsIdle <= '0';
+				eventFifoWordsDmaAligned <= std_logic_vector(unsigned(eventFifoWords) + 1);
 			else
-				eventFifoWordsDma <= eventFifoWords;
-				--dmaLookAheadIsIdle <= '1';
+				eventFifoWordsDmaAligned <= eventFifoWords;
 			end if;
+
+			eventFifoWordsDma <= eventFifoWords;
+			eventFifoWordsDma32 <= std_logic_vector((x"00" & unsigned(eventFifoWords) & x"00") + unsigned(eventFifoWords) +  unsigned(eventFifoWordsDmaSlice)); -- ## hack, to avoid multiplication ?!?
+			
+--			if(registerResetFifos(1) = '1') then
+--				s <= 0;
+--				state7 <= wait0;
+--				--fifoWasEmpty <= '1';
+--			end if;
+			
 		end if;
 	end if;
 end process P2;
-
-P3:process (registerWrite.clock)
-begin
-	if rising_edge(registerWrite.clock) then
-		if (registerWrite.reset = '1') then
-			counterSecounds <= to_unsigned(0,counterSecounds'length);
-			realTimeCounterSecounds <= to_unsigned(0,realTimeCounterSecounds'length);
-			realTimeCounterSubSecounds <= to_unsigned(0,realTimeCounterSubSecounds'length);
-		else
-		
-			counterSecounds <= counterSecounds + 1;
-			if(counterSecounds >= to_unsigned(118750000,counterSecounds'length)) then
-				counterSecounds <= to_unsigned(0,counterSecounds'length);
-				realTimeCounterSecounds <= realTimeCounterSecounds + 1;
-				realTimeCounterSubSecounds <= to_unsigned(0,realTimeCounterSubSecounds'length);
-			else
-				realTimeCounterSubSecounds <= realTimeCounterSubSecounds + 8;
-			end if;			
-		end if;
-	end if;
-end process P3;
 
 registerRead.eventFifoFullCounter <= std_logic_vector(eventFifoFullCounter);
 registerRead.eventFifoOverflowCounter <= std_logic_vector(eventFifoOverflowCounter);
@@ -510,5 +532,105 @@ begin
 		end if;
 	end if;
 end process P4;
+
+-- irq generation
+P5:process (registerWrite.clock)
+begin
+	if rising_edge(registerWrite.clock) then
+		irq2arm <= '0'; -- autoreset
+		if (registerWrite.reset = '1') then
+			eventsPerIRQcounter <= (others=>'0');
+			irqCounter <= 0;
+			stateIrq <= idle;
+			eventCount <= (others=>'0');
+			irqTimeoutCounter <= 1000; -- register?!
+			irqRequest <= '0';
+			irqRequest_eventsPerCount <= '0';
+			irqRequest_eventFifoWords <= '0';
+			irqRequest_timeout <= '0';
+			irqRequest_eventsPerCount_old <= '0';
+			irqRequest_eventFifoWords_old <= '0';
+			irqRequest_timeout_old <= '0'; 
+		else
+			case stateIrq is -- max irq rate is 2kHz now (500us dead time after irq)
+				when idle =>
+					if((irqRequest = '1') and (registerWrite.irqStall = '0')) then -- irqStall can be used to reduce the irq rate during unfinished dma transfers
+						irqRequest <= '0';
+						irq2arm <= '1'; -- autoreset
+						stateIrq <= irqBlock;
+						irqCounter <= 0;
+					end if;
+				
+				when irqBlock =>
+					irqCounter <= irqCounter + 1;
+					if (irqCounter >= 62500) then
+						stateIrq <= idle;
+					end if;
+			end case;
+							
+			if (increaseEventCounter = '1') then 
+				eventCount <= eventCount + 1;
+				if (unsigned(registerWrite.eventsPerIrq) /= to_unsigned(0,registerWrite.eventsPerIrq'length)) then
+					eventsPerIRQcounter <= eventsPerIRQcounter + 1;
+				end if;
+			end if;
+			
+			irqRequest_eventsPerCount_old <= irqRequest_eventsPerCount;
+			irqRequest_eventFifoWords_old <= irqRequest_eventFifoWords;
+			irqRequest_timeout_old <= irqRequest_timeout;
+
+			if(registerWrite.forceIrq = '1') then
+				irqRequest <= '1';
+			end if;
+			if((irqRequest_eventsPerCount = '1') and (irqRequest_eventsPerCount_old = '0')) then
+				irqRequest <= '1';
+			end if;
+			if((irqRequest_eventFifoWords = '1') and (irqRequest_eventFifoWords_old = '0')) then
+				irqRequest <= '1';
+			end if;
+			if((irqRequest_timeout = '1') and (irqRequest_timeout_old = '0')) then
+				irqRequest <= '1';
+			end if;
+
+			if(registerWrite.enableIrq = '1') then
+				if (registerWrite.eventsPerIrq /= (registerWrite.eventsPerIrq'range=>'0')) then
+					if (eventsPerIRQcounter >= unsigned(registerWrite.eventsPerIrq)) then
+						irqRequest_eventsPerCount <= '1';
+						eventsPerIRQcounter <= (others=>'0');
+					else
+						irqRequest_eventsPerCount <= '0';
+					end if;
+				end if;		
+				
+				if (registerWrite.irqAtEventFifoWords /= (registerWrite.irqAtEventFifoWords'range=>'0')) then
+					if (unsigned(eventFifoWords) >= unsigned(registerWrite.irqAtEventFifoWords)) then
+						irqRequest_eventFifoWords <= '1';
+					else
+						irqRequest_eventFifoWords <= '0';
+					end if;
+				end if;
+				
+				if (eventFifoWords /= (eventFifoWords'range=>'0')) then
+					if ((irqTimeoutCounter /= 0) and (internalTiming.tick_ms = '1')) then
+						irqTimeoutCounter <= irqTimeoutCounter - 1;
+					end if;
+					if (irqTimeoutCounter = 1) then
+						irqTimeoutCounter <= 0;
+						irqRequest_timeout <= '1';
+					else
+						irqRequest_timeout <= '0';
+					end if;
+				else
+					irqTimeoutCounter <= 1000; -- 1000 = 1sec timeout
+				end if;
+			end if;
+			
+			--if ((clearEventCounter = '1') or (resetEventCount_bit = '1')) then
+			if (registerWrite.clearEventCounter = '1') then
+				eventCount <= (others=>'0');
+			end if;
+		end if;
+	end if;
+end process P5;
 
 end behavioral;

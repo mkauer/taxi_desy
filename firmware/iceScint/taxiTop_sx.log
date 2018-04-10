@@ -1,0 +1,1022 @@
+
+WARNING: The Trce option "-ucf" is either illegal or not supported by projNav and hence will not be added in the strategy file(mapextraeffort2.xds) created by Smartxplorer.
+
+Command Line : 
+-------------
+map C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.ngd -ol high -xe n -t 3 -w -p xc6slx45-fgg484-3 -o taxiTop_map.ncd C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf
+
+Release 14.7 - Map P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Using target part "6slx45fgg484-3".
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+INFO:Security:50 - The XILINXD_LICENSE_FILE environment variable is set to
+'2101@feda2014.desy.de'.
+INFO:Security:53 - The LM_LICENSE_FILE environment variable is not set.
+INFO:Security:54 - 'xc6slx45' is a WebPack part.
+WARNING:Security:43 - No license file was found in the standard Xilinx license
+directory.
+WARNING:Security:44 - Since no license file was found,
+       please run the Xilinx License Configuration Manager
+       (xlcm or "Manage Xilinx Licenses")
+       to assist in obtaining a license.
+WARNING:Security:42 - Your software subscription period has lapsed. Your current
+version of Xilinx tools will continue to function, but you no longer qualify for
+Xilinx software updates or new releases.
+----------------------------------------------------------------------
+Mapping design into LUTs...
+WARNING:MapLib:701 - Signal EXT_CLK_P connected to top level port EXT_CLK_P has
+   been removed.
+WARNING:MapLib:701 - Signal EXT_CLK_N connected to top level port EXT_CLK_N has
+   been removed.
+WARNING:MapLib:701 - Signal EXT_PPS_P connected to top level port EXT_PPS_P has
+   been removed.
+WARNING:MapLib:701 - Signal EXT_PPS_N connected to top level port EXT_PPS_N has
+   been removed.
+WARNING:MapLib:701 - Signal EXT_TRIG_IN_P connected to top level port
+   EXT_TRIG_IN_P has been removed.
+WARNING:MapLib:701 - Signal EXT_TRIG_IN_N connected to top level port
+   EXT_TRIG_IN_N has been removed.
+WARNING:MapLib:701 - Signal ADC_FR_4P connected to top level port ADC_FR_4P has
+   been removed.
+WARNING:MapLib:701 - Signal ADC_FR_4N connected to top level port ADC_FR_4N has
+   been removed.
+WARNING:MapLib:701 - Signal ADC_DCO_4P connected to top level port ADC_DCO_4P
+   has been removed.
+WARNING:MapLib:701 - Signal ADC_DCO_4N connected to top level port ADC_DCO_4N
+   has been removed.
+WARNING:MapLib:701 - Signal GPS_TIMEPULSE2 connected to top level port
+   GPS_TIMEPULSE2 has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<0> connected to top level port
+   ADC_OUTA_2P<0> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<0> connected to top level port
+   ADC_OUTA_2N<0> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<1> connected to top level port
+   ADC_OUTA_2P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<1> connected to top level port
+   ADC_OUTA_2N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<2> connected to top level port
+   ADC_OUTA_2P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<2> connected to top level port
+   ADC_OUTA_2N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<3> connected to top level port
+   ADC_OUTA_2P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<3> connected to top level port
+   ADC_OUTA_2N<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<4> connected to top level port
+   ADC_OUTA_2P<4> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<4> connected to top level port
+   ADC_OUTA_2N<4> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<5> connected to top level port
+   ADC_OUTA_2P<5> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<5> connected to top level port
+   ADC_OUTA_2N<5> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<6> connected to top level port
+   ADC_OUTA_2P<6> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<6> connected to top level port
+   ADC_OUTA_2N<6> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2P<7> connected to top level port
+   ADC_OUTA_2P<7> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_2N<7> connected to top level port
+   ADC_OUTA_2N<7> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<0> connected to top level port
+   ADC_OUTA_3P<0> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<0> connected to top level port
+   ADC_OUTA_3N<0> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<1> connected to top level port
+   ADC_OUTA_3P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<1> connected to top level port
+   ADC_OUTA_3N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<2> connected to top level port
+   ADC_OUTA_3P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<2> connected to top level port
+   ADC_OUTA_3N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<3> connected to top level port
+   ADC_OUTA_3P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<3> connected to top level port
+   ADC_OUTA_3N<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<4> connected to top level port
+   ADC_OUTA_3P<4> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<4> connected to top level port
+   ADC_OUTA_3N<4> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<5> connected to top level port
+   ADC_OUTA_3P<5> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<5> connected to top level port
+   ADC_OUTA_3N<5> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<6> connected to top level port
+   ADC_OUTA_3P<6> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<6> connected to top level port
+   ADC_OUTA_3N<6> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3P<7> connected to top level port
+   ADC_OUTA_3P<7> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_3N<7> connected to top level port
+   ADC_OUTA_3N<7> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRA_P<1> connected to top level port
+   ADC_FRA_P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRA_N<1> connected to top level port
+   ADC_FRA_N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRA_P<2> connected to top level port
+   ADC_FRA_P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRA_N<2> connected to top level port
+   ADC_FRA_N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRA_P<3> connected to top level port
+   ADC_FRA_P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRA_N<3> connected to top level port
+   ADC_FRA_N<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRB_P<1> connected to top level port
+   ADC_FRB_P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRB_N<1> connected to top level port
+   ADC_FRB_N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRB_P<2> connected to top level port
+   ADC_FRB_P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRB_N<2> connected to top level port
+   ADC_FRB_N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRB_P<3> connected to top level port
+   ADC_FRB_P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_FRB_N<3> connected to top level port
+   ADC_FRB_N<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOA_P<1> connected to top level port
+   ADC_DCOA_P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOA_N<1> connected to top level port
+   ADC_DCOA_N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOA_P<2> connected to top level port
+   ADC_DCOA_P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOA_N<2> connected to top level port
+   ADC_DCOA_N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOA_P<3> connected to top level port
+   ADC_DCOA_P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOA_N<3> connected to top level port
+   ADC_DCOA_N<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOB_P<1> connected to top level port
+   ADC_DCOB_P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOB_N<1> connected to top level port
+   ADC_DCOB_N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOB_P<2> connected to top level port
+   ADC_DCOB_P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOB_N<2> connected to top level port
+   ADC_DCOB_N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOB_P<3> connected to top level port
+   ADC_DCOB_P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_DCOB_N<3> connected to top level port
+   ADC_DCOB_N<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4P<0> connected to top level port
+   ADC_OUTA_4P<0> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4N<0> connected to top level port
+   ADC_OUTA_4N<0> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4P<1> connected to top level port
+   ADC_OUTA_4P<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4N<1> connected to top level port
+   ADC_OUTA_4N<1> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4P<2> connected to top level port
+   ADC_OUTA_4P<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4N<2> connected to top level port
+   ADC_OUTA_4N<2> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4P<3> connected to top level port
+   ADC_OUTA_4P<3> has been removed.
+WARNING:MapLib:701 - Signal ADC_OUTA_4N<3> connected to top level port
+   ADC_OUTA_4N<3> has been removed.
+WARNING:MapLib:701 - Signal DRS4_SROUT<2> connected to top level port
+   DRS4_SROUT<2> has been removed.
+WARNING:MapLib:701 - Signal DRS4_SROUT<3> connected to top level port
+   DRS4_SROUT<3> has been removed.
+WARNING:MapLib:701 - Signal DRS4_DTAP<1> connected to top level port
+   DRS4_DTAP<1> has been removed.
+WARNING:MapLib:701 - Signal DRS4_DTAP<2> connected to top level port
+   DRS4_DTAP<2> has been removed.
+WARNING:MapLib:701 - Signal DRS4_DTAP<3> connected to top level port
+   DRS4_DTAP<3> has been removed.
+WARNING:MapLib:701 - Signal DRS4_PLLLCK<1> connected to top level port
+   DRS4_PLLLCK<1> has been removed.
+WARNING:MapLib:701 - Signal DRS4_PLLLCK<2> connected to top level port
+   DRS4_PLLLCK<2> has been removed.
+WARNING:MapLib:701 - Signal DRS4_PLLLCK<3> connected to top level port
+   DRS4_PLLLCK<3> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_N<0> connected to top level port
+   LVDS_IO_N<0> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_N<1> connected to top level port
+   LVDS_IO_N<1> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_P<1> connected to top level port
+   LVDS_IO_P<1> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_N<2> connected to top level port
+   LVDS_IO_N<2> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_P<2> connected to top level port
+   LVDS_IO_P<2> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_N<3> connected to top level port
+   LVDS_IO_N<3> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_P<3> connected to top level port
+   LVDS_IO_P<3> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_N<4> connected to top level port
+   LVDS_IO_N<4> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_P<4> connected to top level port
+   LVDS_IO_P<4> has been removed.
+WARNING:MapLib:701 - Signal LVDS_IO_N<5> connected to top level port
+   LVDS_IO_N<5> has been removed.
+WARNING:MapLib:701 - Signal I2C_CLK<1> connected to top level port I2C_CLK<1>
+   has been removed.
+WARNING:MapLib:701 - Signal I2C_DATA<1> connected to top level port I2C_DATA<1>
+   has been removed.
+WARNING:MapLib:701 - Signal I2C_CLK<2> connected to top level port I2C_CLK<2>
+   has been removed.
+WARNING:MapLib:701 - Signal I2C_DATA<2> connected to top level port I2C_DATA<2>
+   has been removed.
+WARNING:MapLib:701 - Signal I2C_CLK<3> connected to top level port I2C_CLK<3>
+   has been removed.
+WARNING:MapLib:701 - Signal I2C_DATA<3> connected to top level port I2C_DATA<3>
+   has been removed.
+WARNING:MapLib:701 - Signal ADDR_64BIT connected to top level port ADDR_64BIT
+   has been removed.
+WARNING:MapLib:701 - Signal TEST_DAC_SCL connected to top level port
+   TEST_DAC_SCL has been removed.
+WARNING:MapLib:701 - Signal TEST_DAC_SDA connected to top level port
+   TEST_DAC_SDA has been removed.
+Writing file taxiTop_map.ngm...
+Running directed packing...
+WARNING:Pack:2865 - The OUT_TERM property and DRIVE property can not be used
+   together. The DRIVE value 12 on I/O component DRS4_SRCLK<1> will be ignored.
+WARNING:Pack:2865 - The OUT_TERM property and DRIVE property can not be used
+   together. The DRIVE value 12 on I/O component DRS4_SRCLK<2> will be ignored.
+WARNING:Pack:2865 - The OUT_TERM property and DRIVE property can not be used
+   together. The DRIVE value 12 on I/O component DRS4_SRCLK<3> will be ignored.
+WARNING:Pack:1186 - One or more I/O components have conflicting property values.
+    For each occurrence, the system will use the property value attached to the
+   pad.  Otherwise, the system will use the first property value read.  To view
+   each occurrence, create a detailed map report (run map using the -detail
+   option).
+WARNING:Pack:2865 - The OUT_TERM property and DRIVE property can not be used
+   together. The DRIVE value 12 on I/O component TEST_GATE<1> will be ignored.
+WARNING:Pack:2865 - The OUT_TERM property and DRIVE property can not be used
+   together. The DRIVE value 12 on I/O component TEST_GATE<2> will be ignored.
+WARNING:Pack:2865 - The OUT_TERM property and DRIVE property can not be used
+   together. The DRIVE value 12 on I/O component TEST_GATE<3> will be ignored.
+Running delay-based LUT packing...
+Updating timing models...
+WARNING:Pack:1653 - At least one timing constraint is impossible to meet because component delays alone exceed the constraint. A timing
+   constraint summary below shows the failing constraints (preceded with an Asterisk (*)). Please use the Timing Analyzer (GUI) or TRCE
+   (command line) with the Mapped NCD and PCF files to identify which constraints and paths are failing because of the component delays
+   alone. If the failing path(s) is mapped to Xilinx components as expected, consider relaxing the constraint. If it is not mapped to
+   components as expected, re-evaluate your HDL and how synthesis is optimizing the path. To allow the tools to bypass this error, set the
+   environment variable XIL_TIMING_ALLOW_IMPOSSIBLE to 1.
+
+
+   For more information about the Timing Analyzer, consult the Xilinx Timing Analyzer Reference manual; for more information on TRCE,
+   consult the Xilinx Command Line Tools User Guide "TRACE" chapter.
+INFO:Timing:3386 - Intersecting Constraints found and resolved.  For more 
+   information, see the TSI report.  Please consult the Xilinx Command Line 
+   Tools User Guide for information on generating a TSI report.
+INFO:Timing:3284 - This timing report was generated using estimated delay 
+   information.  For accurate numbers, please refer to the post Place and Route 
+   timing report.
+Number of Timing Constraints that were not applied: 6
+
+Asterisk (*) preceding a constraint indicates it was not met.
+   This may be due to a setup or hold violation.
+
+----------------------------------------------------------------------------------------------------------
+  Constraint                                |    Check    | Worst Case |  Best Case | Timing |   Timing   
+                                            |             |    Slack   | Achievable | Errors |    Score   
+----------------------------------------------------------------------------------------------------------
+* TS_x0_discriminatorSerdesSlowClock = PERI | SETUP       |    -0.555ns|    34.975ns|       1|         555
+  OD TIMEGRP "x0_discriminatorSerdesSlowClo | HOLD        |     0.071ns|            |       0|           0
+  ck" TS_x0_clockDcm1ToPll / 4.75 HIGH 50%  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_clockDcm1ToPll = PERIOD TIMEGRP "x0 | MINLOWPULSE |    30.000ns|    10.000ns|       0|           0
+  _clockDcm1ToPll" TS_x0_clockBufio2ToDcm / |             |            |            |        |            
+   2.5 HIGH 50%                             |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_clockDcm3ToPll = PERIOD TIMEGRP "x0 | MINLOWPULSE |    23.332ns|    10.000ns|       0|           0
+  _clockDcm3ToPll" TS_x0_clockBufio2ToDcm / |             |            |            |        |            
+   3 HIGH 50%                               |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_clockBufio2ToDcm = PERIOD TIMEGRP " | MINLOWPULSE |    68.000ns|    32.000ns|       0|           0
+  x0_clockBufio2ToDcm" TS_QOSC2_OUT HIGH 50 |             |            |            |        |            
+  %                                         |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_dcm2FxClock = PERIOD TIMEGRP "x0_dc | SETUP       |     5.993ns|     2.007ns|       0|           0
+  m2FxClock" TS_x0_clockBufio2ToDcm / 12.5  | HOLD        |     0.413ns|            |       0|           0
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_adcSerdesSlowClock = PERIOD TIMEGRP | SETUP       |    14.585ns|     2.081ns|       0|           0
+   "x0_adcSerdesSlowClock" TS_x0_clockDcm3T | HOLD        |     0.096ns|            |       0|           0
+  oPll / 2 HIGH 50%                         | MINPERIOD   |    13.542ns|     3.124ns|       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_adcClocks_serdesDivClockPhase = PERIOD | SETUP       |    14.284ns|     2.382ns|       0|           0
+   TIMEGRP "adcClocks_serdesDivClockPhase"  | HOLD        |     0.096ns|            |       0|           0
+  TS_x0_clockDcm3ToPll / 2 HIGH 50%         |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_QOSC2_OUT = PERIOD TIMEGRP "QOSC2_OUT" | MINPERIOD   |    99.075ns|     0.925ns|       0|           0
+   100 ns HIGH 50%                          |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_thru_1_path" TIG                 | SETUP       |         N/A|     2.034ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_thru_x_path" TIG                 | SETUP       |         N/A|     2.369ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  TS_x0_adcSerdesFastClock = PERIOD TIMEGRP | N/A         |         N/A|         N/A|     N/A|         N/A
+   "x0_adcSerdesFastClock" TS_x0_clockDcm3T |             |            |            |        |            
+  oPll / 14 HIGH 50%                        |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_discriminatorSerdesFastClock = PERI | N/A         |         N/A|         N/A|     N/A|         N/A
+  OD TIMEGRP "x0_discriminatorSerdesFastClo |             |            |            |        |            
+  ck" TS_x0_clockDcm1ToPll / 38 HIGH 50%    |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+
+
+Derived Constraint Report
+Review Timing Report for more details on the following derived constraints.
+To create a Timing Report, run "trce -v 12 -fastpaths -o design_timing_report design.ncd design.pcf"
+or "Run Timing Analysis" from Timing Analyzer (timingan).
+Derived Constraints for TS_QOSC2_OUT
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+---
+----------+
+|                               |   Period    |       Actual Period       |      Timing Errors        |      Paths
+Analyzed       |
+|           Constraint          | Requirement
+|-------------+-------------|-------------+-------------|-------------+-------------|
+|                               |             |   Direct    | Derivative  |   Direct    | Derivative  |   Direct    |
+Derivative  |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+---
+----------+
+|TS_QOSC2_OUT                   |    100.000ns|      0.925ns|    415.328ns|            0|            1|            0|   
+   645406|
+| TS_x0_clockBufio2ToDcm        |    100.000ns|     32.000ns|    415.328ns|            0|            1|            0|   
+   645406|
+|  TS_x0_dcm2FxClock            |      8.000ns|      2.007ns|          N/A|            0|            0|          140|   
+        0|
+|  TS_x0_clockDcm3ToPll         |     33.333ns|     10.000ns|      6.248ns|            0|            0|            0|   
+     6311|
+|   TS_adcClocks_serdesDivClockP|     16.667ns|      2.382ns|          N/A|            0|            0|         3237|   
+        0|
+|   hase                        |             |             |             |             |             |             |   
+         |
+|   TS_x0_adcSerdesFastClock    |      2.381ns|          N/A|          N/A|            0|            0|            0|   
+        0|
+|   TS_x0_adcSerdesSlowClock    |     16.667ns|      3.124ns|          N/A|            0|            0|         3074|   
+        0|
+|  TS_x0_clockDcm1ToPll         |     40.000ns|     10.000ns|    166.131ns|            0|            1|            0|   
+   638955|
+|   TS_x0_discriminatorSerdesFas|      1.053ns|          N/A|          N/A|            0|            0|            0|   
+        0|
+|   tClock                      |             |             |             |             |             |             |   
+         |
+|   TS_x0_discriminatorSerdesSlo|      8.421ns|     34.975ns|          N/A|            1|            0|       638955|   
+        0|
+|   wClock                      |             |             |             |             |             |             |   
+         |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+---
+----------+
+
+1 constraint not met.
+INFO:Timing:2761 - N/A entries in the Constraints List may indicate that the 
+   constraint is not analyzed due to the following: No paths covered by this 
+   constraint; Other constraints intersect with this constraint; or This 
+   constraint was disabled by a Path Tracing Control. Please run the Timespec 
+   Interaction Report (TSI) via command line (trce tsi) or Timing Analyzer GUI.
+
+
+INFO:Map:215 - The Interim Design Summary has been generated in the MAP Report
+   (.mrp).
+Running timing-driven placement...
+Total REAL time at the beginning of Placer: 30 secs 
+Total CPU  time at the beginning of Placer: 29 secs 
+
+Phase 1.1  Initial Placement Analysis
+Phase 1.1  Initial Placement Analysis (Checksum:460fb812) REAL time: 33 secs 
+
+Phase 2.7  Design Feasibility Check
+Phase 2.7  Design Feasibility Check (Checksum:460fb812) REAL time: 34 secs 
+
+Phase 3.31  Local Placement Optimization
+Phase 3.31  Local Placement Optimization (Checksum:460fb812) REAL time: 34 secs 
+
+Phase 4.2  Initial Placement for Architecture Specific Features
+
+Phase 4.2  Initial Placement for Architecture Specific Features
+(Checksum:5ea3540) REAL time: 1 mins 6 secs 
+
+Phase 5.36  Local Placement Optimization
+Phase 5.36  Local Placement Optimization (Checksum:5ea3540) REAL time: 1 mins 6 secs 
+
+Phase 6.30  Global Clock Region Assignment
+Phase 6.30  Global Clock Region Assignment (Checksum:5ea3540) REAL time: 1 mins 6 secs 
+
+Phase 7.3  Local Placement Optimization
+Phase 7.3  Local Placement Optimization (Checksum:5ea3540) REAL time: 1 mins 6 secs 
+
+Phase 8.5  Local Placement Optimization
+Phase 8.5  Local Placement Optimization (Checksum:5ea3540) REAL time: 1 mins 6 secs 
+
+Phase 9.8  Global Placement
+....................
+.................................................................
+.........................................................................................................................................................................................
+...........................................................................................................................................................................................
+......................................
+Phase 9.8  Global Placement (Checksum:65cd86d1) REAL time: 3 mins 48 secs 
+
+Phase 10.5  Local Placement Optimization
+Phase 10.5  Local Placement Optimization (Checksum:65cd86d1) REAL time: 3 mins 48 secs 
+
+Phase 11.18  Placement Optimization
+Phase 11.18  Placement Optimization (Checksum:6bffd63d) REAL time: 4 mins 23 secs 
+
+Phase 12.5  Local Placement Optimization
+Phase 12.5  Local Placement Optimization (Checksum:6bffd63d) REAL time: 4 mins 23 secs 
+
+Phase 13.34  Placement Validation
+Phase 13.34  Placement Validation (Checksum:4d012b9) REAL time: 4 mins 24 secs 
+
+Total REAL time to Placer completion: 4 mins 34 secs 
+Total CPU  time to Placer completion: 4 mins 31 secs 
+Running post-placement packing...
+Writing output files...
+
+Design Summary:
+Number of errors:      0
+Number of warnings:  111
+Slice Logic Utilization:
+  Number of Slice Registers:                 7,087 out of  54,576   12%
+    Number used as Flip Flops:               7,087
+    Number used as Latches:                      0
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:                0
+  Number of Slice LUTs:                      7,271 out of  27,288   26%
+    Number used as logic:                    6,937 out of  27,288   25%
+      Number using O6 output only:           3,975
+      Number using O5 output only:             956
+      Number using O5 and O6:                2,006
+      Number used as ROM:                        0
+    Number used as Memory:                      18 out of   6,408    1%
+      Number used as Dual Port RAM:              0
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:            18
+        Number using O6 output only:            10
+        Number using O5 output only:             0
+        Number using O5 and O6:                  8
+    Number used exclusively as route-thrus:    316
+      Number with same-slice register load:    238
+      Number with same-slice carry load:        78
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 2,914 out of   6,822   42%
+  Number of MUXCYs used:                     3,424 out of  13,644   25%
+  Number of LUT Flip Flop pairs used:        9,413
+    Number with an unused Flip Flop:         3,014 out of   9,413   32%
+    Number with an unused LUT:               2,142 out of   9,413   22%
+    Number of fully used LUT-FF pairs:       4,257 out of   9,413   45%
+    Number of unique control sets:             324
+    Number of slice register sites lost
+      to control set restrictions:             679 out of  54,576    1%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                       203 out of     316   64%
+    Number of LOCed IOBs:                      203 out of     203  100%
+    IOB Master Pads:                             9
+    IOB Slave Pads:                              9
+
+Specific Feature Utilization:
+  Number of RAMB16BWERs:                        72 out of     116   62%
+  Number of RAMB8BWERs:                         17 out of     232    7%
+  Number of BUFIO2/BUFIO2_2CLKs:                 1 out of      32    3%
+    Number used as BUFIO2s:                      1
+    Number used as BUFIO2_2CLKs:                 0
+  Number of BUFIO2FB/BUFIO2FB_2CLKs:             0 out of      32    0%
+  Number of BUFG/BUFGMUXs:                       6 out of      16   37%
+    Number used as BUFGs:                        6
+    Number used as BUFGMUX:                      0
+  Number of DCM/DCM_CLKGENs:                     3 out of       8   37%
+    Number used as DCMs:                         3
+    Number used as DCM_CLKGENs:                  0
+  Number of ILOGIC2/ISERDES2s:                  32 out of     376    8%
+    Number used as ILOGIC2s:                     0
+    Number used as ISERDES2s:                   32
+  Number of IODELAY2/IODRP2/IODRP2_MCBs:        32 out of     376    8%
+    Number used as IODELAY2s:                   32
+    Number used as IODRP2s:                      0
+    Number used as IODRP2_MCBs:                  0
+  Number of OLOGIC2/OSERDES2s:                   0 out of     376    0%
+  Number of BSCANs:                              0 out of       4    0%
+  Number of BUFHs:                               0 out of     256    0%
+  Number of BUFPLLs:                             2 out of       8   25%
+  Number of BUFPLL_MCBs:                         0 out of       4    0%
+  Number of DSP48A1s:                            0 out of      58    0%
+  Number of ICAPs:                               0 out of       1    0%
+  Number of MCBs:                                0 out of       2    0%
+  Number of PCILOGICSEs:                         0 out of       2    0%
+  Number of PLL_ADVs:                            2 out of       4   50%
+  Number of PMVs:                                0 out of       1    0%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of SUSPEND_SYNCs:                       0 out of       1    0%
+
+Average Fanout of Non-Clock Nets:                3.74
+
+Peak Memory Usage:  682 MB
+Total REAL time to MAP completion:  4 mins 41 secs 
+Total CPU time to MAP completion:   4 mins 37 secs 
+
+Mapping completed.
+See MAP report file "taxiTop_map.mrp" for details.
+
+Command Line : 
+-------------
+par C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.ngd -ol high -w taxiTop.ncd C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf
+
+Release 14.7 - par P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+
+
+Constraints file: C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf.
+Loading device for application Rf_Device from file '6slx45.nph' in environment C:\Xilinx\14.7\ISE_DS\ISE\.
+   "taxiTop" is an NCD, version 3.2, device xc6slx45, package fgg484, speed -3
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+INFO:Security:50 - The XILINXD_LICENSE_FILE environment variable is set to '2101@feda2014.desy.de'.
+INFO:Security:53 - The LM_LICENSE_FILE environment variable is not set.
+INFO:Security:54 - 'xc6slx45' is a WebPack part.
+WARNING:Security:43 - No license file was found in the standard Xilinx license directory.
+WARNING:Security:44 - Since no license file was found,
+       please run the Xilinx License Configuration Manager
+       (xlcm or "Manage Xilinx Licenses")
+       to assist in obtaining a license.
+WARNING:Security:42 - Your software subscription period has lapsed. Your current version of Xilinx tools will continue
+to function, but you no longer qualify for Xilinx software updates or new releases.
+
+----------------------------------------------------------------------
+
+Initializing temperature to 85.000 Celsius. (default - Range: 0.000 to 85.000 Celsius)
+Initializing voltage to 1.140 Volts. (default - Range: 1.140 to 1.260 Volts)
+
+
+Device speed data version:  "PRODUCTION 1.23 2013-10-13".
+
+
+
+Device Utilization Summary:
+
+Slice Logic Utilization:
+  Number of Slice Registers:                 7,087 out of  54,576   12%
+    Number used as Flip Flops:               7,087
+    Number used as Latches:                      0
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:                0
+  Number of Slice LUTs:                      7,271 out of  27,288   26%
+    Number used as logic:                    6,937 out of  27,288   25%
+      Number using O6 output only:           3,975
+      Number using O5 output only:             956
+      Number using O5 and O6:                2,006
+      Number used as ROM:                        0
+    Number used as Memory:                      18 out of   6,408    1%
+      Number used as Dual Port RAM:              0
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:            18
+        Number using O6 output only:            10
+        Number using O5 output only:             0
+        Number using O5 and O6:                  8
+    Number used exclusively as route-thrus:    316
+      Number with same-slice register load:    238
+      Number with same-slice carry load:        78
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 2,914 out of   6,822   42%
+  Number of MUXCYs used:                     3,424 out of  13,644   25%
+  Number of LUT Flip Flop pairs used:        9,413
+    Number with an unused Flip Flop:         3,014 out of   9,413   32%
+    Number with an unused LUT:               2,142 out of   9,413   22%
+    Number of fully used LUT-FF pairs:       4,257 out of   9,413   45%
+    Number of slice register sites lost
+      to control set restrictions:               0 out of  54,576    0%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                       203 out of     316   64%
+    Number of LOCed IOBs:                      203 out of     203  100%
+    IOB Master Pads:                             9
+    IOB Slave Pads:                              9
+
+Specific Feature Utilization:
+  Number of RAMB16BWERs:                        72 out of     116   62%
+  Number of RAMB8BWERs:                         17 out of     232    7%
+  Number of BUFIO2/BUFIO2_2CLKs:                 1 out of      32    3%
+    Number used as BUFIO2s:                      1
+    Number used as BUFIO2_2CLKs:                 0
+  Number of BUFIO2FB/BUFIO2FB_2CLKs:             0 out of      32    0%
+  Number of BUFG/BUFGMUXs:                       6 out of      16   37%
+    Number used as BUFGs:                        6
+    Number used as BUFGMUX:                      0
+  Number of DCM/DCM_CLKGENs:                     3 out of       8   37%
+    Number used as DCMs:                         3
+    Number used as DCM_CLKGENs:                  0
+  Number of ILOGIC2/ISERDES2s:                  32 out of     376    8%
+    Number used as ILOGIC2s:                     0
+    Number used as ISERDES2s:                   32
+  Number of IODELAY2/IODRP2/IODRP2_MCBs:        32 out of     376    8%
+    Number used as IODELAY2s:                   32
+    Number used as IODRP2s:                      0
+    Number used as IODRP2_MCBs:                  0
+  Number of OLOGIC2/OSERDES2s:                   0 out of     376    0%
+  Number of BSCANs:                              0 out of       4    0%
+  Number of BUFHs:                               0 out of     256    0%
+  Number of BUFPLLs:                             2 out of       8   25%
+  Number of BUFPLL_MCBs:                         0 out of       4    0%
+  Number of DSP48A1s:                            0 out of      58    0%
+  Number of ICAPs:                               0 out of       1    0%
+  Number of MCBs:                                0 out of       2    0%
+  Number of PCILOGICSEs:                         0 out of       2    0%
+  Number of PLL_ADVs:                            2 out of       4   50%
+  Number of PMVs:                                0 out of       1    0%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of SUSPEND_SYNCs:                       0 out of       1    0%
+
+
+Overall effort level (-ol):   High 
+Router effort level (-rl):    High 
+
+INFO:Timing:3386 - Intersecting Constraints found and resolved.  For more information, see the TSI report.  Please consult the Xilinx
+   Command Line Tools User Guide for information on generating a TSI report.
+Starting initial Timing Analysis.  REAL time: 13 secs 
+Finished initial Timing Analysis.  REAL time: 14 secs 
+
+WARNING:Par:288 - The signal QOSC1_OUT_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal POW_ALERT_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal ADC_SDO_4_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal EBI1_MCK_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal CBL_PLGDn<1>_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal CBL_PLGDn<2>_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal CBL_PLGDn<3>_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal RS232_RXD_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal RS485_RXD_IBUF has no load.  PAR will not attempt to route this signal.
+Starting Router
+
+
+Phase  1  : 51431 unrouted;      REAL time: 15 secs 
+
+Phase  2  : 39935 unrouted;      REAL time: 18 secs 
+
+Phase  3  : 20088 unrouted;      REAL time: 49 secs 
+
+Phase  4  : 20136 unrouted; (Setup:539, Hold:0, Component Switching Limit:0)     REAL time: 55 secs 
+
+Updating file: taxiTop.ncd with current fully routed design.
+
+Phase  5  : 0 unrouted; (Setup:539, Hold:0, Component Switching Limit:0)     REAL time: 2 mins 56 secs 
+
+Phase  6  : 0 unrouted; (Setup:539, Hold:0, Component Switching Limit:0)     REAL time: 2 mins 57 secs 
+
+Phase  7  : 0 unrouted; (Setup:0, Hold:0, Component Switching Limit:0)     REAL time: 3 mins 13 secs 
+
+Phase  8  : 0 unrouted; (Setup:0, Hold:0, Component Switching Limit:0)     REAL time: 3 mins 13 secs 
+
+Phase  9  : 0 unrouted; (Setup:0, Hold:0, Component Switching Limit:0)     REAL time: 3 mins 13 secs 
+
+Phase 10  : 0 unrouted; (Setup:0, Hold:0, Component Switching Limit:0)     REAL time: 3 mins 16 secs 
+Total REAL time to Router completion: 3 mins 16 secs 
+Total CPU time to Router completion: 3 mins 22 secs 
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+Generating "PAR" statistics.
+
+**************************
+Generating Clock Report
+**************************
+
++---------------------+--------------+------+------+------------+-------------+
+|        Clock Net    |   Resource   |Locked|Fanout|Net Skew(ns)|Max Delay(ns)|
++---------------------+--------------+------+------+------------+-------------+
+|triggerSerdesClocks_ |              |      |      |            |             |
+|      serdesDivClock |  BUFGMUX_X2Y4| No   | 2144 |  0.186     |  1.397      |
++---------------------+--------------+------+------+------------+-------------+
+|adcClocks_serdesDivC |              |      |      |            |             |
+|                lock |  BUFGMUX_X2Y2| No   |  136 |  0.168     |  1.381      |
++---------------------+--------------+------+------+------------+-------------+
+| x0/dcm2FxClock_BUFG |  BUFGMUX_X2Y3| No   |    6 |  0.022     |  1.242      |
++---------------------+--------------+------+------+------------+-------------+
+|adcClocks_serdesDivC |              |      |      |            |             |
+|           lockPhase |         Local|      |   30 |  0.024     |  0.696      |
++---------------------+--------------+------+------+------------+-------------+
+|triggerSerdesClocks_ |              |      |      |            |             |
+|       serdesIoClock |         Local|      |   32 |  0.048     |  1.562      |
++---------------------+--------------+------+------+------------+-------------+
+|adcClocks_serdesIoCl |              |      |      |            |             |
+|                 ock |         Local|      |   32 |  0.048     |  1.562      |
++---------------------+--------------+------+------+------------+-------------+
+
+* Net Skew is the difference between the minimum and maximum routing
+only delays for the net. Note this is different from Clock Skew which
+is reported in TRCE timing report. Clock Skew is the difference between
+the minimum and maximum path delays which includes logic delays.
+
+* The fanout is the number of component pins not the individual BEL loads,
+for example SLICE loads not FF loads.
+
+Timing Score: 0 (Setup: 0, Hold: 0, Component Switching Limit: 0)
+
+Number of Timing Constraints that were not applied: 6
+
+Asterisk (*) preceding a constraint indicates it was not met.
+   This may be due to a setup or hold violation.
+
+----------------------------------------------------------------------------------------------------------
+  Constraint                                |    Check    | Worst Case |  Best Case | Timing |   Timing   
+                                            |             |    Slack   | Achievable | Errors |    Score   
+----------------------------------------------------------------------------------------------------------
+  TS_x0_discriminatorSerdesSlowClock = PERI | SETUP       |     0.042ns|     8.379ns|       0|           0
+  OD TIMEGRP         "x0_discriminatorSerde | HOLD        |     0.267ns|            |       0|           0
+  sSlowClock" TS_x0_clockDcm1ToPll / 4.75 H |             |            |            |        |            
+  IGH         50%                           |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_clockDcm1ToPll = PERIOD TIMEGRP "x0 | MINLOWPULSE |    30.000ns|    10.000ns|       0|           0
+  _clockDcm1ToPll"         TS_x0_clockBufio |             |            |            |        |            
+  2ToDcm / 2.5 HIGH 50%                     |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_clockDcm3ToPll = PERIOD TIMEGRP "x0 | MINLOWPULSE |    23.332ns|    10.000ns|       0|           0
+  _clockDcm3ToPll"         TS_x0_clockBufio |             |            |            |        |            
+  2ToDcm / 3 HIGH 50%                       |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_dcm2FxClock = PERIOD TIMEGRP "x0_dc | SETUP       |     1.707ns|     6.293ns|       0|           0
+  m2FxClock" TS_x0_clockBufio2ToDcm /       | HOLD        |     0.502ns|            |       0|           0
+     12.5 HIGH 50%                          |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_clockBufio2ToDcm = PERIOD TIMEGRP " | MINLOWPULSE |    68.000ns|    32.000ns|       0|           0
+  x0_clockBufio2ToDcm" TS_QOSC2_OUT         |             |            |            |        |            
+   HIGH 50%                                 |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_adcSerdesSlowClock = PERIOD TIMEGRP | SETUP       |     7.243ns|     9.423ns|       0|           0
+   "x0_adcSerdesSlowClock"         TS_x0_cl | HOLD        |     0.243ns|            |       0|           0
+  ockDcm3ToPll / 2 HIGH 50%                 |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_adcClocks_serdesDivClockPhase = PERIOD | SETUP       |    10.690ns|     5.976ns|       0|           0
+   TIMEGRP         "adcClocks_serdesDivCloc | HOLD        |     0.243ns|            |       0|           0
+  kPhase" TS_x0_clockDcm3ToPll / 2 HIGH 50% |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_QOSC2_OUT = PERIOD TIMEGRP "QOSC2_OUT" | MINPERIOD   |    99.075ns|     0.925ns|       0|           0
+   100 ns HIGH 50%                          |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_thru_1_path" TIG                 | SETUP       |         N/A|     7.943ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_thru_x_path" TIG                 | SETUP       |         N/A|    11.181ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  TS_x0_adcSerdesFastClock = PERIOD TIMEGRP | N/A         |         N/A|         N/A|     N/A|         N/A
+   "x0_adcSerdesFastClock"         TS_x0_cl |             |            |            |        |            
+  ockDcm3ToPll / 14 HIGH 50%                |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_x0_discriminatorSerdesFastClock = PERI | N/A         |         N/A|         N/A|     N/A|         N/A
+  OD TIMEGRP         "x0_discriminatorSerde |             |            |            |        |            
+  sFastClock" TS_x0_clockDcm1ToPll / 38 HIG |             |            |            |        |            
+  H 50%                                     |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+
+
+Derived Constraint Report
+Review Timing Report for more details on the following derived constraints.
+To create a Timing Report, run "trce -v 12 -fastpaths -o design_timing_report design.ncd design.pcf"
+or "Run Timing Analysis" from Timing Analyzer (timingan).
+Derived Constraints for TS_QOSC2_OUT
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|                               |   Period    |       Actual Period       |      Timing Errors        |      Paths Analyzed       |
+|           Constraint          | Requirement |-------------+-------------|-------------+-------------|-------------+-------------|
+|                               |             |   Direct    | Derivative  |   Direct    | Derivative  |   Direct    | Derivative  |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|TS_QOSC2_OUT                   |    100.000ns|      0.925ns|     99.501ns|            0|            0|            0|       645406|
+| TS_x0_clockBufio2ToDcm        |    100.000ns|     32.000ns|     99.501ns|            0|            0|            0|       645406|
+|  TS_x0_dcm2FxClock            |      8.000ns|      6.293ns|          N/A|            0|            0|          140|            0|
+|  TS_x0_clockDcm3ToPll         |     33.333ns|     10.000ns|     18.846ns|            0|            0|            0|         6311|
+|   TS_adcClocks_serdesDivClockP|     16.667ns|      5.976ns|          N/A|            0|            0|         3237|            0|
+|   hase                        |             |             |             |             |             |             |             |
+|   TS_x0_adcSerdesFastClock    |      2.381ns|          N/A|          N/A|            0|            0|            0|            0|
+|   TS_x0_adcSerdesSlowClock    |     16.667ns|      9.423ns|          N/A|            0|            0|         3074|            0|
+|  TS_x0_clockDcm1ToPll         |     40.000ns|     10.000ns|     39.800ns|            0|            0|            0|       638955|
+|   TS_x0_discriminatorSerdesFas|      1.053ns|          N/A|          N/A|            0|            0|            0|            0|
+|   tClock                      |             |             |             |             |             |             |             |
+|   TS_x0_discriminatorSerdesSlo|      8.421ns|      8.379ns|          N/A|            0|            0|       638955|            0|
+|   wClock                      |             |             |             |             |             |             |             |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+
+All constraints were met.
+INFO:Timing:2761 - N/A entries in the Constraints List may indicate that the 
+   constraint is not analyzed due to the following: No paths covered by this 
+   constraint; Other constraints intersect with this constraint; or This 
+   constraint was disabled by a Path Tracing Control. Please run the Timespec 
+   Interaction Report (TSI) via command line (trce tsi) or Timing Analyzer GUI.
+
+
+Generating Pad Report.
+
+All signals are completely routed.
+
+WARNING:Par:283 - There are 9 loadless signals in this design. This design will cause Bitgen to issue DRC warnings.
+
+Total REAL time to PAR completion: 3 mins 20 secs 
+Total CPU time to PAR completion: 3 mins 26 secs 
+
+Peak Memory Usage:  666 MB
+
+Placer: Placement generated during map.
+Routing: Completed - No errors found.
+Timing: Completed - No errors found.
+
+Number of error messages: 0
+Number of warning messages: 11
+Number of info messages: 1
+
+Writing design to file taxiTop.ncd
+
+
+
+PAR done!
+
+Command Line : 
+-------------
+trce C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.ngd C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf -xml C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.twx -v 3 -s 3 -n 3 -fastpaths -ucf taxi.ucf -o C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.twr
+
+Release 14.7 - Trace  (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+
+Loading device for application Rf_Device from file '6slx45.nph' in environment
+C:\Xilinx\14.7\ISE_DS\ISE\.
+   "taxiTop" is an NCD, version 3.2, device xc6slx45, package fgg484, speed -3
+INFO:Timing:3386 - Intersecting Constraints found and resolved.  For more
+   information, see the TSI report.  Please consult the Xilinx Command Line
+   Tools User Guide for information on generating a TSI report.
+--------------------------------------------------------------------------------
+Release 14.7 Trace  (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+C:\Xilinx\14.7\ISE_DS\ISE\bin\nt64\unwrapped\trce.exe
+C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxi
+Top.ncd
+C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxi
+Top.pcf
+-xml
+C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxi
+Top.twx
+-v 3 -s 3 -n 3 -fastpaths -ucf taxi.ucf -o
+C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxi
+Top.twr
+
+
+Design file:              taxiTop.ncd
+Physical constraint file: taxiTop.pcf
+Device,speed:             xc6slx45,-3 (PRODUCTION 1.23 2013-10-13)
+Report level:             verbose report
+--------------------------------------------------------------------------------
+
+INFO:Timing:3412 - To improve timing, see the Timing Closure User Guide (UG612).
+INFO:Timing:2752 - To get complete path coverage, use the unconstrained paths option. All paths that are not constrained will be reported in
+   the unconstrained paths section(s) of the report.
+INFO:Timing:3339 - The clock-to-out numbers in this timing report are based on a 50 Ohm transmission line loading model.  For the details of
+   this model, and for more information on accounting for different loading conditions, please see the device datasheet.
+
+
+Timing summary:
+---------------
+
+Timing errors: 0  Score: 0 (Setup/Max: 0, Hold: 0)
+
+Constraints cover 652147 paths, 0 nets, and 40795 connections
+
+Design statistics:
+   Minimum period:  32.000ns (Maximum frequency:  31.250MHz)
+
+
+Analysis completed Thu Mar 22 13:22:53 2018
+--------------------------------------------------------------------------------
+
+Generating Report ...
+
+Number of warnings: 0
+Number of info messages: 4
+Total time: 18 secs 
+
+Command Line : 
+-------------
+xpwr C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.ngd C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf -l 10 -o C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pwr
+
+Release 14.7 - xpwr P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Loading device for application Rf_Device from file '6slx45.nph' in environment
+C:\Xilinx\14.7\ISE_DS\ISE\.
+   "taxiTop" is an NCD, version 3.2, device xc6slx45, package fgg484, speed -3
+
+INFO:Power:1693 - 
+   --------------------------------------------------------------
+                         The power estimate will be calculated using PRODUCTION
+   data.
+   --------------------------------------------------------------
+
+Design load 20% completeDesign load 25% completeDesign load 30% completeDesign load 60% completeDesign load 95% completeDesign load 100% completeWARNING:PowerEstimator:270 - Power estimate is considered inaccurate. To see details, generate an advanced report with the "-v" switch.
+Running Vector-less Activity Propagation
+..........
+Finished Running Vector-less Activity Propagation
+Finished Running Vector-less Activity Propagation 4 secs 
+WARNING:Power:1337 - Clock frequency for clock net "adcClocks_serdesStrobe" is zero.
+WARNING:Power:1337 - Clock frequency for clock net "triggerSerdesClocks_serdesStrobe" is zero.
+WARNING:Power:1369 - Clock frequency for one or more clocks was not found through
+   timing constraints (PCF file) or simulation data.  Without knowing the
+   clock frequency of all clocks, dynamic power information for those clock
+   domains will default to zero which may under-estimate the power for this
+   design.  To avoid this warning, provide at least one of the following:
+     1. The proper timing constraints (PERIOD) for clocks (re-implement design
+        and load the newly generated PCF file into XPower Analyzer)
+     2. A post PAR simulation-generated VCD or SAIF file indicating clock
+        frequencies
+     3. The clock frequency for clocks in the "By Type -> Clocks" view in the
+        XPower Analyzer GUI and then applying "Update Power Analysis"
+Power report saved as C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pwr.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                                                                                                                      Xilinx XPower Analyzer                                                                                                                                                                      |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Release                | 14.7 - P.20131013 (nt64)                                                                                                                                                                                                                                                                                                                |
+| Command Line           | C:\Xilinx\14.7\ISE_DS\ISE\bin\nt64\unwrapped\xpwr.exe C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.ncd C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf -l 10 -o C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pwr  |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1.  Settings
+1.1.  Project
+-----------------------------------------------------------------------------------------------------------------------
+|                                                       Project                                                       |
+-----------------------------------------------------------------------------------------------------------------------
+| Design File               | C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.ncd |
+| Settings File             | NA                                                                                      |
+| Physical Constraints File | C:\Xilinx\projects\taxi_sp_last\firmware\iceScint\smartxplorer_results\run7\taxiTop.pcf |
+| Simulation Activity File  | NA                                                                                      |
+| Design Nets Matched       | NA                                                                                      |
+| Simulation Nets Matched   | NA                                                                                      |
+-----------------------------------------------------------------------------------------------------------------------
+
+1.2.  Device
+-------------------------------------------------
+|                    Device                     |
+-------------------------------------------------
+| Family           | Spartan6                   |
+| Part             | xc6slx45                   |
+| Package          | fgg484                     |
+| Temp Grade       | C-Grade                    |
+| Process          | Typical                    |
+| Speed Grade      | -3                         |
+| Characterization | Production,v1.3,2011-05-04 |
+-------------------------------------------------
+
+2.  Summary
+2.1.  On-Chip Power Summary
+-----------------------------------------------------------------------------
+|                           On-Chip Power Summary                           |
+-----------------------------------------------------------------------------
+|        On-Chip        | Power (mW) |  Used  | Available | Utilization (%) |
+-----------------------------------------------------------------------------
+| Clocks                |      88.20 |      2 |    ---    |       ---       |
+| Logic                 |       7.05 |   7271 |     27288 |              27 |
+| Signals               |      39.04 |  12396 |    ---    |       ---       |
+| IOs                   |     449.83 |    203 |       316 |              64 |
+| BlockRAM/FIFO         |      38.45 |  ---   |    ---    |       ---       |
+|   8K BlockRAM         |      14.49 |     17 |       232 |               7 |
+|   16K BlockRAM        |      23.96 |     72 |       116 |              62 |
+| DCMs                  |      53.94 |      3 |         8 |              38 |
+| PLLs                  |     245.13 |      2 |         4 |              50 |
+| Static Power          |      66.28 |        |           |                 |
+| Total                 |     987.91 |        |           |                 |
+-----------------------------------------------------------------------------
+
+2.3.  Power Supply Summary
+----------------------------------------------------------
+|                  Power Supply Summary                  |
+----------------------------------------------------------
+|                      | Total  | Dynamic | Static Power |
+----------------------------------------------------------
+| Supply Power (mW)    | 972.81 | 411.35  | 561.46       |
+----------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+|                                            Power Supply Currents                                            |
+---------------------------------------------------------------------------------------------------------------
+|     Supply Source     | Supply Voltage | Total Current (mA) | Dynamic Current (mA) | Quiescent Current (mA) |
+---------------------------------------------------------------------------------------------------------------
+| Vccint                |          1.200 |             204.57 |               172.27 |                  32.30 |
+| Vccaux                |          3.300 |             157.31 |                32.20 |                 125.11 |
+| Vcco25                |          2.500 |              57.58 |                15.08 |                  42.50 |
+| Vcco18                |          1.800 |              35.69 |                33.69 |                   2.00 |
+---------------------------------------------------------------------------------------------------------------
+
+
+Analysis completed: Thu Mar 22 13:23:23 2018
+----------------------------------------------------------------
+
+Number of error messages: 0
+Number of warning messages: 4
+Number of info messages: 1
+

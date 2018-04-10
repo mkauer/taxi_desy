@@ -48,64 +48,73 @@ entity gpsTiming is
 end gpsTiming;
 
 architecture behavioral of gpsTiming is
-	type state2_t is (sync, idle, startBit, sample, stopBit);
-	signal state2 : state2_t := sync;
+	type stateGps_t is (sync, idle, startBit, sample, stopBit);
+	signal stateGps : stateGps_t := sync;
+	type stateGpsPps_t is (idle, sub);
+	signal stateGpsPps : stateGpsPps_t := idle;
 	
 	signal differenceGpsToLocalClock : signed(31 downto 0) := (others => '0');
+	signal differenceGpsToLocalClockPPS : signed(31 downto 0) := (others => '0');
+	signal differenceGpsToLocalClockLatched : signed(31 downto 0) := (others => '0');
 	signal localClockSubSecondCounter : signed(31 downto 0) := (others => '0');
-	signal cycleCountLatched : std_logic_vector(31 downto 0) := (others => '0');
 	signal gpsRx_now : std_logic := '0';
 	signal rx : std_logic := '0';
 	signal gpsPps_now : std_logic := '0';
 	signal gpsPps_old : std_logic := '0';
-	signal rxBuffer : std_logic_vector(8*24-1 downto 0) := (others => '0');
-	signal PacketTimTp : std_logic_vector(rxBuffer'length-1 downto 0) := (others => '0');
-		alias MessageTimTp is PacketTimTp(18*8-1 downto 2*8);
-			alias syncChar1 is PacketTimTp(1*8-1 downto 0*8);
-			alias syncChar2 is PacketTimTp(2*8-1 downto 1*8);
-			alias class is PacketTimTp(3*8-1 downto 2*8);
-			alias id is PacketTimTp(4*8-1 downto 3*8);
-			alias len is PacketTimTp(6*8-1 downto 4*8);
-		
-			alias towMS is PacketTimTp(10*8-1 downto 6*8); 
-			alias towSubMS is PacketTimTp(14*8-1 downto 10*8); -- will be 0
-			alias qErr is PacketTimTp(18*8-1 downto 14*8);
-			alias week is PacketTimTp(20*8-1 downto 18*8);
-			alias flags is PacketTimTp(21*8-1 downto 20*8);
-				alias timebase is PacketTimTp(20*8+0);
-				alias utc is PacketTimTp(20*8+1);
-			alias reserved1 is PacketTimTp(22*8-1 downto 21*8);
+	--signal rxBuffer : std_logic_vector(8*24-1 downto 0) := (others => '0');
+	signal rxBuffer : std_logic_vector(14*8-1 downto 0) := (others => '0');
+	--signal PacketTimTp : std_logic_vector(rxBuffer'length-1 downto 0) := (others => '0');
+	--	alias MessageTimTp is PacketTimTp(18*8-1 downto 2*8);
+	--		alias syncChar1 is PacketTimTp(1*8-1 downto 0*8);
+	--		alias syncChar2 is PacketTimTp(2*8-1 downto 1*8);
+	--		alias class is PacketTimTp(3*8-1 downto 2*8);
+	--		alias id is PacketTimTp(4*8-1 downto 3*8);
+	--		alias len is PacketTimTp(6*8-1 downto 4*8);
+	--	
+	--		alias towMS is PacketTimTp(10*8-1 downto 6*8); 
+	--		alias towSubMS is PacketTimTp(14*8-1 downto 10*8); -- will be 0
+	--		alias qErr is PacketTimTp(18*8-1 downto 14*8);
+	--		alias week is PacketTimTp(20*8-1 downto 18*8);
+	--		alias flags is PacketTimTp(21*8-1 downto 20*8);
+	--			alias timebase is PacketTimTp(20*8+0);
+	--			alias utc is PacketTimTp(20*8+1);
+	--		alias reserved1 is PacketTimTp(22*8-1 downto 21*8);
+	
+	signal week : std_logic_vector(15 downto 0) := (others => '0');
+	signal qErr : std_logic_vector(31 downto 0) := (others => '0');
+	signal towMS : std_logic_vector(31 downto 0) := (others => '0');
+	signal towSubMS : std_logic_vector(31 downto 0) := (others => '0');
 	
 	signal tick_ms : std_logic := '0';
 	signal newData : std_logic := '0';
 	signal newDataLatched : std_logic := '0';
 	signal newDataLatchedReset : std_logic := '0';
 	
-	--signal counter_clock : integer range 0 to 2**17-1 := 0;
 	signal counter_ms : unsigned(15 downto 0) := (others=>'0');
-	signal counter_halfSec : unsigned(16 downto 0) := (others=>'0');
 	signal counter1 : integer range 0 to 2**7-1 := 0;
 	signal counter2 : integer range 0 to 2**16-1 := 0;
 	
 	signal bitCounter : integer range 0 to 15 := 0;
 	signal byteCounter : integer range 0 to 31 := 0;
 	
-	--signal realTimeCounter : unsigned(63 downto 0) := (others=>'0');
 	signal realTimeCounter : std_logic_vector(63 downto 0) := (others=>'0');
 	signal realTimeCounterLatched : std_logic_vector(63 downto 0) := (others=>'0');
 	
 	signal ppsCounter : unsigned(15 downto 0) := (others=>'0');
+	signal gpsDataReady : std_logic := '0';
+	signal fakePps : std_logic := '0';
+	signal fakePpsEnabled : std_logic := '0';
 	
 begin
+
 
 gpsTiming.newData <= newData;
 gpsTiming.week <= week;
 gpsTiming.quantizationError <= qErr;
 gpsTiming.timeOfWeekMilliSecond <= towMS;
 gpsTiming.timeOfWeekSubMilliSecond <= towSubMS;
-gpsTiming.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClock, 16));
+gpsTiming.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClockLatched, 16)); -- ## overflow / underflow
 gpsTiming.realTimeCounterLatched <= realTimeCounterLatched;
---gpsTiming.realTimeCounter <= std_logic_vector(realTimeCounter);
 
 tick_ms <= internalTiming.tick_ms;
 realTimeCounter <= internalTiming.realTimeCounter;
@@ -114,35 +123,40 @@ registerRead.week <= week;
 registerRead.quantizationError <= qErr;
 registerRead.timeOfWeekMilliSecond <= towMS;
 registerRead.timeOfWeekSubMilliSecond <= towSubMS;
-registerRead.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClock, 16));
---registerRead.tick_ms <= tick_ms;
+registerRead.differenceGpsToLocalClock <= std_logic_vector(resize(differenceGpsToLocalClockLatched, 16)); -- ## overflow / underflow
 
 registerRead.counterPeriod <= registerWrite.counterPeriod;
 
 registerRead.newDataLatched <= newDataLatched;
 newDataLatchedReset <= registerWrite.newDataLatchedReset;
-
+registerRead.fakePpsEnabled <= registerWrite.fakePpsEnabled;
+fakePpsEnabled <= registerWrite.fakePpsEnabled;
 
 gpsTx <= '1';
 gpsIrq <= '0';
 gpsNotReset <= '1';
 
-
 P0:process (registerWrite.clock)
 begin
 	if rising_edge(registerWrite.clock) then
-		--tick_ms <= '0'; -- autoreset
 		newData <= '0'; -- autoreset
+		gpsDataReady <= '0'; -- autoreset
 		if (registerWrite.reset = '1') then
 			localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
-			--counter_clock <= 1;
+			differenceGpsToLocalClock <= to_signed(0,differenceGpsToLocalClock'length);
+			differenceGpsToLocalClockPPS <= to_signed(0,differenceGpsToLocalClockPPS'length);
+			differenceGpsToLocalClockLatched <= to_signed(0,differenceGpsToLocalClockLatched'length);
 			counter_ms <= (others=>'0');
-			counter_halfSec <= "0"&x"0001";
-			state2 <= sync;
-			--realTimeCounter <= (others=>'0');
+			stateGps <= sync;
+			stateGpsPps <= idle;
 			realTimeCounterLatched <= (others=>'0');
-			ppsCounter <= x"0001";
+			ppsCounter <= x"0000";
 			newDataLatched <= '0';
+			week <= (others=>'0');
+			qErr <= (others=>'0');
+			towMS <= (others=>'0');
+			towSubMS <= (others=>'0');
+			fakePps <= '0';
 		else
 			gpsPps_now <= gpsPps; -- ## not in sync....
 			gpsPps_old <= gpsPps_now; 
@@ -152,39 +166,55 @@ begin
 
 			newDataLatched <= newDataLatched and not(newDataLatchedReset);
 			
-			--realTimeCounter <= realTimeCounter + 1;
+			localClockSubSecondCounter <= localClockSubSecondCounter + 1;
 			
-			if((gpsPps_old = '0') and (gpsPps_now = '1')) then
-				cycleCountLatched <= std_logic_vector(localClockSubSecondCounter);
-				localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length);
-				differenceGpsToLocalClock <= to_signed(118750000,differenceGpsToLocalClock'length) - localClockSubSecondCounter;
-				realTimeCounterLatched <= realTimeCounter;
-			else
-				localClockSubSecondCounter <= localClockSubSecondCounter + 1;
+			case stateGpsPps is
+				when idle =>
+					if(((gpsPps_old = '0') and (gpsPps_now = '1')) or (fakePps = '1')) then
+						localClockSubSecondCounter <= to_signed(0,localClockSubSecondCounter'length); -- ## 0 or 1 !?!
+						differenceGpsToLocalClockPPS <= to_signed(globalClockRate_Hz,differenceGpsToLocalClockPPS'length) - localClockSubSecondCounter;
+						realTimeCounterLatched <= realTimeCounter;
+						ppsCounter <= ppsCounter + 1;
+						stateGpsPPS <= sub;
+					end if;
+
+				when sub =>
+					stateGpsPPS <= idle;
+					differenceGpsToLocalClock <= differenceGpsToLocalClock + differenceGpsToLocalClockPPS;
+					fakePps <= '0';
+					if(fakePps = '1') then
+						gpsDataReady <= '1'; -- autoreset
+					end if;
+
+				when others => null;
+			end case;
+
+			if((ppsCounter >= unsigned(registerWrite.counterPeriod)) and (gpsDataReady = '1')) then
+				ppsCounter <= x"0000";
+				newData <= '1'; -- autoreset
+				newDataLatched <= '1';
+				differenceGpsToLocalClockLatched <= differenceGpsToLocalClock;
+				differenceGpsToLocalClock <= to_signed(0,differenceGpsToLocalClock'length);
 			end if;
-			
-			--counter_clock <= counter_clock + 1;
-			--if(counter_clock = globalClockRate) then
-			--	counter_clock <= 1;
-			--	tick_ms <= '1'; -- autoreset
-			--	counter_ms <= counter_ms + 1;
-			--end if;
+
 			if(tick_ms = '1') then
 				counter_ms <= counter_ms + 1;
 			end if;
-			if(counter_ms >= x"01f3") then
+			if(counter_ms >= x"03e7") then
 				counter_ms <= (others=>'0');
-				counter_halfSec <= counter_halfSec + 1;
+				if(fakePpsEnabled = '1') then
+					fakePps <= '1';
+				end if;
 			end if;
 
-			case state2 is				
+			case stateGps is				
 				when sync =>
 					if(rx = '1') then
 						if(tick_ms = '1') then
 							counter1 <= counter1 + 1;
 						end if;
 						if(counter1 = 100) then
-							state2 <= idle;
+							stateGps <= idle;
 							byteCounter <= 0;
 						end if;
 					else
@@ -193,7 +223,7 @@ begin
 					
 				when idle =>
 					if(rx = '0') then -- startbit
-						state2 <= startBit;
+						stateGps <= startBit;
 						bitCounter <= 0;
 						counter2 <= 0;
 					end if;
@@ -203,7 +233,7 @@ begin
 					if(counter2 = ticksPerBit) then
 						counter2 <= 0;
 						bitCounter <= 0;
-						state2 <= sample;
+						stateGps <= sample;
 					end if;
 					
 				when sample =>
@@ -215,14 +245,14 @@ begin
 					if(counter2 = ticksPerBit) then
 						counter2 <= 0;
 						if(bitCounter = 8) then
-							state2 <= stopBit;
+							stateGps <= stopBit;
 							byteCounter <= byteCounter + 1;
 						end if;
 					end if;
 					
 				when stopBit =>
 					if(rx = '1') then
-						state2 <= idle;
+						stateGps <= idle;
 						if(byteCounter = 1) then
 							if(rxBuffer(rxBuffer'length-1-0*8 downto rxBuffer'length-1*8) /= x"b5") then
 								byteCounter <= 0;
@@ -234,28 +264,33 @@ begin
 						end if;
 						
 						if(byteCounter = 4) then
-							if((rxBuffer(rxBuffer'length-1-0*8 downto rxBuffer'length-1*8) = x"01") and 
-								(rxBuffer(rxBuffer'length-1-1*8 downto rxBuffer'length-2*8) = x"0d") and 
-								(rxBuffer(rxBuffer'length-1-2*8 downto rxBuffer'length-3*8) = x"62") and 
-								(rxBuffer(rxBuffer'length-1-3*8 downto rxBuffer'length-4*8) = x"b5")) then
-								null; -- packed found....
-							else
+							if(rxBuffer(rxBuffer'length-1-0*8 downto rxBuffer'length-4*8) /= x"010d62b5") then  
 								byteCounter <= 0;								
 							end if;
 						end if;
-						if(byteCounter = 24) then
+						--if(byteCounter = 24) then
+						if(byteCounter = 20) then -- ## yes, we cut of the crc and some flags/refInfo...
 							byteCounter <= 0;
-							PacketTimTp <= rxBuffer;
-							--newData <= '1'; -- autoreset
+							
+							--PacketTimTp <= rxBuffer;
+
+							--crc <= rxBuffer(18*8-1 downto 16*8);
+							--refInfo <= rxBuffer(16*8-1 downto 15*8);
+							--flags <= rxBuffer(15*8-1 downto 14*8);
+							week <= rxBuffer(14*8-1 downto 12*8); --rxBuffer(20*8-1 downto 18*8);
+							qErr <= rxBuffer(12*8-1 downto 8*8); --rxBuffer(18*8-1 downto 14*8);
+							towSubMS <= rxBuffer(8*8-1 downto 4*8); --rxBuffer(14*8-1 downto 10*8);
+							towMS <= rxBuffer(4*8-1 downto 0*8); --rxBuffer(10*8-1 downto 6*8);
+
+							--if((counter_halfSec(16 downto 1) >= unsigned(registerWrite.counterPeriod)) or (ppsCounter >= unsigned(registerWrite.counterPeriod))) then
+							gpsDataReady <= '1'; -- autoreset
 							--if(ppsCounter >= unsigned(registerWrite.counterPeriod)) then
-							if((counter_halfSec(16 downto 1) >= unsigned(registerWrite.counterPeriod)) or (ppsCounter >= unsigned(registerWrite.counterPeriod))) then
-								ppsCounter <= x"0001";
-								counter_halfSec <= "0"&x"0001";
-								newData <= '1'; -- autoreset
-								newDataLatched <= '1';
-							else
-								ppsCounter <= ppsCounter + 1;
-							end if;
+							--	ppsCounter <= x"0000";
+							--	newData <= '1'; -- autoreset
+							--	newDataLatched <= '1';
+							--else
+							--	ppsCounter <= ppsCounter + 1;
+							--end if;
 						end if;
 					end if;			
 					
