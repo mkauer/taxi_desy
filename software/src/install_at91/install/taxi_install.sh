@@ -45,10 +45,11 @@ enableService()
 #opkg install lighttpd lighttpd-module-fastcgi
 
 # do global system service installation
-enableService smcdrv.d 40
-enableService fpgadrv.d 41
-enableService fpgaboot.d 60
-enableService daqdrv.d 61
+enableService fpgadrv.d 40
+enableService fpgaboot.d 41
+enableService smcdrv.d 50
+enableService daqdrv.d 60
 enableService fpgaconfig.d 62
 enableService eventSender.d 90
+
 #enableService screen.d 90

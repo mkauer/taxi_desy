@@ -73,6 +73,10 @@ static inline int testBitVal16(uint16_t value, uint16_t index)
 {
 	return (value & ((uint16_t)(1)<<index))?1:0;
 }
+//static inline int testBitMask16(uint16_t value, uint16_t index) // problematic behavior: it is not clear what should be done if the mask has more than 1 used bit and only some of them are inside the value
+//{
+//	return (value & index)?1:0;
+//}
 
 // 32 bit manipulation routines
 static inline uint32_t bitValue32(uint16_t index)

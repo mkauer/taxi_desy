@@ -43,7 +43,7 @@ void printStats(void)
 {
 	sc::movexy(0,0);
 	std::cout << "counter will reset every " << int(polarstern_getPixelTriggerCounterPeriod()) << " secounds                    " << std::endl << "--------------------------------------" <<std::endl;
-	for(int i=0;i<(POLARSTERN_NUMBEROFCHANNELS);i++) {std::cout << "ch. " << i << ":\t" << "(" << int(polarstern_getTriggerThreshold(i)) << ")" << g_statas[i] << "\t" << int(polarstern_getPixelTriggerRates(i)) << "    " << std::endl;}
+	for(int i=0;i<(POLARSTERN_NUMBEROFCHANNELS);i++) {std::cout << "ch. \t" << i << ": " << "(" << int(polarstern_getTriggerThreshold(i)) << ")" << g_statas[i] << "\t" << int(polarstern_getPixelTriggerRates(i)) << "    " << std::endl;}
 	polarstern_doResetRatesNewData();
 }
 

@@ -49,9 +49,9 @@ int main(int argc, char** argv)
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help,h", "")
-		("irigb,i", "print irig-b information")
-		("gps,g", "print gps information")
-		("temperature,t", po::value<int>(), "print tmp05 temperature in °C")
+		("irigb,i", "print irig-b information if available")
+		("gps,g", "print gps information if available")
+		("temperature,t", po::value<int>(), "print tmp05 temperature in °C (sensor is on the taxi pcb) the argument is the number of measurements")
 //		("now,n", "show the actual white rabbit time")
 //		("", po::value<int>(), "")
 		;

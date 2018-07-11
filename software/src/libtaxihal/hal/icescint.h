@@ -236,7 +236,7 @@ static inline uint16_t icescint_getRs485SoftTriggerMask(void)
 {
 	return IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_RS485SOFTTXMASK);
 }
-static inline void icescint_setRs485SoftTriggerMask(uint16_t _mask)
+static inline void icescint_setRs485SoftTxMask(uint16_t _mask)
 {
 	return IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_RS485SOFTTXMASK, _mask);
 }
@@ -343,6 +343,11 @@ static inline uint16_t icescint_getIrigBinarySecond(void)
 {
 	uint16_t ret = IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_WHITERABBIT_IRIGDATA_BINARY_SECONDS); // will latch the data
 	return ret;
+}
+
+static inline void icescint_doForceMiscData(void)
+{
+	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_MISCDATAFORCE, 0x0);
 }
 
 //// GPS
