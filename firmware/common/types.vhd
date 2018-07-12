@@ -140,6 +140,7 @@ package types is
 		irqAtEventFifoWords : std_logic_vector(15 downto 0);
 		eventRateCounter : std_logic_vector(15 downto 0);
 		eventLostRateCounter : std_logic_vector(15 downto 0);
+		deviceId : std_logic_vector(15 downto 0);
 	end record;
 	type eventFifoSystem_registerWrite_t is record
 		clock : std_logic;
@@ -154,6 +155,8 @@ package types is
 		irqStall : std_logic;
 		irqAtEventFifoWords : std_logic_vector(15 downto 0);
 		forceIrq : std_logic;
+		forceMiscData : std_logic;
+		deviceId : std_logic_vector(15 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -241,6 +244,8 @@ package types is
 
 	type internalTiming_t is record
 		tick_ms : std_logic;
+		tick_sec : std_logic;
+		tick_min : std_logic;
 		realTimeCounter: std_logic_vector(63 downto 0);
 	end record;
 

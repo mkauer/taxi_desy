@@ -34,10 +34,10 @@ entity ltm9007_14 is
 		adcDataA_p : in std_logic_vector(7 downto 0);
 		adcDataA_n : in std_logic_vector(7 downto 0);
 		
-		frameA_p : in std_logic_vector(0 downto 0);
-		frameA_n : in std_logic_vector(0 downto 0);
-		frameB_p : in std_logic_vector(0 downto 0);
-		frameB_n : in std_logic_vector(0 downto 0);
+		--frameA_p : in std_logic_vector(0 downto 0);
+		--frameA_n : in std_logic_vector(0 downto 0);
+		--frameB_p : in std_logic_vector(0 downto 0);
+		--frameB_n : in std_logic_vector(0 downto 0);
 		--dataClockA_p : in std_logic;
 		--dataClockA_n : in std_logic;
 		--dataClockB_p : in std_logic;
@@ -249,11 +249,11 @@ begin
 	adcDataStart_66_TPTHRU_TIG <= drs4_to_ltm9007_14.adcDataStart_66;
 	adcDataStart_66 <= drs4_to_ltm9007_14.adcDataStart_66;
 	
-	adcDataGroupA_p <= adcDataA_p(6) & adcDataA_p(4) & adcDataA_p(2) & adcDataA_p(0);
-	adcDataGroupA_n <= adcDataA_n(6) & adcDataA_n(4) & adcDataA_n(2) & adcDataA_n(0);
-	adcDataGroupB_p <= adcDataA_p(7) & adcDataA_p(5) & adcDataA_p(3) & adcDataA_p(1);
-	adcDataGroupB_n <= adcDataA_n(7) & adcDataA_n(5) & adcDataA_n(3) & adcDataA_n(1);
-	
+	adcDataGroupA_p <= adcDataA_p(7) & adcDataA_p(4) & adcDataA_p(3) & adcDataA_p(0);
+	adcDataGroupA_n <= adcDataA_n(7) & adcDataA_n(4) & adcDataA_n(3) & adcDataA_n(0);
+	adcDataGroupB_p <= adcDataA_p(6) & adcDataA_p(5) & adcDataA_p(2) & adcDataA_p(1);
+	adcDataGroupB_n <= adcDataA_n(6) & adcDataA_n(5) & adcDataA_n(2) & adcDataA_n(1);
+
 	reset <= registerWrite.reset;
 	bitslipPattern <= registerWrite.bitslipPattern when (bitslipPatternOverride = '0') else "1100101";
 	bitslipStart1 <= registerWrite.bitslipStart or bitslipStart2;
@@ -835,10 +835,19 @@ begin
 			
 				when read2 =>
 					if(fifoValidA = '1') then -- ## fifo B is allways the same...
-						l0: for i in 0 to 3 loop
-							sampleBuffer(i) := std_logic_vector(resize(unsigned(fifoOutA(13+i*14 downto 0+i*14)),16) + resize(unsigned(offsetCorrectionRamData(i)),16));
-							sampleBuffer(i+4) := std_logic_vector(resize(unsigned(fifoOutB(13+i*14 downto 0+i*14)),16) + resize(unsigned(offsetCorrectionRamData(i+4)),16));
-						end loop;
+						--l0: for i in 0 to 3 loop
+						--	sampleBuffer(i*2) := std_logic_vector(resize(unsigned(fifoOutA(13+i*14 downto 0+i*14)),16) + resize(unsigned(offsetCorrectionRamData(i)),16));
+						--	sampleBuffer(i*2+1) := std_logic_vector(resize(unsigned(fifoOutB(13+i*14 downto 0+i*14)),16) + resize(unsigned(offsetCorrectionRamData(i+4)),16));
+						--end loop;
+							sampleBuffer(0) := std_logic_vector(resize(unsigned(fifoOutA(13+0*14 downto 0+0*14)),16) + resize(unsigned(offsetCorrectionRamData(0)),16));
+							sampleBuffer(3) := std_logic_vector(resize(unsigned(fifoOutA(13+1*14 downto 0+1*14)),16) + resize(unsigned(offsetCorrectionRamData(3)),16));
+							sampleBuffer(4) := std_logic_vector(resize(unsigned(fifoOutA(13+2*14 downto 0+2*14)),16) + resize(unsigned(offsetCorrectionRamData(4)),16));
+							sampleBuffer(7) := std_logic_vector(resize(unsigned(fifoOutA(13+3*14 downto 0+3*14)),16) + resize(unsigned(offsetCorrectionRamData(7)),16));
+							sampleBuffer(1) := std_logic_vector(resize(unsigned(fifoOutB(13+0*14 downto 0+0*14)),16) + resize(unsigned(offsetCorrectionRamData(1)),16));
+							sampleBuffer(2) := std_logic_vector(resize(unsigned(fifoOutB(13+1*14 downto 0+1*14)),16) + resize(unsigned(offsetCorrectionRamData(2)),16));
+							sampleBuffer(5) := std_logic_vector(resize(unsigned(fifoOutB(13+2*14 downto 0+2*14)),16) + resize(unsigned(offsetCorrectionRamData(5)),16));
+							sampleBuffer(6) := std_logic_vector(resize(unsigned(fifoOutB(13+3*14 downto 0+3*14)),16) + resize(unsigned(offsetCorrectionRamData(6)),16));
+
 						l1: for i in 0 to 7 loop							
 							ltm9007_14_to_eventFifoSystem.channel(i) <= sampleBuffer(i);
 							chargeBuffer(i) <= std_logic_vector(unsigned(chargeBuffer(i)) + unsigned(sampleBuffer(i)));

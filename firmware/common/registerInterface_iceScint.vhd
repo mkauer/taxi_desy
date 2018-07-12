@@ -48,7 +48,7 @@ entity registerInterface_iceScint is
 		triggerDataDelay_0w : out triggerDataDelay_registerWrite_t;
 		triggerDataDelay_1r : in triggerDataDelay_registerRead_t;
 		triggerDataDelay_1w : out triggerDataDelay_registerWrite_t;
-		pixelRateCounter_0r : in pixelRateCounter_registerRead_t;
+		pixelRateCounter_0r_p0 : in pixelRateCounter_registerRead_t;
 		pixelRateCounter_0w : out pixelRateCounter_registerWrite_t;
 		dac088s085_x3_0r : in dac088s085_x3_registerRead_t;
 		dac088s085_x3_0w : out dac088s085_x3_registerWrite_t;
@@ -64,7 +64,7 @@ entity registerInterface_iceScint is
 		drs4_0w : out drs4_registerWrite_t;
 		ltm9007_14_0r : in ltm9007_14_registerRead_t;
 		ltm9007_14_0w : out ltm9007_14_registerWrite_t;
-		triggerLogic_0r : in triggerLogic_registerRead_t;
+		triggerLogic_0r_p : in triggerLogic_registerRead_t;
 		triggerLogic_0w : out triggerLogic_registerWrite_t;
 		iceTad_0r : in iceTad_registerRead_t;
 		iceTad_0w : out iceTad_registerWrite_t;
@@ -104,6 +104,11 @@ architecture behavior of registerInterface_iceScint is
 --	signal irigDataLatched : std_logic_vector(72 downto 0) := (others => '0');
 	signal tmp05_0r_thLatched : std_logic_vector(15 downto 0) := (others => '0');
 	
+	signal pixelRateCounter_0r : pixelRateCounter_registerRead_t;
+	signal pixelRateCounter_0r_p1 : pixelRateCounter_registerRead_t;
+	signal pixelRateCounter_0r_p2 : pixelRateCounter_registerRead_t;
+	signal triggerLogic_0r : triggerLogic_registerRead_t;
+
 begin
 
 --	irigDataLatched <= whiteRabbitTiming_0r.irigDataLatched(87 downto 49)
@@ -115,6 +120,16 @@ begin
 --					   & whiteRabbitTiming_0r.irigDataLatched(15 downto 13)
 --					   & whiteRabbitTiming_0r.irigDataLatched(11 downto 5)
 --					   & whiteRabbitTiming_0r.irigDataLatched(3 downto 0);
+
+	process (controlBus.clock)
+	begin
+		if rising_edge(controlBus.clock) then
+			pixelRateCounter_0r <= pixelRateCounter_0r_p2;
+			pixelRateCounter_0r_p2 <= pixelRateCounter_0r_p1;
+			pixelRateCounter_0r_p1 <= pixelRateCounter_0r_p0;
+			triggerLogic_0r <= triggerLogic_0r_p;
+		end if;
+	end process;
 
 g0: if moduleEnabled /= 0 generate
 	controlBus <= smc_vectorToBus(addressAndControlBus);
@@ -202,6 +217,7 @@ g0: if moduleEnabled /= 0 generate
 			dac088s085_x3_0w.valuesChangedChip0 <= x"00"; -- autoreset
 			dac088s085_x3_0w.valuesChangedChip1 <= x"00"; -- autoreset
 			dac088s085_x3_0w.valuesChangedChip2 <= x"00"; -- autoreset
+			eventFifoSystem_0w.forceMiscData <= '0'; -- autoreset
 			if (controlBus.reset = '1') then
 				registerA <= (others => '0');
 				registerb <= (others => '0');
@@ -219,6 +235,7 @@ g0: if moduleEnabled /= 0 generate
 				eventFifoSystem_0w.irqAtEventFifoWords <= x"0100";
 				eventFifoSystem_0w.enableIrq <= '0';
 				eventFifoSystem_0w.irqStall <= '0';
+				eventFifoSystem_0w.deviceId <= x"0000";
 				numberOfSamplesToRead <= x"0020";
 				drs4_0w.sampleMode <= x"1";
 				drs4_0w.readoutMode <= x"5"; 
@@ -271,36 +288,27 @@ g0: if moduleEnabled /= 0 generate
 					
 						when x"0102" => eventFifoClear <= '1'; -- autoreset
 						when x"0108" => eventFifoSystem_0w.irqStall <= dataBusIn(0);
+						when x"010a" => eventFifoSystem_0w.deviceId <= dataBusIn;
 					
 						when x"0200" => gpsTiming_0w.counterPeriod <= dataBusIn;
 						when x"0202" => gpsTiming_0w.newDataLatchedReset <= '1'; -- autoreset
 						
 						when x"0300" => tmp05_0w.conversionStart <= dataBusIn(0); -- autoreset
+						when others => null;
+					end case;
 
-						when x"100c" => triggerDataDelay_0w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_0w.resetDelay <= '1'; -- autoreset
-						when x"100e" => triggerDataDelay_1w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_1w.resetDelay <= '1'; -- autoreset
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
+						when x"0310" => ad56x1_0w.valueChip0 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
+						when x"0312" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
+						when x"0314" => ad56x1_0w.valueChangedChip0 <= dataBusIn(0); ad56x1_0w.valueChangedChip1 <= dataBusIn(1); -- autoreset
+						when others => null;
+					end case;
 
-						when x"1100" => eventFifoSystem_0w.packetConfig <= dataBusIn;
-						when x"1102" => eventFifoSystem_0w.eventsPerIrq <= dataBusIn;
-						when x"1104" => eventFifoSystem_0w.irqAtEventFifoWords <= dataBusIn;
-						when x"1106" => eventFifoSystem_0w.enableIrq <= dataBusIn(0);
-						when x"1108" => eventFifoSystem_0w.forceIrq <= dataBusIn(0); -- autoreset
-						when x"110a" => eventFifoSystem_0w.clearEventCounter <= dataBusIn(0); -- autoreset
-						when x"112c" => debugReset <= '1'; -- autoreset
-
-						when x"100a" => clockConfig_debug_0w.drs4RefClockPeriod <= dataBusIn(7 downto 0);
-											
-						
-						when x"1040" => pixelRateCounter_0w.resetCounter <= dataBusIn(7 downto 0); -- autoreset
-						when x"1042" => pixelRateCounter_0w.counterPeriod <= dataBusIn; -- autoreset
-						when x"1044" => pixelRateCounter_0w.doublePulsePrevention <= dataBusIn(0);
-						when x"1046" => pixelRateCounter_0w.doublePulseTime <= dataBusIn(7 downto 0);
-						
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						when x"0400" => dac088s085_x3_0w.init <= '1'; -- autoreset
 						when x"0402" => dac088s085_x3_0w.valuesChangedChip0 <= dataBusIn(7 downto 0); -- autoreset
 						when x"0404" => dac088s085_x3_0w.valuesChangedChip1 <= dataBusIn(7 downto 0); -- autoreset
 						when x"0406" => dac088s085_x3_0w.valuesChangedChip2 <= dataBusIn(7 downto 0); -- autoreset
-
 						when x"0410" => dac088s085_x3_0w.valuesChip0(0) <= dataBusIn(7 downto 0); dac088s085_x3_0w.valuesChangedChip0(0) <= '1';
 						when x"0412" => dac088s085_x3_0w.valuesChip0(1) <= dataBusIn(7 downto 0); dac088s085_x3_0w.valuesChangedChip0(1) <= '1';
 						when x"0414" => dac088s085_x3_0w.valuesChip0(2) <= dataBusIn(7 downto 0); dac088s085_x3_0w.valuesChangedChip0(2) <= '1';
@@ -325,24 +333,70 @@ g0: if moduleEnabled /= 0 generate
 						when x"043a" => dac088s085_x3_0w.valuesChip2(5) <= dataBusIn(7 downto 0); dac088s085_x3_0w.valuesChangedChip2(5) <= '1';
 						when x"043c" => dac088s085_x3_0w.valuesChip2(6) <= dataBusIn(7 downto 0); dac088s085_x3_0w.valuesChangedChip2(6) <= '1';
 						when x"043e" => dac088s085_x3_0w.valuesChip2(7) <= dataBusIn(7 downto 0); dac088s085_x3_0w.valuesChangedChip2(7) <= '1';
-						
-						
-						when x"0310" => ad56x1_0w.valueChip0 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip0 <= '1'; -- autoreset
-						when x"0312" => ad56x1_0w.valueChip1 <= dataBusIn(11 downto 0); ad56x1_0w.valueChangedChip1 <= '1'; -- autoreset
-						when x"0314" => ad56x1_0w.valueChangedChip0 <= dataBusIn(0); ad56x1_0w.valueChangedChip1 <= dataBusIn(1); -- autoreset
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
+						when x"100a" => clockConfig_debug_0w.drs4RefClockPeriod <= dataBusIn(7 downto 0);
+						when x"100c" => triggerDataDelay_0w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_0w.resetDelay <= '1'; -- autoreset
+						when x"100e" => triggerDataDelay_1w.numberOfDelayCycles <= dataBusIn; triggerDataDelay_1w.resetDelay <= '1'; -- autoreset
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
+						when x"1040" => pixelRateCounter_0w.resetCounter <= dataBusIn(7 downto 0); -- autoreset
+						when x"1042" => pixelRateCounter_0w.counterPeriod <= dataBusIn; -- autoreset
+						when x"1044" => pixelRateCounter_0w.doublePulsePrevention <= dataBusIn(0);
+						when x"1046" => pixelRateCounter_0w.doublePulseTime <= dataBusIn(7 downto 0);
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						
 						--when x"10a0" => drs4_0w.stoftTrigger <= '1'; -- autoreset
 						when x"10a4" => drs4_0w.resetStates <= '1'; -- autoreset
 						when x"10a6" => numberOfSamplesToRead <= dataBusIn;
 						when x"10a8" => drs4_0w.sampleMode <= dataBusIn(3 downto 0);
 						when x"10aa" => drs4_0w.readoutMode <= dataBusIn(3 downto 0);
-						
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						when x"10b0" => ltm9007_14_0w.testMode <= dataBusIn(3 downto 0);
 							ltm9007_14_0w.init <= '1'; -- autoreset
 						when x"10b2" => ltm9007_14_0w.testPattern <= dataBusIn(13 downto 0); 
 						when x"10b4" => ltm9007_14_0w.bitslipStart <= '1'; -- autoreset 
 						when x"10b6" => ltm9007_14_0w.bitslipPattern <= dataBusIn(6 downto 0); 
-						
+					
+						when x"10e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(7 downto 0); -- autoreset 
+						--when x"10e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(2 downto 0); 
+						when x"10e2" => ltm9007_14_0w.offsetCorrectionRamAddress <= dataBusIn(9 downto 0); 
+						when x"10e4" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(15 downto 0); 
+						when x"10e6" => ltm9007_14_0w.baselineStart <= dataBusIn(9 downto 0); 
+						when x"10e8" => ltm9007_14_0w.baselineEnd <= dataBusIn(9 downto 0); 
+						when others => null;
+					end case;
+					
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
+						when x"10f0" => iceTad_0w.powerOn <= dataBusIn(7 downto 0); 
+						when x"10f2" => panelPower_0w.init <= '1'; -- autoreset 
+						when x"10f4" => panelPower_0w.enable <= dataBusIn(0); 
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
+						when x"1100" => eventFifoSystem_0w.packetConfig <= dataBusIn;
+						when x"1102" => eventFifoSystem_0w.eventsPerIrq <= dataBusIn;
+						when x"1104" => eventFifoSystem_0w.irqAtEventFifoWords <= dataBusIn;
+						when x"1106" => eventFifoSystem_0w.enableIrq <= dataBusIn(0);
+						when x"1108" => eventFifoSystem_0w.forceIrq <= dataBusIn(0); -- autoreset
+						when x"110a" => eventFifoSystem_0w.clearEventCounter <= dataBusIn(0); -- autoreset
+						when x"110c" => eventFifoSystem_0w.forceMiscData <= '1'; -- autoreset
+						when x"112c" => debugReset <= '1'; -- autoreset
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						when x"11d0" => triggerLogic_0w.triggerSerdesDelay <= dataBusIn(9 downto 0);
 							triggerLogic_0w.triggerSerdesDelayInit <= '1'; --autoreset
 							triggerDataDelay_1w.numberOfDelayCycles <= x"00" & dataBusIn(7 downto 0);
@@ -357,17 +411,10 @@ g0: if moduleEnabled /= 0 generate
 						when x"11de" => triggerLogic_0w.resetCounter <= dataBusIn(0); -- autoreset
 						when x"11e0" => triggerLogic_0w.counterPeriod <= dataBusIn; -- autoreset
 						when x"11e8" => triggerLogic_0w.sameEventTime <= dataBusIn(11 downto 0);
-						
-						when x"10e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(7 downto 0); -- autoreset 
-						--when x"10e0" => ltm9007_14_0w.offsetCorrectionRamWrite <= dataBusIn(2 downto 0); 
-						when x"10e2" => ltm9007_14_0w.offsetCorrectionRamAddress <= dataBusIn(9 downto 0); 
-						when x"10e4" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(15 downto 0); 
-						when x"10e6" => ltm9007_14_0w.baselineStart <= dataBusIn(9 downto 0); 
-						when x"10e8" => ltm9007_14_0w.baselineEnd <= dataBusIn(9 downto 0); 
-						
-						when x"10f0" => iceTad_0w.powerOn <= dataBusIn(7 downto 0); 
-						when x"10f2" => panelPower_0w.init <= '1'; -- autoreset 
-						when x"10f4" => panelPower_0w.enable <= dataBusIn(0); 
+						when others => null;
+					end case;
+
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						when x"1300" => iceTad_0w.rs485Data(0) <= dataBusIn(7 downto 0); 
 						when x"1302" => iceTad_0w.rs485Data(1) <= dataBusIn(7 downto 0); 
 						when x"1304" => iceTad_0w.rs485Data(2) <= dataBusIn(7 downto 0); 
@@ -381,16 +428,15 @@ g0: if moduleEnabled /= 0 generate
 						when x"131a" => iceTad_0w.rs485FifoRead <= dataBusIn(7 downto 0); -- autoreset
 						when x"131c" => iceTad_0w.softTxEnable <= dataBusIn(7 downto 0); 
 						when x"131e" => iceTad_0w.softTxMask <= dataBusIn(7 downto 0); 
-						
-						when x"1400" => whiteRabbitTiming_0w.newDataLatchedReset <= '1'; -- autoreset
-						when x"1420" => whiteRabbitTiming_0w.counterPeriod <= dataBusIn;
-						
-						
-						--when x"1000" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
-						--when x"1800" => ltm9007_14_0w.offsetCorrectionRamData <= dataBusIn(7 downto 0); 
-						
 						when others => null;
 					end case;
+						
+					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
+						when x"1400" => whiteRabbitTiming_0w.newDataLatchedReset <= '1'; -- autoreset
+						when x"1420" => whiteRabbitTiming_0w.counterPeriod <= dataBusIn;
+						when others => null;
+					end case;
+
 				elsif ((controlBus.readStrobe = '1') and (controlBus.writeStrobe = '0') and (chipSelectInternal = '1')) then	
 					case (controlBus.address(15 downto 0) and not(subAddressMask)) is
 						when x"0000" => readDataBuffer <= x"00"&registerA;
@@ -401,6 +447,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"0104" => readDataBuffer <= eventFifoSystem_0r.eventFifoWordsDmaAligned;
 						when x"0106" => readDataBuffer <= eventFifoSystem_0r.eventFifoWordsPerSlice;
 						when x"0108" => readDataBuffer <= x"000" & "000" & eventFifoSystem_0r.irqStall;
+						when x"010a" => readDataBuffer <= eventFifoSystem_0r.deviceId;
 						
 						when x"0200" => readDataBuffer <= gpsTiming_0r.counterPeriod;
 						when x"0202" => readDataBuffer <= x"000" & "000" & gpsTiming_0r.newDataLatched;
@@ -497,38 +544,38 @@ g0: if moduleEnabled /= 0 generate
 						when x"103c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterAllEdgesLatched(6);
 						when x"103e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterAllEdgesLatched(7);
 						
-						when x"1130" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(0);
-						when x"1132" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(1);
-						when x"1134" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(2);
-						when x"1136" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(3);
-						when x"1138" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(4);
-						when x"113a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(5);
-						when x"113c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(6);
-						when x"113e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(7);
-						when x"1140" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(0);
-						when x"1142" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(1);
-						when x"1144" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(2);
-						when x"1146" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(3);
-						when x"1148" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(4);
-						when x"114a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(5);
-						when x"114c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(6);
-						when x"114e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(7);
-						when x"1150" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(0);
-						when x"1152" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(1);
-						when x"1154" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(2);
-						when x"1156" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(3);
-						when x"1158" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(4);
-						when x"115a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(5);
-						when x"115c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(6);
-						when x"115e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(7);
-						when x"1160" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(0);
-						when x"1162" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(1);
-						when x"1164" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(2);
-						when x"1166" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(3);
-						when x"1168" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(4);
-						when x"116a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(5);
-						when x"116c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(6);
-						when x"116e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(7);
+						--when x"1130" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(0); --will take dead time into account
+						--when x"1132" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(1);
+						--when x"1134" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(2);
+						--when x"1136" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(3);
+						--when x"1138" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(4);
+						--when x"113a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(5);
+						--when x"113c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(6);
+						--when x"113e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterLatched(7);
+						--when x"1140" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(0);
+						--when x"1142" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(1);
+						--when x"1144" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(2);
+						--when x"1146" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(3);
+						--when x"1148" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(4);
+						--when x"114a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(5);
+						--when x"114c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(6);
+						--when x"114e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterPreventedDoublePulseLatched(7);
+						--when x"1150" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(0);
+						--when x"1152" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(1);
+						--when x"1154" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(2);
+						--when x"1156" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(3);
+						--when x"1158" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(4);
+						--when x"115a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(5);
+						--when x"115c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(6);
+						--when x"115e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterInsideDeadTimeLatched(7);
+						--when x"1160" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(0);
+						--when x"1162" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(1);
+						--when x"1164" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(2);
+						--when x"1166" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(3);
+						--when x"1168" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(4);
+						--when x"116a" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(5);
+						--when x"116c" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(6);
+						--when x"116e" => readDataBuffer <= pixelRateCounter_0r.pixelCounterDebugLatched(7);
 						
 						when x"1042" => readDataBuffer <= pixelRateCounter_0r.counterPeriod;
 						when x"1044" => readDataBuffer <= x"000" & "000" & pixelRateCounter_0r.doublePulsePrevention;
@@ -543,14 +590,14 @@ g0: if moduleEnabled /= 0 generate
 						when x"10b2" => readDataBuffer <= "00" & ltm9007_14_0r.testPattern;
 						when x"10b4" => readDataBuffer <= x"000" & "00" & ltm9007_14_0r.bitslipFailed;
 						when x"10b6" => readDataBuffer <= x"00" & "0" & ltm9007_14_0r.bitslipPattern;
-						when x"10c0" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+0*14 downto 0+0*14);
-						when x"10c2" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+1*14 downto 0+1*14);
-						when x"10c4" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+2*14 downto 0+2*14);
-						when x"10c6" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+3*14 downto 0+3*14);
-						when x"10c8" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+0*14 downto 0+0*14);
-						when x"10ca" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+1*14 downto 0+1*14);
-						when x"10cc" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+2*14 downto 0+2*14);
-						when x"10ce" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+3*14 downto 0+3*14);
+						--when x"10c0" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+0*14 downto 0+0*14);
+						--when x"10c2" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+0*14 downto 0+0*14);
+						--when x"10c4" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+1*14 downto 0+1*14);
+						--when x"10c6" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+1*14 downto 0+1*14);
+						--when x"10c8" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+2*14 downto 0+2*14);
+						--when x"10ca" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+2*14 downto 0+2*14);
+						--when x"10cc" => readDataBuffer <= "00" & ltm9007_14_0r.fifoA(13+3*14 downto 0+3*14);
+						--when x"10ce" => readDataBuffer <= "00" & ltm9007_14_0r.fifoB(13+3*14 downto 0+3*14);
 						
 						when x"11d0" => readDataBuffer <= x"0" & "00" & triggerLogic_0r.triggerSerdesDelay;
 						when x"11d4" => readDataBuffer <= x"00" & triggerLogic_0r.triggerMask;
@@ -636,7 +683,6 @@ g0: if moduleEnabled /= 0 generate
 						--when x"f0d4" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerDelayed;
 						--when x"f0d6" => readDataBuffer <= x"000" & "000" & triggerLogic_0r.trigger.triggerNotDelayed;
 						
---						when others  => readDataBuffer <= (others => '0');
 						when others  => readDataBuffer <= x"dead";
 					end case;
 				end if;

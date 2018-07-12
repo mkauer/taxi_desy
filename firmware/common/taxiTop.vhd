@@ -63,7 +63,9 @@ entity taxiTop is
 		AERA_TRIG_P   : out std_logic;    -- LVDS
 		AERA_TRIG_N   : out std_logic;    -- LVDS      
 
-	  -- ADC #1..3, LTM9007-14, 8 channel, ser out, 40 MSPS max., LVDS outputs
+		-- ADC #1..3, LTM9007-14, 8 channel, ser out, 40 MSPS max., LVDS outputs
+		-- the direction used for the pins is (0 to 7) but will be assigned to a (7 downto 0)
+		-- we do this to compensate the non logical order in the pcb
 		ADC_OUTA_1P   : in  std_logic_vector(0 to 7); -- LVDS, iserdes inputs
 		ADC_OUTA_1N   : in  std_logic_vector(0 to 7); 
 		ADC_OUTA_2P   : in  std_logic_vector(0 to 7); -- LVDS, iserdes inputs
@@ -264,7 +266,7 @@ architecture behaviour of taxiTop is
 	signal triggerTiming : triggerTiming_t;
 	signal drs4Data : ltm9007_14_to_eventFifoSystem_t; -- := (newData => '0', samplingDone => '0', channel => (others=>(others=>'0')), roiBufferReady => '0', roiBuffer => (others=>'0'), charge => (others=>(others=>'0')), chargeDone => '0', baseline => (others=>(others=>'0')), baselineDone => '0');
 	signal gpsTiming : gpsTiming_t := (newData => '0', others => (others=>'0'));
-	signal internalTiming : internalTiming_t := (tick_ms => '0', others => (others=>'0'));
+	signal internalTiming : internalTiming_t; -- := (tick_ms => '0', others => (others=>'0'));
 	signal whiteRabbitTiming : whiteRabbitTiming_t := (newData => '0', others => (others=>'0'));
 	--signal drs4Clocks : drs4Clocks_t := (others=>'0');
 	signal adcFifo : adcFifo_t := (channel=>(others=>(others=>'0')) ,others=>(others=>'0'));
@@ -344,13 +346,7 @@ begin
 		j3: OBUF port map (O => PANEL_RS485_DE(i), I => rs485DataEnable(i));
 	end generate;
 		
-	--g1: for i in 0 to 2 generate
 	g1: for i in 1 to 2 generate
-		--i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_FRA_P(i+1), IB => ADC_FRA_N(i+1), O => open); --adcData(i)(8));
-		--i2: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_FRB_P(i+1), IB => ADC_FRB_N(i+1), O => open); --adcData(i)(9));
-		--i3: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_DCOA_P(i+1), IB => ADC_DCOA_N(i+1), O => open); --adcData(i)(10));
-		--i4: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_DCOB_P(i+1), IB => ADC_DCOB_N(i+1), O => open); --adcData(i)(11));
-		
 		--i5: OBUFDS port map(O => ADC_ENC_P(i+1), OB => ADC_ENC_N(i+1), I => adcEnc(i));
 		i5: OBUFDS port map(O => ADC_ENC_P(i+1), OB => ADC_ENC_N(i+1), I => '0');
 	end generate;
@@ -381,7 +377,8 @@ begin
 	i6: OBUFDS port map(O => EXT_TRIG_OUT_P, OB => EXT_TRIG_OUT_N, I => '0');
 	i7: OBUFDS port map(O => AERA_TRIG_P, OB => AERA_TRIG_N, I => '0');
 	i8: OBUFDS port map(O => ADC_ENC_4P, OB => ADC_ENC_4N, I => '0');
-	i9: OBUF port map(O => ADC_CS_4, I => '0');
+	i9a: OBUF port map(O => ADC_CS_4, I => '0');
+	i9b: IBUF port map(I => ADC_SDO_4, O => open);
 
 
 	--	notClock0 <= not(triggerSerdesClocks.serdesDivClock);
@@ -398,9 +395,10 @@ begin
 		i12a: OBUFT port map(O => LVDS_IO_N(i), I => '0', T => '1');
 		i12b: OBUFT port map(O => LVDS_IO_P(i), I => '0', T => '1');
 	end generate;
-	i10a: IBUF port map(I => LVDS_IO_P(5), O => whiteRabbitPpsIregbInX);
-	i10b: OBUFT port map(O => LVDS_IO_N(5), I => '0', T => '1');
+	i13: IBUF port map(I => LVDS_IO_P(5), O => whiteRabbitPpsIregbInX);
+	i14: OBUFT port map(O => LVDS_IO_N(5), I => '0', T => '1');
 
+	i15: IBUF port map(I => EBI1_MCK, O => open);
 	i16: IBUF port map(I => EBI1_NWE, O => ebiNotWrite);
 	i17: IBUF port map(I => EBI1_NCS2, O => ebiNotChipSelect);
 	i18: IBUF port map(I => EBI1_NRD, O => ebiNotRead);
@@ -454,11 +452,13 @@ begin
 	i30: OBUF port map(O => POW_SW_SCL, I => '0');
 	i31: OBUF port map(O => POW_SW_SDA, I => '0');
 
-	i32: OBUF port map(O => RS232_TXD, I => '0');
+	i32a: IBUF port map(I => RS232_RXD, O => open);
+	i32b: OBUF port map(O => RS232_TXD, I => '0');
 	i33: OBUF port map(O => RS485_PV, I => '0');
 	i34: OBUF port map(O => RS485_DE, I => '0');
 	i35: OBUF port map(O => RS485_REn, I => '0');
-	i36: OBUF port map(O => RS485_TXD, I => '0');
+	i36a: IBUF port map(I => RS485_RXD, O => open);
+	i36b: OBUF port map(O => RS485_TXD, I => '0');
 
 	i37: OBUF port map(O => GPS_RESET_N, I => gpsNotReset);
 	i38: OBUF port map(O => GPS_EXTINT0, I => gpsIrq);
@@ -475,6 +475,12 @@ begin
 
 	i46: IOBUF port map(O => open, IO => TEST_DAC_SCL, I => '0', T => '1');
 	i47: IOBUF port map(O => open, IO => TEST_DAC_SDA, I => '0', T => '1');
+
+	i48: IBUF port map(I => QOSC1_OUT, O => open);
+	i49: IBUF port map(I => POW_ALERT, O => open);
+	i50a: IBUF port map(I => CBL_PLGDn(1), O => open);
+	i50b: IBUF port map(I => CBL_PLGDn(2), O => open);
+	i50c: IBUF port map(I => CBL_PLGDn(3), O => open);
 
 	asyncReset <= not(PON_RESETn and clockValid);
 
@@ -530,8 +536,6 @@ begin
 	x17: entity work.ltm9007_14 port map(
 		ADC_ENC_P(1), ADC_ENC_N(1),
 		ADC_OUTA_1P, ADC_OUTA_1N,
-		ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1),
-		ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1),
 		adcNcsA(0), adcNcsB(0), adcSdi, adcSck,
 		drs4_to_ltm9007_14, drs4Data, adcClocks,
 		ltm9007_14_0r, ltm9007_14_0w);
