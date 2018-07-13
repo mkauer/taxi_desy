@@ -93,7 +93,7 @@ entity serdesIn_1to8 is
 		datain_n		:  in std_logic_vector(D-1 downto 0) ;		-- Input from LVDS receiver pin
 --		rxioclk			:  in std_logic ;				-- IO Clock network
 --		rxserdesstrobe		:  in std_logic ;				-- Parallel data capture strobe
-		reset			:  in std_logic ;				-- Reset line
+--		reset			:  in std_logic ;				-- Reset line
 --		gclk			:  in std_logic ;				-- Global clock
 		triggerSerdesClocks : in triggerSerdesClocks_t;
 		bitslip			:  in std_logic ;				-- Bitslip control line
@@ -144,12 +144,15 @@ architecture behavioral of serdesIn_1to8 is
 	signal rxioclk : std_logic;
 	signal rxserdesstrobe : std_logic;
 	signal gclk : std_logic;
+	signal reset : std_logic;
 
 begin
 
 	rxioclk <= triggerSerdesClocks.serdesIoClock;
 	rxserdesstrobe <= triggerSerdesClocks.serdesStrobe;
 	gclk <= triggerSerdesClocks.serdesDivClock;
+	reset <= triggerSerdesClocks.serdesDivClockReset;
+	--reset <= triggerSerdesClocks.asyncReset;
 
 	pd_state_machine : phase_detector generic map (
 		D		      	=> D) 				-- Set the number of inputs

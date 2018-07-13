@@ -21,6 +21,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.all;
 use work.types.all;
+--use work.types_platformSpecific.all;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
@@ -28,19 +29,14 @@ use work.types.all;
 --use UNISIM.VComponents.all;
 
 entity triggerTimeToEdge is
---	generic 
---	(
---		numberOfChannels : integer := 16
---	);
 	port
 	(
 		triggerPixelIn : in std_logic_vector(8*numberOfChannels-1 downto 0);
 		trigger : in std_logic;
-		--dataOut : out std_logic_vector(16*numberOfChannels-1 downto 0);
-		--dataReady : out std_logic;
+		internalTiming : in internalTiming_t;
 		registerRead : out triggerTimeToEdge_registerRead_t;
 		registerWrite : in triggerTimeToEdge_registerWrite_t;
-		triggerTiming : out triggerTiming_t
+		triggerTiming : out triggerTimeToEdge_t
 	);
 end triggerTimeToEdge;
 
@@ -61,9 +57,12 @@ architecture behavioral of triggerTimeToEdge is
 	
 begin
 	
---	g: for i in 0 to numberOfChannels-1 generate
---		dataOut(i*16+15 downto i*16) <= std_logic_vector(pixelConterRisingLatched(i));
---	end generate;
+	g0: for i in 0 to numberOfChannels-1 generate
+		registerRead.timeToRisingEdge(i) <= std_logic_vector(pixelConterRisingLatched(i));
+		registerRead.timeToFallingEdge(i) <= std_logic_vector(pixelConterFallingLatched(i));
+		triggerTiming.timeToRisingEdge(i) <= std_logic_vector(pixelConterRisingLatched(i));
+		triggerTiming.timeToFallingEdge(i) <= std_logic_vector(pixelConterFallingLatched(i));
+	end generate;	
 
 	registerRead.maxSearchTime <= registerWrite.maxSearchTime;
 
@@ -72,8 +71,10 @@ begin
 		if rising_edge(registerWrite.clock) then
 			if (registerWrite.reset = '1') then
 				pixelConterRising <= (others => (others => '0'));
+				pixelConterRisingLatched <= (others => (others => '0'));
 				pixelCounterRisingStop <= (others => '0');
 				pixelConterFalling <= (others => (others => '0'));
+				pixelConterFallingLatched <= (others => (others => '0'));
 				pixelCounterFallingStop <= (others => '0');
 				dataValid <= '0';
 				state1 <= idle;
@@ -89,6 +90,7 @@ begin
 							state1 <= sample;
 							dataValid <= '0';
 							triggerTiming.newData <= '0';
+							triggerTiming.realTimeCounterLatched <= internalTiming.realTimeCounter;
 						end if;
 						pixelConterRising <= (others => (others => '0'));
 						pixelCounterRisingStop <= (others => '0');
@@ -123,38 +125,17 @@ begin
 						end loop;
 						
 					when latch =>
-						pixelConterRisingLatched <= pixelConterRising;
 						state1 <= prepare;
-						--dataReady <= '1';
 						triggerTiming.newData <= '1';
-						for i in 0 to numberOfChannels-1 loop
-							registerRead.timeToRisingEdge(i) <= std_logic_vector(pixelConterRising(i));
-							registerRead.timeToFallingEdge(i) <= std_logic_vector(pixelConterFalling(i));
-							triggerTiming.timeToRisingEdge(i) <= std_logic_vector(pixelConterRising(i));
-							triggerTiming.timeToFallingEdge(i) <= std_logic_vector(pixelConterFalling(i));
-						end loop;	
-				--		registerRead.ch0 <= std_logic_vector(pixelConterRising(0));
-				--		registerRead.ch1 <= std_logic_vector(pixelConterRising(1));
-				--		registerRead.ch2 <= std_logic_vector(pixelConterRising(2));
-				--		registerRead.ch3 <= std_logic_vector(pixelConterRising(3));
-				--		registerRead.ch4 <= std_logic_vector(pixelConterRising(4));
-				--		registerRead.ch5 <= std_logic_vector(pixelConterRising(5));
-				--		registerRead.ch6 <= std_logic_vector(pixelConterRising(6));
-				--		registerRead.ch7 <= std_logic_vector(pixelConterRising(7));
-					 
-				--		triggerTiming.ch0 <= std_logic_vector(pixelConterRising(0));
-				--		triggerTiming.ch1 <= std_logic_vector(pixelConterRising(1));
-				--		triggerTiming.ch2 <= std_logic_vector(pixelConterRising(2));
-				--		triggerTiming.ch3 <= std_logic_vector(pixelConterRising(3));
-				--		triggerTiming.ch4 <= std_logic_vector(pixelConterRising(4));
-				--		triggerTiming.ch5 <= std_logic_vector(pixelConterRising(5));
-				--		triggerTiming.ch6 <= std_logic_vector(pixelConterRising(6));
-				--		triggerTiming.ch7 <= std_logic_vector(pixelConterRising(7));
+						pixelConterRisingLatched <= pixelConterRising;
+						pixelConterFallingLatched <= pixelConterFalling;
 					
 					when prepare =>
 						if(trigger = '0') then
 							state1 <= idle;
 						end if;
+					
+					when others => null;
 
 				end case;
 			end if;

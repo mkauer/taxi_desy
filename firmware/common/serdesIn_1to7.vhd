@@ -95,9 +95,9 @@ entity serdesIn_1to7 is
 		datain_n		:  in std_logic_vector(D-1 downto 0) ;		-- Input from LVDS receiver pin
 --		rxioclk			:  in std_logic ;				-- IO Clock network
 --		rxserdesstrobe		:  in std_logic ;				-- Parallel data capture strobe
-		reset			:  in std_logic ;				-- Reset line
+--		reset			:  in std_logic ;				-- Reset line
 --		gclk			:  in std_logic ;				-- Global clock
-		serdesClocks : in adcClocks_t;
+		adcClocks : in adcClocks_t;
 		bitslipStart	:  in std_logic ;				-- 
 		bitslipDone		: out std_logic ;				-- 
 		bitslipFailed	: out std_logic ;				-- 
@@ -158,12 +158,18 @@ architecture behavioral of serdesIn_1to7 is
 	signal bitslipStartSync : std_logic_vector(4 downto 0) := (others=>'0');
 	signal data_out : std_logic_vector((D*S)-1 downto 0) := (others=>'0');
 	signal bitslipDoneShift : std_logic_vector(4 downto 0) := (others=>'0');
+	
+	signal bitslipPatternLatched : std_logic_vector(S-1 downto 0); 
+
+	signal reset : std_logic := '0';
 
 begin
 
-	rxioclk <= serdesClocks.serdesIoClock;
-	rxserdesstrobe <= serdesClocks.serdesStrobe;
-	gclk <= serdesClocks.serdesDivClock;
+	rxioclk <= adcClocks.serdesIoClock;
+	rxserdesstrobe <= adcClocks.serdesStrobe;
+	gclk <= adcClocks.serdesDivClock;
+	reset <= adcClocks.serdesDivClockReset;
+	--reset <= adcClocks.asyncReset;
 
 	dataOut <= data_out;
 
@@ -183,7 +189,7 @@ begin
 
 				case stateBitslip is	
 					when run1 =>
-						if(bitslipPattern /= data_out(S-1 downto 0)) then
+						if(bitslipPatternLatched /= data_out(S-1 downto 0)) then
 							bitslip <= '1'; -- autoreset
 							stateBitslip <= run2;
 							bitslipCounter <= bitslipCounter + 1;
@@ -211,6 +217,7 @@ begin
 						if((bitslipStartSync(1) = '1') and (bitslipStartSync(0) = '0')) then
 							stateBitslip <= run1;
 							bitslipCounter <= 0;
+							bitslipPatternLatched <= bitslipPattern;
 						end if;
 
 					when others => stateBitslip <= idle;

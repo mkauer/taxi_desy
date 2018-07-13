@@ -41,7 +41,6 @@ end pulseStretcher;
 architecture Behavioral of pulseStretcher is
 	signal i_old : std_logic_vector(numberOfChannels-1 downto 0) := (others => '0');
 	signal iStretch : std_logic_vector(numberOfChannels-1 downto 0) := (others => '0');
-	--signal iStretched : std_logic_vector(numberOfChannels-1 downto 0) := (others => '0');
 begin
 
 	P0:process (clock)
@@ -50,7 +49,6 @@ begin
 			if(reset = '1') then
 				i_old <= (others => '0');
 				iStretch <= (others => '0');
-	--			iStretched <= (others => '0');
 			else
 				for m in 0 to numberOfChannels-1 loop
 					i_old(m) <= i(m);
