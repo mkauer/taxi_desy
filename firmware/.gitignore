@@ -76,3 +76,8 @@ iseconfig/taxiTop.xreport
 *.un~
 *.swp
 *.pdf
+planAhead_*
+.Xil/
+pa.from*
+planAhead.*
+#PlanAhead-*
