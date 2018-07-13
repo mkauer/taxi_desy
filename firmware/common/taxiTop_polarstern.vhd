@@ -246,7 +246,7 @@ architecture behaviour of taxiTop is
 	signal triggerLogic_0r : p_triggerLogic_registerRead_t;
 	signal triggerLogic_0w : p_triggerLogic_registerWrite_t;
 -------------------------------------------------------------------------------
-	signal internalTiming : internalTiming_t := (tick_ms => '0', others => (others=>'0'));
+	signal internalTiming : internalTiming_t; -- := (tick_ms => '0', others => (others=>'0'));
 	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
 
 	signal triggerTimeToEdge_0 : triggerTimeToEdge_t;
