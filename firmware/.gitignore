@@ -81,3 +81,5 @@ planAhead_*
 pa.from*
 planAhead.*
 #PlanAhead-*
+
+_ignore/
