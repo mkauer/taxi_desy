@@ -1,8 +1,0 @@
-Host camerapc
-        User root
-        UserKnownHostsFile /dev/null
-        StrictHostKeyChecking no
-        GSSAPIAuthentication no
-        ForwardX11 no
-        ForwardX11Trusted no
-        LogLevel quiet
