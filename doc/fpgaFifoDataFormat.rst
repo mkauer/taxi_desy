@@ -107,7 +107,7 @@ At the begin of a White Rabbit second (PPS inside irigb) the real time counter w
 +---------------------+--------+--------+---------+---------+-------------------+-------------------+-------------------+-------------------+
 
 * Word 0: type 0x8000
-* Word 1: binary year ( ?? for south pole year 2018 will be 8 ?? )
+* Word 1: binary year (for south pole year 2018 will be 18)
 * Word 2: binary day 
 * Word 3: binary second
 * Word 4: always reads 0xdead
@@ -124,7 +124,7 @@ At the begin of a White Rabbit second (PPS inside irigb) the real time counter w
 +---------------------+--------+--------+-------------+-------------+-------------------+-------------------+-------------------+-------------------+
 
 * Word 0: type 0x8000
-* Word 1: binary year ( ?? for south pole year 2018 will be 8 ?? )
+* Word 1: binary year (for south pole year 2018 will be 18)
 * Word 2: binary day 
 * Word 3..4: binary second (17 bit)
 * Word 5..8: real time counter (64 bit)
