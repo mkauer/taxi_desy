@@ -7,6 +7,7 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL AT91SAM)
 	add_subdirectory( driver )
 	add_subdirectory( icescint )
 	add_subdirectory( polarstern )
+	add_subdirectory( uvlogger )
 
 	add_subdirectory( cpuload )
 
