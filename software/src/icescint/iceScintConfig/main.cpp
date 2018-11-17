@@ -199,23 +199,23 @@ int main(int argc, char** argv)
 
 	if(vm.count("setDrs4ReadoutMode"))
 	{
-		icescint_setDrs4ReadoutMode(vm["setDrs4ReadoutMode"].as<int>());
+		drs4_setDrs4ReadoutMode(vm["setDrs4ReadoutMode"].as<int>());
 		return EXIT_OK;
 	}
 	if(vm.count("getDrs4ReadoutMode"))
 	{
-		std::cout << int(icescint_getDrs4ReadoutMode()) << std::endl;
+		std::cout << int(drs4_getDrs4ReadoutMode()) << std::endl;
 		return EXIT_OK;
 	}
 
 	if(vm.count("setDrs4NumberOfSamplesToRead"))
 	{
-		icescint_setNumberOfSamplesToRead(vm["setDrs4NumberOfSamplesToRead"].as<int>());
+		drs4_setNumberOfSamplesToRead(vm["setDrs4NumberOfSamplesToRead"].as<int>());
 		return EXIT_OK;
 	}
 	if(vm.count("getDrs4NumberOfSamplesToRead"))
 	{
-		std::cout << int(icescint_getNumberOfSamplesToRead()) << std::endl;
+		std::cout << int(drs4_getNumberOfSamplesToRead()) << std::endl;
 		return EXIT_OK;
 	}
 
@@ -478,8 +478,8 @@ int main(int argc, char** argv)
 	{
 		for(int i=0;i<8;i++) {icescint_setTriggerThreshold(i, 50);}
 		icescint_setSerdesDelay(100);
-		icescint_setDrs4ReadoutMode(6);
-		icescint_setNumberOfSamplesToRead(1024);
+		drs4_setDrs4ReadoutMode(6);
+		drs4_setNumberOfSamplesToRead(1024);
 		icescint_setTriggerMask(0x00);
 		icescint_setPanelPowerMask(0xff);
 		icescint_setIrqAtFifoWords(4096);

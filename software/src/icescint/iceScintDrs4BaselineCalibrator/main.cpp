@@ -156,8 +156,8 @@ int main(int argc, char** argv)
 	uint16_t oldMask = icescint_getTriggerMask();
 	icescint_setTriggerMask(0xff); // all channels off
 
-	uint16_t oldNumberOfSamplesToRead = icescint_getNumberOfSamplesToRead();
-	icescint_setNumberOfSamplesToRead(drs4MaxSamples);
+	uint16_t oldNumberOfSamplesToRead = drs4_getNumberOfSamplesToRead();
+	drs4_setNumberOfSamplesToRead(drs4MaxSamples);
 
 	uint16_t oldFifoConfig = icescint_getEventFifoPacketConfig();
 	icescint_setEventFifoPacketConfig(MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING);
@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 		std::cout << "reset all values to 0x0" << csvPathRead << std::endl;
 		for(int i=0;i<1024;i++)
 		{
-			icescint_setCorrectionRamValue(0xff,i,0);
+			drs4_setCorrectionRamValue(0xff,i,0);
 		}
 		goto cleanUp;
 	}
@@ -213,7 +213,7 @@ int main(int argc, char** argv)
 				int value;
 				istringstream(*it) >> value;
 				if (vm.count("verbose")) {std::cout << " " << value << ", ";}
-				icescint_setCorrectionRamValue(bitValue16(k),i,value);
+				drs4_setCorrectionRamValue(bitValue16(k),i,value);
 				k++;
 			}
 			if (vm.count("verbose")) {std::cout << std::endl;}
@@ -331,7 +331,7 @@ int main(int argc, char** argv)
 		{
 			for(int i=0;i<1024;i++)
 			{
-				icescint_setCorrectionRamValue(bitValue16(j),i, diff[j][i]);
+				drs4_setCorrectionRamValue(bitValue16(j),i, diff[j][i]);
 			}
 		}
 	}
@@ -352,7 +352,7 @@ int main(int argc, char** argv)
 		icescint_setIrqAtFifoWords(oldIrqEventCountThreshold);
 		icescint_setIrqEnable(oldIrqEnabled);
 		icescint_setEventFifoPacketConfig(oldFifoConfig);
-		icescint_setNumberOfSamplesToRead(oldNumberOfSamplesToRead);
+		drs4_setNumberOfSamplesToRead(oldNumberOfSamplesToRead);
 		icescint_setTriggerMask(oldMask);
 
 	return 0;

@@ -143,7 +143,7 @@ public:
 	{
 		if (!m_debug)
 		{
-			icescint_setNumberOfSamplesToRead(value);
+			drs4_setNumberOfSamplesToRead(value);
 		}
 		else
 		{
@@ -155,7 +155,7 @@ public:
 	{
 		if (!m_debug)
 		{
-			return icescint_getNumberOfSamplesToRead();
+			return drs4_getNumberOfSamplesToRead();
 		}
 		else
 		{
@@ -256,7 +256,7 @@ public:
 	{
 		if (!m_debug)
 		{
-			icescint_setDrs4ReadoutMode(value);
+			drs4_setDrs4ReadoutMode(value);
 		}
 		else
 		{
@@ -268,7 +268,7 @@ public:
 	{
 		if (!m_debug)
 		{
-			return icescint_getDrs4ReadoutMode();
+			return drs4_getDrs4ReadoutMode();
 		}
 		else
 		{
