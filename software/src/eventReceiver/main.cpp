@@ -30,19 +30,26 @@ int verbose = 0;
 const int oneDay = 60*60*24;
 
 // read data one-by-one directly from fifo, bypass the driver completly and irq
-void readAndPrintEventsDirect(uint16_t* _data, size_t _words, int _fifoWidthWords)
+void readAndPrintEventsDirect(uint16_t* _data, size_t _words, int _fifoWidthWords, int _dec)
 {
 	size_t events = _words / _fifoWidthWords;
 
 	for (int ev = 0; ev < events; ev++)
 	{
 		std::cout << std::dec << ev << ".event: ";
-		std::cout << "(fifo) [";
+		std::cout << "(fifo) [ ";
 
 		for (int i = 0; i < _fifoWidthWords; i++)
 		{
 			int data = _data[i + ev * _fifoWidthWords];
-			std::cout << "" << std::setfill('0') << std::setw(4) << std::hex << data << " ";
+			if (_dec == 1)
+			{
+				std::cout << "" << std::setw(6) << std::dec << data << " ";
+			}
+			else
+			{
+				std::cout << "" << std::setfill('0') << std::setw(4) << std::hex << data << " ";
+			}
 		}
 
 		std::cout << "]" << std::endl;
@@ -220,7 +227,8 @@ int main(int argc, char** argv)
 			("newFilePath,p", po::value<std::string>(&newFilePath)->default_value("/tmp/"), "new file will be created here")
 			("writeFile,w", "write to file if true")
 			("createDoneFile,d", "create a *.done file")
-			("printRawData,r", "print the raw data to std::out")
+			("printRawData,r", "print the raw data as hex to std::out")
+			("printRawDataDec,R", "print the raw data as dec to std::out")
 			("fifoWidthWords,l", po::value<int>(&fifoWidthWords)->default_value(9), "number of words per line")
 			("printDebugData,b", "print debug data to std::out")
 //			("validate", "validate data")
@@ -313,7 +321,12 @@ int main(int argc, char** argv)
 			if(vm.count("printRawData"))
 			{
 				std::cout << "->  " << std::endl;
-				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords);
+				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 0);
+			}
+			if(vm.count("printRawDataDec"))
+			{
+				std::cout << "->  " << std::endl;
+				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 1);
 			}
 
 			if(writeFile)
