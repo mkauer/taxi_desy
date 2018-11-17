@@ -6,6 +6,7 @@
 #endif
 
 #define __MAKE_BOOL(VAL) ((VAL)?1:0)
+#define numberOfElemts(a) (sizeof(a)/sizeof((a)[0]))
 
 // 8 bit manipulation routines
 static inline uint8_t bitValue8(uint8_t index)
@@ -69,7 +70,7 @@ static inline uint16_t changeMask16(uint16_t value, uint16_t mask, int true_mean
 	if (true_means_set__false_means_clear) {return setMask16(value, mask);}
 	else {return clrMask16(value, mask);}
 }
-static inline int testBitVal16(uint16_t value, uint16_t index)
+static inline int testBitVal16(uint16_t value, uint16_t index) // ## return bool_t...
 {
 	return (value & ((uint16_t)(1)<<index))?1:0;
 }

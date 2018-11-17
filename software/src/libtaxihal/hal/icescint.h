@@ -14,6 +14,7 @@
 #include <stdexcept>
 
 #include "common.h"
+#include "drs4.h"
 
 //#undef BASE_COMMON
 
@@ -37,17 +38,6 @@ static inline uint16_t icescint_getEventFifoWords(void)
 	return common_getEventFifoWordsRAW() * ICESCINT_FIFO_WIDTH_WORDS;
 }
 
-// sets number of analog samples to read from DRS4
-static inline void icescint_setNumberOfSamplesToRead(uint16_t _value)
-{
-	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_NUMBEROFSAMPLESTOREAD, _value);
-}
-// get number of analog samples to read from DRS4
-static inline uint16_t icescint_getNumberOfSamplesToRead(void)
-{
-	return IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_NUMBEROFSAMPLESTOREAD);
-}
-
 // configures the samples typen to be generated (DRS4TIMING, DRS4CHARGE, ... DEBUG)
 static inline void icescint_setEventFifoPacketConfig(uint16_t _value)
 {
@@ -57,31 +47,6 @@ static inline void icescint_setEventFifoPacketConfig(uint16_t _value)
 static inline uint16_t icescint_getEventFifoPacketConfig(void)
 {
 	return IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG);
-}
-
-static inline void icescint_setDrs4ReadoutMode(uint16_t _value)
-{
-	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_READOUTMODE, _value);
-}
-
-static inline uint16_t icescint_getDrs4ReadoutMode(void)
-{
-	return IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_READOUTMODE);
-}
-
-// _channel :  0..7
-// _address :  0..1023 , address of the capacitor of the channel
-// _value   :  offset to add to the ADC value acquired from the cell / address / capacitor
-static inline void icescint_setCorrectionRamValue(uint16_t _channelMask, uint16_t _address, uint16_t _value)
-{
-	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_CORRECTIONRAMADDRESS, _address);
-	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_CORRECTIONRAMWRITEVALUE, _value);
-	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_CORRECTIONRAMCHANNELMASK, _channelMask);
-}
-
-static inline uint16_t icescint_getCorrectionRamValue(void)
-{
-	return 0; //IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG);
 }
 
 void icescint_doIrq(void)
@@ -206,6 +171,15 @@ static inline uint16_t icescint_getPixelTriggerCounterRate(uint16_t _channel)
 	offset = clipValueMax(_channel, COUNT_ICESCINT_PIXELTRIGGERCOUNTER_RATE-1)*SPAN_ICESCINT_PIXELTRIGGERCOUNTER_RATE;
 
 	return IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_PIXELTRIGGERCOUNTER_RATE + offset);
+}
+static inline int icescint_isTriggerRateNewData(void)
+{
+	return testBitVal16(IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_PIXELTRIGGERCOUNTER_NEWDATA),0);
+}
+static inline void icescint_doTriggerRateNewDataReset(bool_t _value)
+{
+	if(_value){_value = 1;} // ## mask?
+	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_PIXELTRIGGERCOUNTER_NEWDATA, _value);
 }
 
 //
