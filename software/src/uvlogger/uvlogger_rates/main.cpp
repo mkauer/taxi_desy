@@ -69,23 +69,37 @@ int main(int argc, char** argv)
 			printf("\033[H"); // cursor to upper left corner
 			period = icescint_getPixelTriggerCounterPeriod();
 			if((period == 0xffff) || (period == 0xdead)) {usleep(1000*1000);} // avoid some of the spam
-			std::cout << "  trigger rate per " << period << " sec. " << std::endl;
-			std::cout << "all rising edges: " << std::endl;
+			std::cout << "  trigger rate per " << period << " sec. (gate time ~" << gateTime << "ns)" << std::endl << std::endl;
+			std::cout << "                              " << std::endl;
+			std::cout << "all rising edges              " << std::endl;
+			std::cout << "------------------------------" << std::endl;
 			for(int i=0;i<COUNT_ICESCINT_PIXELTRIGGERCOUNTER_RATE;i++)
 			{
-				std::cout << "ch. " << i << ": " << int(uvlogger_getPixelTriggerAllRisingEdgesRate(i)) << std::endl;
+				std::cout << "ch." << i << ": " << int(uvlogger_getPixelTriggerAllRisingEdgesRate(i)) << std::endl;
 			}
 
-			std::cout << "only first rising edges per led flash (during gate time ~" << gateTime << "ns): " << std::endl;
+			printf("\033[%d;20H",3);
+			std::cout << "|first rising edges " << std::endl;
+			printf("\033[%d;20H",4);
+			std::cout << "|during gate        " << std::endl;
+			printf("\033[%d;20H",5);
+			std::cout << "+-------------------" << std::endl;
 			for(int i=0;i<COUNT_ICESCINT_PIXELTRIGGERCOUNTER_RATE;i++)
 			{
-				std::cout << "ch. " << i << ": " << int(uvlogger_getPixelTriggerFirstHitsDuringGateRate(i)) << std::endl;
+				printf("\033[%d;20H",i+6);
+				std::cout << "|ch." << i << ": " << int(uvlogger_getPixelTriggerFirstHitsDuringGateRate(i)) << std::endl;
 			}
 
-			std::cout << "all additional (non first) rising edges per led flash (during gate time ~" << gateTime << "ns): " << std::endl;
+			printf("\033[%d;40H",3);
+			std::cout << "|additional rising  " << std::endl;
+			printf("\033[%d;40H",4);
+			std::cout << "|edges during gate  " << std::endl;
+			printf("\033[%d;40H",5);
+			std::cout << "+-------------------" << std::endl;
 			for(int i=0;i<COUNT_ICESCINT_PIXELTRIGGERCOUNTER_RATE;i++)
 			{
-				std::cout << "ch. " << i << ": " << int(uvlogger_getPixelTriggerAdditionalHitsDuringGateRate(i)) << std::endl;
+				printf("\033[%d;40H",i+6);
+				std::cout << "|ch." << i << ": " << int(uvlogger_getPixelTriggerAdditionalHitsDuringGateRate(i)) << std::endl;
 			}
 			icescint_doTriggerRateNewDataReset(1);
 		}
