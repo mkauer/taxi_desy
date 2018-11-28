@@ -12,10 +12,10 @@
 source /opt/taxi/setupenv.sourceme
 
 case "$1" in 
-start)		/opt/taxi/bin/icescint_config -x 
+start)		/opt/taxi/bin/uvlogger_config -x 
 			/home/root/defaultSettings.sh
 			;;
-restart)	/opt/taxi/bin/icescint_config -x 
+restart)	/opt/taxi/bin/uvlogger_config -x 
 			/home/root/defaultSettings.sh
 			;;
 stop)		;;
