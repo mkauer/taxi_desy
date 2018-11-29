@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 //#define DEFAULT_FIRMWARE "/opt/taxi/firmware/icescint_180530_00.bit"
 //#define DEFAULT_FIRMWARE "/opt/taxi/firmware/taxitop.bit"
 //#define DEFAULT_FIRMWARE "/opt/taxi/firmware/icescint_180710_00.bit"
-#define DEFAULT_FIRMWARE "/opt/taxi/firmware/uvlogger_181128_00.bit"
+#define DEFAULT_FIRMWARE "/opt/taxi/firmware/uvlogger_181129_00.bit"
 
 int main(int argc, char** argv)
 {
