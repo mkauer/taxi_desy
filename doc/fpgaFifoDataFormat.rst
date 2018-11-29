@@ -46,6 +46,20 @@ Each channel is a 16 bit counter representing the time to rising edge.
 * Word 0: type 0x3000
 * Word 1..8: time to rising edge per channel (the first channel can have a non-zero value, channels with no rising edge will have the maximum counter value which depends on the readout window)
 
+UV-Logger Trigger Timing
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each channel is a 16 bit counter representing the time to rising edge. 
+
++----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Trigger Timing | channel 0 | channel 1 | channel 2 | channel 3 | channel 4 | channel 5 | channel 6 | channel 7 |
+| 0xa000         | [15..0]   | [15..0]   | [15..0]   | [15..0]   | [15..0]   | [15..0]   | [15..0]   | [15..0]   |
++----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+
+* Word 0: type 0xa000
+* Word 1..8: time to rising edge per channel (the first channel can have a non-zero value, channels with no rising edge will have the maximum counter value which depends on the readout window)
+
+
 DRS4 Sampling
 ~~~~~~~~~~~~~
 
