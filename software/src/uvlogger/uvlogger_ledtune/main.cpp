@@ -47,37 +47,40 @@ int main(int argc, char** argv)
 		("setHighVoltageRampStepSize", po::value<int>()->default_value(100), "debug")
 		("setHighVoltageRampStepSleep", po::value<int>()->default_value(10000), "debug in [us]")
 
-		("suv", po::value<int>(), "setAvalancheVoltage [0-4095]")
+		("suv", po::value<int>(), "setAvalancheVoltage (UV-LED) [0-4095]")
 		("guv", "getAvalancheVoltage ...")
 		("iuv", po::value<int>(), "incAvalancheVoltage [0-x]")
 		("duv", po::value<int>(), "decAvalancheVoltage [0-x]")
+
+		("svv", po::value<int>(), "setVaricapVoltage (UV-LED) [0-4095]")
+		("gvv", "getVaricapVoltage ...")
+		("ivv", po::value<int>(), "incVaricapVoltage [0-x]")
+		("dvv", po::value<int>(), "decVaricapVoltage [0-x]")
 
 		("sbv", po::value<int>(), "setBlueLedVoltage [0-4095]")
 		("gbv", "getBlueLedVoltage ...")
 		("ibv", po::value<int>(), "incBlueLedVoltage [0-x]")
 		("dbv", po::value<int>(), "decBlueLedVoltage [0-x]")
 
-		("svv", po::value<int>(), "setVaricapVoltage [0-4095]")
-		("gvv", "getVaricapVoltage ...")
-		("ivv", po::value<int>(), "incVaricapVoltage [0-x]")
-		("dvv", po::value<int>(), "decVaricapVoltage [0-x]")
-
-		("sav", po::value<int>(), "setAttenuatorVoltage [0-4095]")
+		("sav", po::value<int>(), "setAttenuatorVoltage (blue LED) [0-4095]")
 		("gav", "getAttenuatorVoltage ...")
 		("iav", po::value<int>(), "incAttenuatorVoltage [0-x]")
 		("dav", po::value<int>(), "decAttenuatorVoltage [0-x]")
 
-		("g1", po::value<int>(), "...")
-		("g2", po::value<int>(), "...")
+
+		("g1", po::value<int>(), "enable flasher 1 (blue LED)")
+		("g2", po::value<int>(), "enable flasher 2 (UV-LED)")
 		("p1", po::value<int>(), "set flasher1 period [8.4ns ticks]")
 		("p2", po::value<int>(), "set flasher2 period [8.4ns ticks]")
 		("f1", po::value<float>(), "set flasher1 frequency [Hz]")
 		("f2", po::value<float>(), "set flasher2 frequency [Hz]")
-		("w1", po::value<int>(), "...")
-		("w2", po::value<int>(), "...")
-		("ss1", "...")
-		("ss2", "...")
-		("automaticConfiguration,x", "uses a fixed configuration")
+		("w1", po::value<int>(), "flasher 1 LED pulse width")
+		("w2", po::value<int>(), "flasher 2 LED pulse width")
+		("ss1", "send single flasher pulse (blue)")
+		("ss2", "send single flasher pulse (UV)")
+
+		//("automaticConfiguration,x", "uses a fixed configuration")
+		("enableInternalReference,z", "debug...")
 		;
 
 	po::variables_map vm;
@@ -291,7 +294,7 @@ int main(int argc, char** argv)
 		return EXIT_OK;
 	}
 
-	if(vm.count("automaticConfiguration"))
+	if(vm.count("enableInternalReference"))
 	{
 		uvlogger_setFlasherVoltageReferenceToInternal(1);
 
