@@ -311,6 +311,15 @@ static inline uint16_t uvlogger_getHouskeepingPcbLedsEnable(void)
 	return IORD_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_HOUSEKEEPING_ENABLEPCBLEDS);
 }
 
+static inline void uvlogger_setHouskeepingJ24TestPinsEnable(uint16_t _enable)
+{
+	IOWR_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_HOUSEKEEPING_ENABLEJ24TESTPINS, _enable);
+}
+static inline uint16_t uvlogger_getHouskeepingJ24TestPinsEnable(void)
+{
+	return IORD_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_HOUSEKEEPING_ENABLEJ24TESTPINS);
+}
+
 static inline uint16_t uvlogger_getPixelTriggerAllRisingEdgesRate(uint16_t _channel)
 {
 	uint16_t offset;
@@ -341,6 +350,17 @@ static inline uint16_t uvlogger_getRateCounterGateTime(void)
 {
 	return IORD_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_RATECOUNTERGATETIME);
 }
+
+static inline void uvlogger_setTriggerLogicDrs4Decimation(uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_TRIGGERLOGIC_DRS4DECIMATOR, _value);
+}
+static inline uint16_t uvlogger_getTriggerLogicDrs4Decimation(void)
+{
+	return IORD_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_TRIGGERLOGIC_DRS4DECIMATOR);
+}
+
+
 
 
 #endif

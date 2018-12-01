@@ -79,6 +79,8 @@ int main(int argc, char** argv)
 
 		("getPcbLedsEnable", "...")
 		("setPcbLedsEnable", po::value<int>(), "...")
+		("getJ24TestPinsEnable", "...")
+		("setJ24TestPinsEnable", po::value<int>(), "...")
 
 		("getIrqEnable", "")
 		("setIrqEnable", po::value<int>(), "[0-1] interrupt from FPGA to ARM")
@@ -91,6 +93,8 @@ int main(int argc, char** argv)
 		("setTriggerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel, '1' will disable and '0' will enable the channel")
 		("getPixelRatePeriod", "")
 		("setPixelRatePeriod", po::value<int>(), "[0-65535] in seconds, no counter reset if 0")
+		("getTriggerDrs4Decimation", "")
+		("setTriggerDrs4Decimation", po::value<int>(), "[0-65535] will skip every X drs4 packets in the data stream")
 
 		("getSerdesDelay", "")
 		("setSerdesDelay", po::value<int>(), "[0-1023]")
@@ -640,17 +644,41 @@ int main(int argc, char** argv)
 		return EXIT_OK;
 	}
 
+	if(vm.count("setJ24TestPinsEnable"))
+	{
+		uvlogger_setHouskeepingJ24TestPinsEnable(vm["setJ24TestPinsEnable"].as<int>());
+		return EXIT_OK;
+	}
+	if(vm.count("getJ24TestPinsEnable"))
+	{
+		std::cout << int(uvlogger_getHouskeepingJ24TestPinsEnable()) << std::endl;
+		return EXIT_OK;
+	}
+
+	if(vm.count("setTriggerDrs4Decimation"))
+	{
+		uvlogger_setTriggerLogicDrs4Decimation(vm["setTriggerDrs4Decimation"].as<int>());
+		return EXIT_OK;
+	}
+	if(vm.count("getTriggerDrs4Decimation"))
+	{
+		std::cout << int(uvlogger_getTriggerLogicDrs4Decimation()) << std::endl;
+		return EXIT_OK;
+	}
+
 	if(vm.count("automaticConfiguration"))
 	{
 		for(int i=0;i<8;i++) {uvlogger_setTriggerThreshold(i, 0xc00);}
 		icescint_setSerdesDelay(110);
 		drs4_setDrs4ReadoutMode(6);
-		drs4_setNumberOfSamplesToRead(64);
+		drs4_setNumberOfSamplesToRead(1024);
 		icescint_setTriggerMask(0x00);
 		icescint_setIrqAtFifoWords(4096);
 		icescint_setIrqAtEventCount(100);
 		icescint_setIrqEnable(1);
 		icescint_setPixelTriggerCounterPeriod(1);
+		uvlogger_setHouskeepingJ24TestPinsEnable(0);
+		uvlogger_setTriggerLogicDrs4Decimation(0);
 
 		icescint_setEventFifoPacketConfig( 0x0
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
