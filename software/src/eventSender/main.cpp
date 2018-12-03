@@ -13,15 +13,13 @@
 
 namespace po = boost::program_options;
 
-int verbose = 0;
-
 // dummy for zmq message to support zero message copy
 void _freeMessage(void *data, void *hint)
 {
 	// do nothing
 }
 
-void sendDataLoop(int _port )
+void sendDataLoop(int _port, int _verbose)
 {
 	zmq::context_t m_context;
 
@@ -30,7 +28,7 @@ void sendDataLoop(int _port )
 
 	connectAddress << "tcp://*:" << _port;
 
-	if (verbose) std::cout << "publishing on " << connectAddress.str() << std::endl;
+	if (_verbose) {std::cout << "publishing on " << connectAddress.str() << std::endl;}
 
 	publisher.bind(connectAddress.str().c_str());
 
@@ -40,17 +38,17 @@ void sendDataLoop(int _port )
 		while (1)
 		{
 			if (daqdrv_waitForIrq(5000)==DAQDRV_ERROR_NONE) {
-				if (verbose)
+				if (_verbose)
 				{
 					std::cout << "irq!"  << std::endl;
 				}
-				void* data=0;
+				void* data = 0;
 				do {
 					size_t size=daqdrv_getData(&data);
 					if (!size) break;
 					zmq::message_t msg(data, size, &(_freeMessage), NULL);
 
-					if (verbose)
+					if (_verbose)
 					{
 						std::cout << "(" << count << "): " << size << " Bytes send" << std::endl;
 						count++;
@@ -63,7 +61,7 @@ void sendDataLoop(int _port )
 					}
 				} while(1);
 			} else {
-				if (verbose) std::cerr << "irq timeout!" << std::endl;
+				if (_verbose) std::cerr << "irq timeout!" << std::endl;
 			}
 		}
 	} catch (zmq::error_t& e) {
@@ -74,6 +72,7 @@ void sendDataLoop(int _port )
 int main(int argc, char** argv)
 {
 	int port;
+	int verbose = 0;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
@@ -97,8 +96,9 @@ int main(int argc, char** argv)
 
 	if (vm.count("help"))
 	{
-		std::cout << "description: generic event sender that sends data acquired from daqdrv via zmq publisher" << std::endl << "(compiled " << __DATE__ << " " << __TIME__ << ")" << std::endl << desc
-				<< std::endl;
+		std::cout << "description: generic event sender that sends data acquired from daqdrv via zmq publisher" << std::endl;
+		std::cout << "(compiled " << __DATE__ << " " << __TIME__ << ")" << std::endl;
+		std::cout << desc << std::endl;
 		return 1;
 	}
 
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
 		daqdrv_clearBuffers();
 	}
 
-	sendDataLoop(port);
+	sendDataLoop(port, verbose);
 
 	return 0;
 }

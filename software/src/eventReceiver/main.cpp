@@ -58,6 +58,62 @@ void readAndPrintEventsDirect(uint16_t* _data, size_t _words, int _fifoWidthWord
 	return;
 }
 
+void filterUvLoggerWaveForms(uint16_t* _data, size_t _words, int _fifoWidthWords, int _dec, uint16_t* _waveforms, int* _waveformLength, int _print)
+{
+	size_t events = _words / _fifoWidthWords;
+	enum state_e {idle,headerFound};
+	static enum state_e state = idle;
+
+	static int waveformPresent = 0;
+
+	//static int length = 0;
+	size_t pointer = 0;
+	*_waveformLength = 0;
+
+	for (int ev=0;ev<events;ev++)
+	{
+		uint16_t type  = _data[ev * _fifoWidthWords];
+
+		switch(state)
+		{
+			case idle:
+				if(type == 0x1000)
+				{
+					state = headerFound;
+					//length = _data[ev * _fifoWidthWords + 3];
+					pointer = 0;
+					for (int i=0;i<_fifoWidthWords;i++)
+					{
+						_waveforms[pointer * _fifoWidthWords + i] = _data[ev * _fifoWidthWords + i];
+					}
+					pointer++;
+					waveformPresent = 0;
+				}
+				break;
+
+			case headerFound:
+				if((_data[ev * _fifoWidthWords + 0] & 0xf000) == 0x4000)
+				{
+					for (int i=0;i<_fifoWidthWords;i++)
+					{
+						_waveforms[pointer * _fifoWidthWords + i] = _data[ev * _fifoWidthWords + i];
+					}
+					pointer++;
+					*_waveformLength = pointer * _fifoWidthWords * 2;
+					waveformPresent = 1;
+				}
+				else
+				{
+					state = idle;
+					pointer = 0;
+					if(waveformPresent == 1) {return;} // ## will drop all data in the buffer
+				}
+				break;
+		}
+	}
+	return;
+}
+
 //int getEvent(uint16_t* _data, uint32_t* _eventCounter, size_t* _words, size_t _fifoWidthWords)
 //{
 //	uint32_t eventCounter = 0;
@@ -219,7 +275,6 @@ int main(int argc, char** argv)
 	po::options_description desc("Allowed options");
 	desc.add_options()
 			("help,h", "")
-//			("verbose,v", "be verbose")
 			("server", po::value<std::string>(&server)->default_value("127.0.0.1"), "server data is send to")
 			("port", po::value<int>(&port)->default_value(10011), "server port data is send to")
 			("newFileTimeout,f", po::value<int>(&newFileTimeout)->default_value(-1), "new file will be created after [sec]")
@@ -229,6 +284,7 @@ int main(int argc, char** argv)
 			("createDoneFile,d", "create a *.done file")
 			("printRawData,r", "print the raw data as hex to std::out")
 			("printRawDataDec,R", "print the raw data as dec to std::out")
+			("filterWaveFormsOnly,a", "take only events with wave form data")
 			("fifoWidthWords,l", po::value<int>(&fifoWidthWords)->default_value(9), "number of words per line")
 			("printDebugData,b", "print debug data to std::out")
 //			("validate", "validate data")
@@ -266,7 +322,7 @@ int main(int argc, char** argv)
 	if (verbose) std::cout << "connecting to " << connectAddress.str() << std::endl;
 
 	subscriber.connect(connectAddress.str().c_str());
-	// set 0 filter, receiver everything!
+	// set 0 filter, receive everything!
 	subscriber.setsockopt( ZMQ_SUBSCRIBE, "", 0);
 
 	uint64_t numMessages = 0;
@@ -304,12 +360,14 @@ int main(int argc, char** argv)
 
 //	TestDataValidator validator;
 
+	uint16_t buffer[9*4200];
+	int bufferLength = 0;
+
 	while (1)
 	{
 		if (subscriber.recv(&message))
 		{
 			numMessages++;
-//			if ((numMessages % 1000) == 0) {std::cout << numMessages << std::endl;}
 			if (verbose) {std::cout << numMessages << std::endl;}
 
 //			readAndValidateEventsDirect((uint16_t*) message.data(), message.size() / 2, &eventCounter, &okEvents, &errorEvents);
@@ -318,20 +376,46 @@ int main(int argc, char** argv)
 //				validator.process(message.data(), message.size());
 //			}
 
-			if(vm.count("printRawData"))
+			if(vm.count("filterWaveFormsOnly"))
 			{
-				std::cout << "->  " << std::endl;
-				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 0);
+				filterUvLoggerWaveForms((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 0, buffer, &bufferLength, 1);
+
+				if(vm.count("printRawData"))
+				{
+					std::cout << "->  " << std::endl;
+					readAndPrintEventsDirect(buffer, bufferLength / 2, fifoWidthWords, 0);
+				}
+				if(vm.count("printRawDataDec"))
+				{
+					std::cout << "->  " << std::endl;
+					readAndPrintEventsDirect(buffer, bufferLength / 2, fifoWidthWords, 1);
+				}
 			}
-			if(vm.count("printRawDataDec"))
+			else
 			{
-				std::cout << "->  " << std::endl;
-				readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 1);
+				if(vm.count("printRawData"))
+				{
+					std::cout << "->  " << std::endl;
+					readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 0);
+				}
+				if(vm.count("printRawDataDec"))
+				{
+					std::cout << "->  " << std::endl;
+					readAndPrintEventsDirect((uint16_t*) message.data(), message.size() / 2, fifoWidthWords, 1);
+				}
 			}
+
 
 			if(writeFile)
 			{
-				myfile.write((char*)message.data(), message.size());
+				if(vm.count("filterWaveFormsOnly"))
+				{
+					myfile.write((char*)buffer, bufferLength);
+				}
+				else
+				{
+					myfile.write((char*)message.data(), message.size());
+				}
 
 				rawtime_now = time(NULL);
 				seconds = difftime(rawtime_now, rawtime_old);
