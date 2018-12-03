@@ -94,7 +94,7 @@ int main(int argc, char** argv)
 		("getPixelRatePeriod", "")
 		("setPixelRatePeriod", po::value<int>(), "[0-65535] in seconds, no counter reset if 0")
 		("getTriggerDrs4Decimation", "")
-		("setTriggerDrs4Decimation", po::value<int>(), "[0-65535] will skip every X drs4 packets in the data stream")
+		("setTriggerDrs4Decimation", po::value<int>(), "[0-65535] will skip X drs4 packets in the data stream after sending one")
 
 		("getSerdesDelay", "")
 		("setSerdesDelay", po::value<int>(), "[0-1023]")
