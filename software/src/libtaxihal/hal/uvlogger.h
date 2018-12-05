@@ -360,6 +360,16 @@ static inline uint16_t uvlogger_getTriggerLogicDrs4Decimation(void)
 	return IORD_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_TRIGGERLOGIC_DRS4DECIMATOR);
 }
 
+// ## hack for debugging
+static inline void uvlogger_setRegister(uint16_t _address, uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_UVLOGGER, _address, _value);
+}
+static inline uint16_t uvlogger_getRegister(uint16_t _address)
+{
+	return IORD_16DIRECT(BASE_UVLOGGER, _address);
+}
+
 
 
 

@@ -680,6 +680,8 @@ int main(int argc, char** argv)
 		uvlogger_setHouskeepingJ24TestPinsEnable(0);
 		uvlogger_setTriggerLogicDrs4Decimation(0);
 
+		uvlogger_setRegister(0xd026, 0x17); // ## hack for the comm module
+
 		icescint_setEventFifoPacketConfig( 0x0
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4SAMPLING
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4BASELINE
