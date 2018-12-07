@@ -119,7 +119,7 @@ int main(int argc, char** argv)
 		("setPacketTriggerTiming", po::value<int>(), "[0-1] enables data type for fifo")
 		("getPacketPixelRates", "")
 		("setPacketPixelRates", po::value<int>(), "[0-1] enables data type for fifo")
-		("doPacketMisc", "send the misc packet once, immediately")
+		("doPacketMisc,m", "send the misc packet once, immediately")
 		("setPacketMisc", po::value<int>(), "[0-1] enables data type for misc data")
 
 		("setSoftTriggerSingleShot", po::value<int>(), "no value")
@@ -690,7 +690,7 @@ int main(int argc, char** argv)
 			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TRIGGERTIMING
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TEST_DATA1
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_TEST_DATA2
-//			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_MISC
+			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_MISC
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_WHITERABBIT
 //			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_GPS
 			| MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_PIXELRATES

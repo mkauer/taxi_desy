@@ -9,6 +9,14 @@
 
 typedef int bool_t;
 
+static inline void uvlogger_setMiscData(uint16_t _slot, uint16_t _channel, uint16_t _value)
+{
+	_channel = clipValueMinMax(_channel, 0, UVLOGGER_NUMBEROFCHANNELS-1);
+	_slot = clipValueMinMax(_slot, 0, 1);
+
+	IOWR_16DIRECT(BASE_UVLOGGER, OFFS_UVLOGGER_MISCDATA + _channel*2 + _slot*8*2, _value);
+}
+
 static inline void uvlogger_setTriggerThreshold(uint16_t _channel, uint16_t _threshold)
 {
 	uint16_t offset;
@@ -130,6 +138,8 @@ static inline void uvlogger_setHighVoltage(uint16_t _channel, uint16_t _voltage)
 	_channel = clipValueMinMax(_channel, 0, numberOfElemts(uvlogger_highVoltageChannelUntwister)-1);
 	_voltage = clipValueMinMax(_voltage, 0, bitValue16(12)-1);
 
+	uvlogger_setMiscData(0, _channel, _voltage); // untwisted version
+
 	_channel = uvlogger_highVoltageChannelUntwister[_channel];
 
 	uvlogger_i2c_sendByte(OFFS_UVLOGGER_I2C_BASE_A, UVLOGGER_I2C_ADDRESS_HVDAC_WRITE, bitValue16(BIT_UVLOGGER_I2C_CONTROL_SENDSTART));
@@ -219,6 +229,8 @@ static inline void uvlogger_setFlasherVoltage(uint16_t _channel, uint16_t _volta
 	uvlogger_i2c_sendByte(OFFS_UVLOGGER_I2C_BASE_F, 0x30+_channel);
 	uvlogger_i2c_sendByte(OFFS_UVLOGGER_I2C_BASE_F, _voltage>>4);
 	uvlogger_i2c_sendByte(OFFS_UVLOGGER_I2C_BASE_F, (_voltage<<4)&0xff, bitValue16(BIT_UVLOGGER_I2C_CONTROL_SENDSTOP));
+
+	uvlogger_setMiscData(1, _channel, _voltage);
 }
 
 static inline void uvlogger_setFlasherVoltageReferenceToInternal(int _enable)
