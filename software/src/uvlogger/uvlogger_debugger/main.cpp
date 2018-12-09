@@ -45,6 +45,7 @@ void i2c(void)
 
 void uvlogger_setRegisterx(uint16_t _a, uint16_t _b)
 {
+	uvlogger_setRegister(_a,_b);
 	std::cout << std::hex << int(_b) << std::endl;
 }
 
@@ -297,24 +298,49 @@ int main(int argc, char** argv)
 	}
 
 	int t = 0;
-	if(vm.count("comm180mv")) {t=t|0x38; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm150mv")) {t=t|0x30; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm120mv")) {t=t|0x28; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm90mv")) {t=t|0x20; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm60mv")) {t=t|0x18; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm24mv")) {t=t|0x10; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm12mv")) {t=t|0x08; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm6mv")) {t=t|0x00; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+//	int v=0;
+//	int b=0;
+//	if(vm.count("comm180mv") != 0 ||
+//			vm.count("comm150mv")  != 0 ||
+//			vm.count("comm120mv") != 0 ||
+//			vm.count("comm90mv") != 0 ||
+//			vm.count("comm60mv") != 0 ||
+//			vm.count("comm24mv") != 0 ||
+//			vm.count("comm12mv") != 0 ||
+//			vm.count("comm6mv")){v=1;}
+//
+//	if(vm.count("comm500k") != 0 ||
+//			vm.count("comm375k") != 0 ||
+//			vm.count("comm250k") != 0 ||
+//			vm.count("comm150k") != 0 ||
+//			vm.count("comm125k") != 0 ||
+//			vm.count("comm100k") != 0 ||
+//			vm.count("comm50k") != 0 ||
+//			vm.count("comm25k")){b=1;}
+//
+//	if(v==1 && b==0){std::cout << "no baudrate given" << std::endl;return EXIT_OK;}
+//	if(v==0 && b==1){std::cout << "no voltage given" << std::endl;return EXIT_OK;}
+//	if(v==1 && b==1)
+//	{
+		if(vm.count("comm180mv")) {t=t|0x38; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm150mv")) {t=t|0x30; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm120mv")) {t=t|0x28; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm90mv")) {t=t|0x20; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm60mv")) {t=t|0x18; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm24mv")) {t=t|0x10; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm12mv")) {t=t|0x08; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm6mv")) {t=t|0x00; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
 
-	if(vm.count("comm500k")) {t=t|0x07; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm375k")) {t=t|0x06; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm250k")) {t=t|0x05; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm150k")) {t=t|0x04; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm125k")) {t=t|0x03; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm100k")) {t=t|0x02; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm50k")) {t=t|0x01; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-	if(vm.count("comm25k")) {t=t|0x00; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
-
+		if(vm.count("comm500k")) {t=t|0x07; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm375k")) {t=t|0x06; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm250k")) {t=t|0x05; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm150k")) {t=t|0x04; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm125k")) {t=t|0x03; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm100k")) {t=t|0x02; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm50k")) {t=t|0x01; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+		if(vm.count("comm25k")) {t=t|0x00; uvlogger_setRegisterx(0xd026, t);} // ## hack for the comm module
+//	}
+//
 //	if(vm.count("temperature"))
 //	{
 //		int iter = vm["temperature"].as<int>();
