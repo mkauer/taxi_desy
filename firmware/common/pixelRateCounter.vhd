@@ -74,6 +74,10 @@ architecture behavioral of pixelRateCounter is
 	signal eventSamplingCounter : unsigned(7 downto 0) := (others=>'0');
 	signal eventSamplingActive : std_logic := '0';
 	signal eventTrigger_old : std_logic := '0';
+
+	signal newData : std_logic := '0';
+	signal newData_latched : std_logic := '0';
+
 begin
 
 	registerRead.counterPeriod <= registerWrite.counterPeriod;
@@ -100,10 +104,14 @@ begin
 		registerRead.pixelCounterDebugLatched(i) <= std_logic_vector(pixelCounterDebugLatched(i));
 	end generate;
 
+	pixelRateCounter.newData <= newData;
+	registerRead.newData <= newData_latched;
+
+
 	P0:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
-			pixelRateCounter.newData <= '0'; -- autoreset
+			newData <= '0'; -- autoreset
 			rateCounterTimeOut <= '0'; -- autorest
 			if(registerWrite.reset = '1') then
 				pixel <= (others => '0');
@@ -130,7 +138,10 @@ begin
 				eventSamplingCounter <= (others => '0');
 				eventSamplingActive <= '0';
 				eventTrigger_old <= '0';
+				newData_latched <= '0';
 			else
+				newData_latched <= (newData_latched or newData) and not registerWrite.newDataReset;
+				
 				pixel_old <= pixel;
 				realTimeDeltaCounter <= realTimeDeltaCounter + 1;
 
@@ -229,7 +240,7 @@ begin
 					pixelCounterInsideDeadTime <= (others => (others => '0'));
 					pixelCounterDebug <= (others => (others => '0'));
 					
-					pixelRateCounter.newData <= '1'; -- autoreset
+					newData <= '1'; -- autoreset
 					realTimeCounterLatched <= internalTiming.realTimeCounter;
 					realTimeDeltaCounterLatched <= std_logic_vector(realTimeDeltaCounter);
 					realTimeDeltaCounter <= (others => '0');

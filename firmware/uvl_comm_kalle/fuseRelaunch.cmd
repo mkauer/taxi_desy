@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -lib "secureip" -o "H:/zn/Projects/UV_Logger/readout/FPGA/uvl_readout/uvl_readout_tb_01_isim_beh.exe" -prj "H:/zn/Projects/UV_Logger/readout/FPGA/uvl_readout/uvl_readout_tb_01_beh.prj" "work.uvl_readout_tb_01" 

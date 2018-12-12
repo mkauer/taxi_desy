@@ -72,7 +72,7 @@ entity registerInterface_iceScint is
 		panelPower_0w : out panelPower_registerWrite_t;
 		tmp05_0r : in tmp05_registerRead_t;
 		tmp05_0w : out tmp05_registerWrite_t;
-		clockConfig_debug_0w : out clockConfig_debug_t
+		clockConfig_debug_0w : out clockConfig_debug_t -- ## remove me!!!
 	);
 end registerInterface_iceScint;
 

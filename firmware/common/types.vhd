@@ -20,10 +20,12 @@ package types is
 	constant globalClockRate_kHz : integer := globalClockRate_platformSpecific_hz/1000;
 	
 	type dataNumberOfChannelsX8Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(7 downto 0);
+	type dataNumberOfChannelsX12Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(11 downto 0);
 	type dataNumberOfChannelsX16Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(15 downto 0);
 	type dataNumberOfChannelsX24Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(23 downto 0);
 	type dataNumberOfChannelsX32Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(31 downto 0);
 	type data8x8Bit_t is array (0 to 7) of std_logic_vector(7 downto 0);
+	type data8x12Bit_t is array (0 to 7) of std_logic_vector(11 downto 0);
 	type data8x16Bit_t is array (0 to 7) of std_logic_vector(15 downto 0);
 	type data8x24Bit_t is array (0 to 7) of std_logic_vector(23 downto 0);
 	type data8x32Bit_t is array (0 to 7) of std_logic_vector(31 downto 0);
@@ -94,14 +96,16 @@ package types is
 		serdesDivClock : std_logic;
 		serdesIoClock : std_logic;
 		serdesStrobe : std_logic;
-		asyncReset : std_logic;
+		asyncReset : std_logic; -- ## remove
 	end record;
+
 
 -------------------------------------------------------------------------------
 	
 	type triggerTiming_t is record
 		channel : dataNumberOfChannelsX16Bit_t;
 		newData : std_logic;
+		newDataValid : std_logic;
 	end record;
 	
 -------------------------------------------------------------------------------
@@ -157,6 +161,8 @@ package types is
 		forceIrq : std_logic;
 		forceMiscData : std_logic;
 		deviceId : std_logic_vector(15 downto 0);
+		miscSlotA : data8x16Bit_t;
+		miscSlotB : data8x16Bit_t;
 	end record;
 
 -------------------------------------------------------------------------------
@@ -164,10 +170,12 @@ package types is
 	type triggerTimeToRisingEdge_registerRead_t is record
 		--channel : data8x16Bit_t;
 		channel : dataNumberOfChannelsX16Bit_t;
+		timeout : std_logic_vector(15 downto 0);
 	end record;
 	type triggerTimeToRisingEdge_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
+		timeout : std_logic_vector(15 downto 0);
 	end record;
 	
 	type triggerDataDelay_registerRead_t is record
@@ -322,6 +330,7 @@ package types is
 -------------------------------------------------------------------------------
 
 	type pixelRateCounter_registerRead_t is record
+		newData : std_logic;
 		pixelCounterAllEdgesLatched : dataNumberOfChannelsX16Bit_t;
 		pixelCounterPreventedDoublePulseLatched : dataNumberOfChannelsX16Bit_t;
 		pixelCounterLatched : dataNumberOfChannelsX16Bit_t;
@@ -335,6 +344,7 @@ package types is
 	type pixelRateCounter_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
+		newDataReset : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
 		--resetCounter : std_logic_vector(15 downto 0);
 		resetCounter : std_logic_vector_xCannel_t;
@@ -350,7 +360,43 @@ package types is
 		realTimeCounterLatched : std_logic_vector(63 downto 0);
 		realTimeDeltaCounterLatched : std_logic_vector(63 downto 0); -- more or less like counterPeriod 
 	end record;
-	----------------------------------
+
+-------------------------------------------------------------------------------
+
+	type pixelRateCounter_v2_registerRead_t is record
+		newData : std_logic;
+		rateAllEdgesLatched : dataNumberOfChannelsX16Bit_t;
+		rateFirstHitsDuringGateLatched : dataNumberOfChannelsX16Bit_t;
+		rateAdditionalHitsDuringGateLatched : dataNumberOfChannelsX16Bit_t;
+		rateCounterPeriod : std_logic_vector(15 downto 0);
+	--	gateTimeout : std_logic_vector(15 downto 0);
+	--	doublePulsePrevention : std_logic;
+	--	doublePulseTime : std_logic_vector(7 downto 0);
+	end record;
+	
+	type pixelRateCounter_v2_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		newDataReset : std_logic;
+		rateCounterPeriod : std_logic_vector(15 downto 0);
+	--	gateTimeout : std_logic_vector(15 downto 0);
+		resetCounter : std_logic_vector_xCannel_t;
+	--	doublePulsePrevention : std_logic;
+	--	doublePulseTime : std_logic_vector(7 downto 0);
+	end record;
+	
+	type pixelRateCounter_v2_t is record
+		newData : std_logic;
+		rateCounterPeriod : std_logic_vector(15 downto 0);
+		rateAllEdgesLatched : dataNumberOfChannelsX16Bit_t;
+		rateFirstHitsDuringGateLatched : dataNumberOfChannelsX16Bit_t;
+		rateAdditionalHitsDuringGateLatched : dataNumberOfChannelsX16Bit_t;
+		realTimeCounterLatched : std_logic_vector(63 downto 0);
+		realTimeDeltaCounterLatched : std_logic_vector(63 downto 0); -- more or less like counterPeriod 
+	end record;
+
+----------------------------------
+
 	type pixelRateCounter_polarstern_registerRead_t is record
 		pixelCounterAllEdgesLatched : std_logic_vector_array_channelsX16Bit_t;
 		--pixelCounterPreventedDoublePulseLatched : dataNumberOfChannelsX16Bit_t;
@@ -409,6 +455,24 @@ package types is
 		offsetCorrectionRamData : std_logic_vector(15 downto 0);
 	end record;
 
+	type drs4_pins_A_t is record
+		notReset : std_logic;
+		address : std_logic_vector(3 downto 0);
+		denable : std_logic;
+		dwrite : std_logic;
+		dwriteSerdes : std_logic_vector(7 downto 0);
+		rsrload : std_logic;
+		mosi : std_logic;
+		sclk : std_logic;
+		wsrin : std_logic;
+	end record;
+	type drs4_pins_B_t is record
+		miso : std_logic;
+		dtap : std_logic;
+		plllck : std_logic;
+		wsrout : std_logic;
+	end record;
+
 -------------------------------------------------------------------------------
 	
 	type ltm9007_14_to_eventFifoSystem_t is record
@@ -446,8 +510,8 @@ package types is
 -------------------------------------------------------------------------------
 	
 	type ltm9007_14_registerRead_t is record
-		fifoA : std_logic_vector(4*14-1 downto 0);
-		fifoB : std_logic_vector(4*14-1 downto 0);
+		--fifoA : std_logic_vector(4*14-1 downto 0);
+		--fifoB : std_logic_vector(4*14-1 downto 0);
 		testMode : std_logic_vector(3 downto 0);
 		testPattern : std_logic_vector(13 downto 0);
 		bitslipPattern : std_logic_vector(6 downto 0);
@@ -484,15 +548,20 @@ package types is
 		triggerSerdesDelay : std_logic_vector(9 downto 0);
 		triggerMask : std_logic_vector(7 downto 0);
 		singleSeq : std_logic;
-		--trigger : triggerLogic_t; -- debug
 		triggerGeneratorEnabled : std_logic;
 		triggerGeneratorPeriod : unsigned(31 downto 0);
 		
-		rate : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
-		rateLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
-		rateDeadTimeLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
-		counterPeriod : std_logic_vector(15 downto 0);
-		sameEventTime : std_logic_vector(11 downto 0);
+		drs4TriggerDelay : std_logic_vector(8 downto 0);
+		
+		drs4Decimator : std_logic_vector(15 downto 0);
+		
+		--rate : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
+		--rateLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
+		--rateDeadTimeLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
+		--counterPeriod : std_logic_vector(15 downto 0);
+		--sameEventTime : std_logic_vector(11 downto 0);
+		
+		gateTime : std_logic_vector(15 downto 0);
 	end record;
 
 	type triggerLogic_registerWrite_t is record
@@ -501,14 +570,21 @@ package types is
 		triggerSerdesDelayInit : std_logic;
 		triggerSerdesDelay : std_logic_vector(9 downto 0);
 		triggerMask : std_logic_vector(7 downto 0);
-		softTrigger : std_logic;
+		singleSoftTrigger : std_logic;
 		singleSeq : std_logic;
 		triggerGeneratorEnabled : std_logic;
 		triggerGeneratorPeriod : unsigned(31 downto 0);
 		
-		counterPeriod : std_logic_vector(15 downto 0);
-		resetCounter : std_logic; --_vector(15 downto 0);
-		sameEventTime : std_logic_vector(11 downto 0);
+		drs4TriggerDelay : std_logic_vector(8 downto 0);
+		drs4TriggerDelayReset : std_logic;
+		
+		drs4Decimator : std_logic_vector(15 downto 0);
+		
+		--counterPeriod : std_logic_vector(15 downto 0);
+		--resetCounter : std_logic; --_vector(15 downto 0);
+		--sameEventTime : std_logic_vector(11 downto 0);
+		
+		gateTime : std_logic_vector(15 downto 0);
 	end record;
 
 	type triggerLogic_t is record
@@ -516,8 +592,15 @@ package types is
 		triggerSerdesNotDelayed : std_logic_vector(7 downto 0);
 		triggerDelayed : std_logic;
 		triggerNotDelayed : std_logic;
-		softTrigger : std_logic;
-		sumTriggerSameEvent : std_logic;
+		
+		--singleSoftTrigger : std_logic;
+		--sumTriggerSameEvent : std_logic;
+		
+		flasherTrigger : std_logic;
+		flasherTriggerGate : std_logic;
+		
+		timingAndDrs4 : std_logic;
+		timingOnly : std_logic;
 
 		newData : std_logic;
 		counterPeriod : std_logic_vector(15 downto 0);
@@ -586,6 +669,134 @@ package types is
 	type clockConfig_debug_t is record
 		drs4RefClockPeriod : std_logic_vector(7 downto 0);
 	end record;
+	
+-------------------------------------------------------------------------------
+	
+	type clocks_t is record
+		triggerSerdesClocks : triggerSerdesClocks_t;
+		adcClocks : adcClocks_t;
+		drs4RefClock : std_logic;
+		asyncReset : std_logic;
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type dac1_uvLogger_registerRead_t is record
+		channelA : dataNumberOfChannelsX12Bit_t;
+		valuesChangedA : std_logic_vector(7 downto 0);
+		channelB : dataNumberOfChannelsX12Bit_t;
+		valuesChangedB : std_logic_vector(7 downto 0);
+		debug : std_logic_vector(3 downto 0);
+	end record;
+	type dac1_uvLogger_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		channelA : dataNumberOfChannelsX12Bit_t;
+		valuesChangedA : std_logic_vector(7 downto 0);
+		channelB : dataNumberOfChannelsX12Bit_t;
+		valuesChangedB : std_logic_vector(7 downto 0);
+		debug2 : std_logic;
+	end record;
+	type dac1_uvLogger_stats_t is record
+		channelA : dataNumberOfChannelsX12Bit_t;
+		channelB : dataNumberOfChannelsX12Bit_t;
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type tmp10x_uvLogger_registerRead_t is record
+		temperature : std_logic_vector(15 downto 0);
+		busy : std_logic;
+	end record;
+	type tmp10x_uvLogger_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		startConversion : std_logic;
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type i2c_genericBus_registerRead_t is record
+		data : std_logic_vector(7 downto 0);
+		busy : std_logic;
+	end record;
+	type i2c_genericBus_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		startTransfer : std_logic;
+		direction : std_logic;
+		sendStartBeforeData : std_logic;
+		sendStopAfterData : std_logic;
+		waitForAckAfterData : std_logic;
+		sendAckAfterData : std_logic;
+		data : std_logic_vector(7 downto 0);
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type ledFlasher_registerRead_t is record
+		enableGenerator : std_logic_vector(1 downto 0);
+		useNegativePolarity : std_logic_vector(1 downto 0);
+		pulseWidth0 : std_logic_vector(7 downto 0);
+		pulseWidth1 : std_logic_vector(7 downto 0);
+		generatorPeriod0 : std_logic_vector(31 downto 0);
+		generatorPeriod1 : std_logic_vector(31 downto 0);
+	end record;
+	type ledFlasher_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		doSingleShot : std_logic_vector(1 downto 0);
+		enableGenerator : std_logic_vector(1 downto 0);
+		useNegativePolarity : std_logic_vector(1 downto 0);
+		pulseWidth0 : std_logic_vector(7 downto 0);
+		pulseWidth1 : std_logic_vector(7 downto 0);
+		generatorPeriod0 : std_logic_vector(31 downto 0);
+		generatorPeriod1 : std_logic_vector(31 downto 0);
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type houseKeeping_registerRead_t is record
+		enablePcbLeds : std_logic;
+		enablePcbLedGreen : std_logic;
+		enablePcbLedRed : std_logic;
+		enableJ24TestPins : std_logic;
+	end record;
+	type houseKeeping_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		enablePcbLeds : std_logic;
+		enablePcbLedGreen : std_logic;
+		enablePcbLedRed : std_logic;
+		enableJ24TestPins : std_logic;
+	end record;
+
+-------------------------------------------------------------------------------
+
+	type commDebug_registerRead_t is record
+		tx_baud_div : std_logic_vector(15 downto 0);
+		dU_1mV : std_logic_vector(15 downto 0);
+		com_adc_thr : std_logic_vector(15 downto 0);
+	end record;
+	type commDebug_registerWrite_t is record
+		clock : std_logic;
+		reset : std_logic;
+		tx_baud_div : std_logic_vector(15 downto 0);
+		dU_1mV : std_logic_vector(15 downto 0);
+		com_adc_thr : std_logic_vector(15 downto 0);
+		dac_valueIdle : std_logic_vector(11 downto 0);
+		dac_valueLow : std_logic_vector(11 downto 0);
+		dac_valueHigh : std_logic_vector(11 downto 0);
+		dac_time1 : std_logic_vector(15 downto 0);
+		dac_time2 : std_logic_vector(15 downto 0);
+		dac_time3 : std_logic_vector(15 downto 0);
+		dac_clkTime : std_logic_vector(15 downto 0);
+		com_thr_adj : std_logic_vector(2 downto 0);
+		adc_deadTime : std_logic_vector(11 downto 0);
+		adc_syncTimeout : std_logic_vector(15 downto 0);
+		adc_baselineAveragingTime : std_logic_vector(15 downto 0);
+		jumper : std_logic_vector(15 downto 0);
+	end record;
 
 -------------------------------------------------------------------------------
 -- polarstern
@@ -617,6 +828,14 @@ package types is
 		rateCounterLatched : p_triggerPathCounter_t;
 		rateCounterSectorLatched : std_logic_vector_array_channelsX16Bit_t;
 	end record;
+
+-------------------------------------------------------------------------------
+
+	
+
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
 

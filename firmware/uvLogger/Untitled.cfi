@@ -1,0 +1,11 @@
+# PROMGEN: Xilinx Prom Generator P.20131013
+# Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+SOFTWARE_VERSION P.20131013
+DATE            11/28/2018 - 15:08
+SOURCE          C:\Xilinx\projects\taxi\firmware\uvLogger\Untitled.mcs
+DEVICE          2048K
+DATA_WIDTH      1
+FILL_DATA       0xFF
+SIGNATURE       0x0E5593CF
+START_ADDRESS   0x00000000 END_ADDRESS 0x00137B73 DIRECTION_UP   "C:/Xilinx/projects/taxi/firmware/uvLogger/uvl_mb_pinout_top.bit" 6slx45csg324

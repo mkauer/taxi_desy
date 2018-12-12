@@ -1,0 +1,128 @@
+TITLE "ADC to serial decoder, DOR side, LAST CHANGE: 2003/10/27";
+
+INCLUDE "DOR_DUDT";
+INCLUDE "ctup5";
+
+--FUNCTION ctup5 (clock,	aclr)
+--RETURNS (	q[4..0],	cout);
+
+--FUNCTION DOR_DUDT (CLK, max_level, min_level, cteq16, cteq4, hl_edge, reset, uart_done, uart_rdy, idle_rcvd, receive)
+--	RETURNS (ct_aclr, dudt_ena, find_dudt, max_ena, min_ena, , signal_lev1, signal_lev0, rxd);
+
+CONSTANT	IDLE		= H"F";	-- IDLE encoding
+
+SUBDESIGN	adc_to_ser_dudt_DOR
+(
+	clk				: INPUT;
+	reset			: INPUT;
+	com_res			: INPUT;
+	receive			: INPUT;
+	
+	uart_done		: INPUT;
+	data_stb		: INPUT;
+	ctrl_stb		: INPUT;
+	ctrl_err		: INPUT;
+	data[7..0]		: INPUT;
+			
+	in[9..0]		: INPUT;	-- Communication ADC, meanvalue over 4 clocks
+	low_thr[9..0]	: INPUT;	-- Communication threshold, long cable 
+	lrg_thr[9..0]	: INPUT;	-- Communication threshold, short cable 
+	
+	hl_edge			: OUTPUT;
+	lh_edge			: OUTPUT;
+	max_ena			: OUTPUT;	-- dudt greater MINLEVEL
+	min_ena			: OUTPUT;
+	find_dudt		: OUTPUT;
+
+	rxd				: OUTPUT;	-- serial data, 1 clock lengths pulse if ==1
+	signal_lev[1..0]: OUTPUT;	-- levels of signal received
+)
+
+VARIABLE
+
+	ina[9..0]		: DFF;		-- I/O register
+	inb[9..0]		: DFF;
+	inc[9..0]		: DFF;
+	ind[9..0]		: DFF;
+	
+	dudt[9..0]		: DFFE;
+	
+	max_level		: DFF;
+	min_level		: DFF;		
+	hl_edge			: DFF;
+	lh_edge			: DFF;
+	
+	a_greater_d		: NODE;
+	d_greater_a		: NODE;
+		
+	uart_rdy		: NODE;
+	idle_rcvd		: NODE;
+
+	ct				: ctup5;	-- 5 bit up counter
+	get_dudt_stm	: DOR_DUDT;	-- state machine
+	
+BEGIN
+
+ct.clock					= clk;
+ct.aclr						= get_dudt_stm.ct_aclr;
+
+get_dudt_stm.(CLK, max_level, min_level, cteq16, cteq4, hl_edge, reset, uart_done, uart_rdy, idle_rcvd, receive)	=
+			(clk, max_level, min_level, ct.q[4],  ct.q[2], hl_edge, reset, uart_done, uart_rdy, idle_rcvd, receive);
+	
+	uart_rdy				= data_stb # ctrl_stb # ctrl_err;
+	idle_rcvd				= (data[5..2]==IDLE) & ctrl_stb;
+			
+	ina[].clk				= clk;
+	inb[].clk				= clk;
+	inc[].clk				= clk;
+	ind[].clk				= clk;
+
+	min_level.(clk, clrn)	= (clk, !reset);
+	max_level.(clk, clrn)	= (clk, !reset);
+	hl_edge.(clk, clrn)		= (clk, !reset);
+	lh_edge.(clk, clrn)		= (clk, !reset);
+
+	ina[].d					= in[];
+	inb[].d					= ina[].q;
+	inc[].d					= inb[].q;
+	ind[].d					= inc[].q;
+	
+	dudt[].clk				= clk;		
+	dudt[].d				= (low_thr[9..0]) 					& get_dudt_stm.min_ena
+							# (lrg_thr[9..6],GND,lrg_thr[4..0]) & get_dudt_stm.max_ena;
+								-- dudt 32x2mV smaller now
+	dudt[].ena				= get_dudt_stm.dudt_ena;
+
+	a_greater_d				= ina[] > ind[];
+	d_greater_a				= ind[] > ina[];
+	
+	
+	
+	if( a_greater_d & ((ina[] - ind[]) > low_thr[]) )
+		THEN	min_level	= VCC;
+		else	min_level	= GND;		END IF;		
+
+	if( a_greater_d & ((ina[] - ind[]) > lrg_thr[]) )
+		THEN	max_level	= VCC;
+		else	max_level	= GND;		END IF;		
+	
+	if( d_greater_a & ((ind[] - ina[]) > dudt[]) )
+		THEN	hl_edge		= VCC;
+		else	hl_edge		= GND;		END IF;		
+		
+	if( a_greater_d & ((ina[] - ind[]) > dudt[]) )
+		THEN	lh_edge		= VCC;
+		else	lh_edge		= GND;		END IF;		
+		
+	rxd						= get_dudt_stm.rxd;
+				
+	max_ena					= get_dudt_stm.max_ena;	-- test signals
+	min_ena					= get_dudt_stm.min_ena;
+	find_dudt				= get_dudt_stm.find_dudt;
+	
+	signal_lev[0]			= get_dudt_stm.signal_lev0;
+	signal_lev[1]			= get_dudt_stm.signal_lev1;
+		
+	
+	
+END;

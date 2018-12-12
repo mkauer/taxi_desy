@@ -1,0 +1,143 @@
+TITLE "ADC to serial decoder, LAST CHANGE: 2004-12-10";
+
+INCLUDE "hl_dscr";
+INCLUDE "ctup4b";
+
+--CONSTANT COMADC_MAX = 1000;
+--CONSTANT COMADC_MIN = 950;
+
+-- previous function...
+--FUNCTION HL_DSCR1 (CLK, ct0, ct1, ct2, ct3, low_hl, low_lev, lrg_hl, lrg_lev, uart_done, res)
+--	RETURNS (lowsig, lrgsig, ct_aclr, maxen, hl_edge, one_lev, one);
+
+--FUNCTION HL_DSCR (CLK, ct0, ct1, ct2, ct3, low_hl, low_lev, res)
+--	RETURNS (ct_aclr, hl_edge, maxen, one, one_lev);
+
+
+--FUNCTION ctup4b (clock, aclr)
+--RETURNS (	q[3..0]);
+
+
+SUBDESIGN	adc_to_ser
+(
+	clk					: INPUT;
+	reset				: INPUT;
+	in[9..0]			: INPUT;	-- Communication ADC, meanvalue over 4 clocks
+	low_thr[7..0]		: INPUT;	-- Communication threshold, long cable 
+	lrg_thr[9..0]		: INPUT;	-- Communication threshold, short cable
+	low_stp[3..0]		: INPUT;	-- Communication threshold, between consecutive samples, long cable 
+	lrg_stp[7..0]		: INPUT;	-- Communication threshold, between consecutive samples,  short cable
+	uart_done			: INPUT;	-- Rx UART ready
+	dom_A_sel			: INPUT;
+	dom_B_sel			: INPUT;
+	seq0_byte			: INPUT;
+	data_stb			: INPUT;
+	clev_min[9..0]		: INPUT;
+	clev_max[9..0]		: INPUT;
+	fc_adc[11..2]		: INPUT;
+		
+	hl_edge				: OUTPUT;
+	rxd					: OUTPUT;	-- serial data, 1 clock lengths pulse if ==1
+	big_signal			: OUTPUT;
+	small_signal		: OUTPUT;
+	domlev_up_rqa		: OUTPUT;	-- DOM comm. DAC level control
+	domlev_dn_rqa		: OUTPUT;
+	domlev_up_rqb		: OUTPUT;
+	domlev_dn_rqb		: OUTPUT;
+	one_lev				: OUTPUT;
+)
+
+
+VARIABLE
+
+	ina[9..0]		: DFF;		-- I/O register
+	inb[9..0]		: DFF;
+
+	max_val[9..0]	: DFFE;
+	low_hl			: DFF;
+	low_lev			: DFF;
+	lrg_hl			: DFF;
+	lrg_lev			: DFF;
+	
+	hl_edge			: DFF;
+
+	ct				: ctup4b;	-- 3 bit up counter
+	hl_dec_stm		: hl_dscr;	-- state machine
+	domlev_up_rqa	: DFFE;	-- DOM comm. DAC level control
+	domlev_dn_rqa	: DFFE;
+	domlev_up_rqb	: DFFE;
+	domlev_dn_rqb	: DFFE;
+	
+	adcmax[9..0]	: DFFE;
+	
+BEGIN
+
+	ct.clock				= clk;
+	ct.aclr					= hl_dec_stm.ct_aclr;
+
+	ina[].clk				= clk;
+	inb[].clk				= clk;
+
+	ina[].d					= in[];
+	inb[].d					= ina[].q;
+
+	max_val[].clk			= clk;
+	max_val[].d				= ina[].q;
+	max_val[].ena			= hl_dec_stm.maxen;
+
+	
+	low_hl.(clk,clrn)		= (clk, !reset);
+	
+	if( (0,inb[9..0]) > (0,ina[9..0])+(0,low_stp[3..0]))	-- difference between consecutive samples
+		THEN	low_hl.d	= VCC;	
+		else	low_hl.d	= GND;		END IF;				-- avoid negative numbers
+															-- when comparing !!!
+	lrg_hl.(clk,clrn)		= (clk, !reset);
+
+	if( (0,inb[9..0]) > (0,ina[9..0])+(0,lrg_stp[7..0]))	-- difference between consecutive samples
+		THEN	lrg_hl.d	= VCC;	
+		else	lrg_hl.d	= GND;		END IF;	
+													
+	low_lev.(clk,clrn)		= (clk, !reset);
+				
+	if( (0,max_val[9..0])	> (0,ina[9..0]) + (0,low_thr[7..0]))
+		THEN	low_lev.d	= VCC;	
+		else	low_lev.d	= GND;		END IF;	
+
+	lrg_lev.(clk,clrn)		= (clk, !reset);
+				
+	if( (0,max_val[9..0])	> (0,ina[9..0]) + (0,lrg_thr[9..0]))
+		THEN	lrg_lev.d	= VCC;	
+		else	lrg_lev.d	= GND;		END IF;	
+
+--FUNCTION HL_DSCR (CLK, ct0, ct1, ct2, ct3, low_hl, low_lev, res)
+--	RETURNS (ct_aclr, hl_edge, maxen, one, one_lev);
+		
+hl_dec_stm.(CLK, ct0, ct1, ct2, ct3,    low_hl,   low_lev, res)
+	= (clk, ct.q0, ct.q1, ct.q2, ct.q3, low_hl.q, low_lev.q, reset);
+
+	hl_edge.(clk,clrn)		= (clk, !reset);
+	hl_edge.d				= hl_dec_stm.hl_edge;
+	one_lev					= hl_dec_stm.one_lev;
+	rxd						= hl_dec_stm.one;
+	
+	big_signal				= gnd;	--hl_dec_stm.lrgsig;
+	small_signal			= gnd;	--hl_dec_stm.lowsig;
+	
+	adcmax[].clk			= clk;
+	adcmax[].clrn			= !uart_done;
+	adcmax[].d				= ina[].q;	--fc_adc[];	--
+
+	if((adcmax[].q < ina[].q))		THEN	adcmax[].ena	= VCC;	END IF;
+	
+	domlev_up_rqa.(clk, clrn)	= (clk, VCC);
+	domlev_dn_rqa.(clk, clrn)	= (clk, VCC);
+	domlev_up_rqb.(clk, clrn)	= (clk, VCC);
+	domlev_dn_rqb.(clk, clrn)	= (clk, VCC);
+	
+	domlev_up_rqa.(d,ena)		= (adcmax[].q < clev_min[], seq0_byte & data_stb & dom_A_sel);
+	domlev_dn_rqa.(d,ena)		= (adcmax[].q > clev_max[], seq0_byte & data_stb & dom_A_sel);
+	domlev_up_rqb.(d,ena)		= (adcmax[].q < clev_min[], seq0_byte & data_stb & dom_B_sel);
+	domlev_dn_rqb.(d,ena)		= (adcmax[].q > clev_max[], seq0_byte & data_stb & dom_B_sel);
+	
+END;

@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="H:/zn/Projects/UV_Logger/readout/FPGA/uvl_readout/uvl_readout_tb_01_isim_beh.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="numeric_bit" />
+            <top_module name="numeric_std" />
+            <top_module name="std_logic_1164" />
+            <top_module name="std_logic_arith" />
+            <top_module name="std_logic_signed" />
+            <top_module name="std_logic_unsigned" />
+            <top_module name="textio" />
+            <top_module name="uvl_readout_tb_01" />
+            <top_module name="vcomponents" />
+            <top_module name="vital_primitives" />
+            <top_module name="vital_timing" />
+            <top_module name="vpkg" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="47" />
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_reset</obj_property>
+      <obj_property name="ObjectShortName">com_reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/enc_8b10b_reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">enc_8b10b_reset</obj_property>
+      <obj_property name="ObjectShortName">enc_8b10b_reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_fifo_empty_a" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_fifo_empty_a</obj_property>
+      <obj_property name="ObjectShortName">tx_fifo_empty_a</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ctrl_8b10b_port_map/enc_8b10b_ena" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">enc_8b10b_ena</obj_property>
+      <obj_property name="ObjectShortName">enc_8b10b_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/enc_comma_stb" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">enc_comma_stb</obj_property>
+      <obj_property name="ObjectShortName">enc_comma_stb</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/enc_8b10b_in" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">enc_8b10b_in[7:0]</obj_property>
+      <obj_property name="ObjectShortName">enc_8b10b_in[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_data_in_8b10b" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_data_in_8b10b[9:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_data_in_8b10b[9:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ctrl_8b10b_port_map/wait_ct" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">wait_ct</obj_property>
+      <obj_property name="ObjectShortName">wait_ct</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ctrl_8b10b_port_map/state" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/transmitter_8b10b_port_map/state" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ena_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_ena_8b10b</obj_property>
+      <obj_property name="ObjectShortName">tx_ena_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_run_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_run_8b10b</obj_property>
+      <obj_property name="ObjectShortName">tx_run_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ack_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_ack_8b10b</obj_property>
+      <obj_property name="ObjectShortName">tx_ack_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ctrl_8b10b_port_map/tx_done_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_done_8b10b</obj_property>
+      <obj_property name="ObjectShortName">tx_done_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_fifo_empty_a" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_fifo_empty_a</obj_property>
+      <obj_property name="ObjectShortName">tx_fifo_empty_a</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_fifo_rd_en_a" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_fifo_rd_en_a</obj_property>
+      <obj_property name="ObjectShortName">tx_fifo_rd_en_a</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_quiet_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_quiet_8b10b</obj_property>
+      <obj_property name="ObjectShortName">tx_quiet_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_out_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_out_8b10b</obj_property>
+      <obj_property name="ObjectShortName">tx_out_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/receiver_8b10b_port_map/rx_in3" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rx_in3</obj_property>
+      <obj_property name="ObjectShortName">rx_in3</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/rx_data_stb" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rx_data_stb</obj_property>
+      <obj_property name="ObjectShortName">rx_data_stb</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/rx_data_out_8b10b" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">rx_data_out_8b10b[9:0]</obj_property>
+      <obj_property name="ObjectShortName">rx_data_out_8b10b[9:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/rx_data_valid_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rx_data_valid_8b10b</obj_property>
+      <obj_property name="ObjectShortName">rx_data_valid_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/dec_8b10b_valid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">dec_8b10b_valid</obj_property>
+      <obj_property name="ObjectShortName">dec_8b10b_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/dec_8b10b_ko" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">dec_8b10b_ko</obj_property>
+      <obj_property name="ObjectShortName">dec_8b10b_ko</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/rx_data_valid_8b10b" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rx_data_valid_8b10b</obj_property>
+      <obj_property name="ObjectShortName">rx_data_valid_8b10b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/dec_8b10b_out" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">dec_8b10b_out[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dec_8b10b_out[7:0]</obj_property>
+      <obj_property name="Radix">ASCIIRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ctrl_8b10b_port_map/state" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/tx_ctrl_8b10b_port_map/tx_fifo_rd_en" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_fifo_rd_en</obj_property>
+      <obj_property name="ObjectShortName">tx_fifo_rd_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/var_baudrate_generator_8b10b_port_map/baudrate_adj" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">baudrate_adj[3:0]</obj_property>
+      <obj_property name="ObjectShortName">baudrate_adj[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_clk</obj_property>
+      <obj_property name="ObjectShortName">com_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_dac_enc_port_map/ct" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">ct</obj_property>
+      <obj_property name="ObjectShortName">ct</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_dac_enc_port_map/com_dac_clock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_dac_clock</obj_property>
+      <obj_property name="ObjectShortName">com_dac_clock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_dac_enc_port_map/com_dac_in" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">com_dac_in[11:0]</obj_property>
+      <obj_property name="ObjectShortName">com_dac_in[11:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_pipe[0]" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">[0]</obj_property>
+      <obj_property name="ObjectShortName">com_adc_pipe[0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_pipe[1]" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">[1]</obj_property>
+      <obj_property name="ObjectShortName">com_adc_pipe[1]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/dec_state" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">dec_state</obj_property>
+      <obj_property name="ObjectShortName">dec_state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_sdout" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_adc_sdout</obj_property>
+      <obj_property name="ObjectShortName">com_adc_sdout</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_thr" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">com_adc_thr</obj_property>
+      <obj_property name="ObjectShortName">com_adc_thr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_clock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_adc_clock</obj_property>
+      <obj_property name="ObjectShortName">com_adc_clock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_sum" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">com_adc_sum</obj_property>
+      <obj_property name="ObjectShortName">com_adc_sum</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_above_thr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_adc_above_thr</obj_property>
+      <obj_property name="ObjectShortName">com_adc_above_thr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/adc_sum_ena" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">adc_sum_ena</obj_property>
+      <obj_property name="ObjectShortName">adc_sum_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/com_adc_sdout_nd" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">com_adc_sdout_nd</obj_property>
+      <obj_property name="ObjectShortName">com_adc_sdout_nd</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/up_going_edge" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">up_going_edge</obj_property>
+      <obj_property name="ObjectShortName">up_going_edge</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/pulse_length_ct" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">pulse_length_ct</obj_property>
+      <obj_property name="ObjectShortName">pulse_length_ct</obj_property>
+   </wvobject>
+   <wvobject fp_name="/uvl_readout_tb_01/uvl_readout_top_01_port_map/com_adc_dec_port_map/rx_ena" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rx_ena</obj_property>
+      <obj_property name="ObjectShortName">rx_ena</obj_property>
+   </wvobject>
+</wave_config>

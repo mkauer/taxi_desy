@@ -1,0 +1,155 @@
+TITLE "Tx DAC, K.-H. Sulanke,DESY Zeuthen, 2007-04-15";
+-- DAC creating a rectangular waveform, period / bit time=1us
+-- max level programmable now to deal with the ICETOP / Configboot problem
+-- 2005-11-11, dac_max_ld_A,..._B introduced
+-- 2006-04-20, 8b10b encoding introduced
+-- 2006-08-13, for 8b10b encoding dac level is ff or 00 except for tcal
+-- 2006-11-12, for 8b10b encoding dac level is daclevb.q[] like for ask
+--           , COMDAC_MAX reused at : ...IF	(dorlev_up_rqa....
+-- 2007-04-15, made from com_dac_ctrl_var_sig_02,
+-- 2007-04-17, tcal_lev[] used for iceboot now, important when going back from 8b10b to ask
+
+INCLUDE	"dac_levct_sld";
+
+CONSTANT COMDAC_MIN = 128+31;
+CONSTANT COMDAC_MAX = 128+127;
+
+--FUNCTION dac_levct_sld (clock,	updown,	clk_en,	sload,	data[7..0])
+--RETURNS (	q[7..0]);
+
+
+OPTIONS	BIT0=LSB;
+
+SUBDESIGN com_dac_ctrl
+(
+	clk				: INPUT;
+	txd				: INPUT;	-- serial data
+	tx_ct[4..0]		: INPUT;	-- UART counter
+	h_pulse			: INPUT;	-- time calibration high pulse
+	l_pulse			: INPUT;	-- time calibration low pulse
+	dorlev_up_rqa	: INPUT;	-- request from DOM_a, 1 clock length pulse
+	dorlev_dn_rqa	: INPUT;	-- request from DOM_a, 1 clock length pulse
+	dorlev_up_rqb	: INPUT;	-- request from DOM_b, 1 clock length pulse
+	dorlev_dn_rqb	: INPUT;	-- request from DOM_b, 1 clock length pulse
+	dom_A_sel		: INPUT;
+	dom_B_sel		: INPUT;
+	dac_max[7..0]	: INPUT;	-- initial (!) comm. DAC max. level
+	dac_max_ld_A	: INPUT;
+	dac_max_ld_B	: INPUT;
+	enc_8b10b_A		: INPUT;
+	enc_8b10b_B		: INPUT;
+	lev_adapt_en_A	: INPUT;
+	lev_adapt_en_B	: INPUT;
+	
+	tx_idle			: INPUT;	-- Tx idle, no byte to be sent by the uart
+		
+	dac_db[7..0]	: OUTPUT;	-- dac value,  0..ff
+	dac_leva[7..0]	: OUTPUT;	-- dac max. value, 196..255 for DOM_a
+	dac_levb[7..0]	: OUTPUT;	-- dac max. value, 196..255 for DOM_b
+)
+
+VARIABLE
+
+	dacleva			: dac_levct_sld;
+	dacleva_up		: NODE;
+	dacleva_adj		: NODE;
+	tcal_leva[7..0]	: DFFE;
+	
+	daclevb			: dac_levct_sld;
+	daclevb_up		: NODE;
+	daclevb_adj		: NODE;
+	tcal_levb[7..0]	: DFFE;
+
+BEGIN
+
+	IF	(dorlev_up_rqa & dom_A_sel & (dacleva.q[7..0] < COMDAC_MAX))	-- increase Tx signal
+		THEN	dacleva_up	= VCC;
+				dacleva_adj	= VCC;
+	END IF;
+	
+	IF	(dorlev_up_rqb & dom_B_sel & (daclevb.q[7..0] < COMDAC_MAX))	-- increase Tx signal
+		THEN	daclevb_up	= VCC;
+				daclevb_adj	= VCC;
+	END IF;
+				
+	IF	(dorlev_dn_rqa & dom_A_sel & (dacleva.q[7..0] > COMDAC_MIN))	-- decrease Tx signal
+		THEN	dacleva_up	= GND;
+				dacleva_adj	= VCC;
+	END IF;
+		
+	IF	(dorlev_dn_rqb & dom_B_sel & (daclevb.q[7..0] > COMDAC_MIN))	-- decrease Tx signal
+		THEN	daclevb_up	= GND;
+				daclevb_adj	= VCC;
+	END IF;
+
+	dacleva.(clock, updown,     clk_en,                             data[],    sload) =
+	   		(clk,   dacleva_up, dacleva_adj # dac_max_ld_A, dac_max[], dac_max_ld_A);
+	daclevb.(clock, updown,     clk_en,                             data[],    sload) =
+	   		(clk,   daclevb_up, daclevb_adj # dac_max_ld_B, dac_max[], dac_max_ld_B);
+
+	IF (!h_pulse & !l_pulse & tx_idle) 	THEN dac_db[] =  H"80";	END IF;	-- quiet line level
+
+-- DOM_A --
+
+	tcal_leva[].clk	= clk;
+	tcal_leva[].ena	= lev_adapt_en_A # dac_max_ld_A;
+	tcal_leva[].d	= dacleva.q[];
+	
+	IF (dom_A_sel & !h_pulse &  l_pulse	)		THEN dac_db[] = !tcal_leva[7..0].q; END IF;
+	IF (dom_A_sel &  h_pulse & !l_pulse	)		THEN dac_db[] =  tcal_leva[7..0].q; END IF;
+	
+	IF (dom_A_sel & !h_pulse & !l_pulse & !tx_idle & txd & !enc_8b10b_A & tx_ct[]>9) THEN 
+			dac_db[] =  tcal_leva[7..0].q; 
+	END IF;
+	
+	IF (dom_A_sel & !h_pulse & !l_pulse &  !tx_idle & txd & !enc_8b10b_A & tx_ct[]<=9) THEN 
+			dac_db[] = !tcal_leva[7..0].q; 
+	END IF;
+	
+	IF (dom_A_sel & !h_pulse & !l_pulse &  !tx_idle & !txd & !enc_8b10b_A) THEN 
+			dac_db[] = H"80"; 
+	END IF;
+
+	IF (dom_A_sel & !h_pulse & !l_pulse &  !tx_idle & txd & enc_8b10b_A) THEN 
+			dac_db[] =  dacleva.q[7..0];
+	END IF;
+	
+	IF (dom_A_sel & !h_pulse & !l_pulse &  !tx_idle & !txd & enc_8b10b_A) THEN 
+			dac_db[] = !dacleva.q[7..0];
+	END IF;
+
+-- DOM_B --
+
+	tcal_levb[].clk	= clk;
+	tcal_levb[].ena	= lev_adapt_en_B # dac_max_ld_B;
+	tcal_levb[].d	= daclevb.q[];
+	
+	IF (dom_B_sel & !h_pulse &  l_pulse	)		THEN dac_db[] = !tcal_levb[7..0].q; END IF;
+	IF (dom_B_sel &  h_pulse & !l_pulse	)		THEN dac_db[] =  tcal_levb[7..0].q; END IF;
+	
+	IF (dom_B_sel & !h_pulse & !l_pulse &  !tx_idle & txd & !enc_8b10b_B & tx_ct[]>9) THEN 
+			dac_db[] =  tcal_levb[7..0].q; 
+	END IF;
+	
+	IF (dom_B_sel & !h_pulse & !l_pulse &  !tx_idle & txd & !enc_8b10b_B & tx_ct[]<=9) THEN 
+			dac_db[] = !tcal_levb[7..0].q; 
+	END IF;
+	
+	IF (dom_B_sel & !h_pulse & !l_pulse &  !tx_idle & !txd & !enc_8b10b_B) THEN 
+			dac_db[] = H"80"; 
+	END IF;
+
+	IF (dom_B_sel & !h_pulse & !l_pulse &  !tx_idle & txd & enc_8b10b_B) THEN
+---			dac_db[] = H"FF"; --daclevb.q[7..0];	--
+			dac_db[] = daclevb.q[7..0];	--
+	END IF;
+	
+	IF (dom_B_sel & !h_pulse & !l_pulse &  !tx_idle & !txd & enc_8b10b_B) THEN 
+---			dac_db[] = H"00"; --!daclevb.q[7..0]; --
+			dac_db[] = !daclevb.q[7..0]; --
+	END IF;
+
+	dac_leva[]	= dacleva.q[];
+	dac_levb[]	= daclevb.q[];
+
+END;

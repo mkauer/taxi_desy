@@ -21,6 +21,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.types.all;
+use work.types_platformSpecific.all;
 
 library UNISIM;
 use UNISIM.VComponents.all;
@@ -31,8 +32,10 @@ entity clockConfig is
 		asyncReset : in std_logic;
 		triggerSerdesClocks : out triggerSerdesClocks_t;
 		adcClocks : out adcClocks_t;
+		commClock : out std_logic;
+		commClockReset : out std_logic;
 		clockValid : out std_logic;
-		debug : in clockConfig_debug_t;
+		debug : in clockConfig_debug_t; -- remove me !!
 		drs4RefClock : out std_logic
 	);
 end clockConfig;
@@ -70,9 +73,10 @@ architecture Behavioral of clockConfig is
 	signal reset_i0 : std_logic_vector(7 downto 0) := x"ff";
 	signal reset_i1 : std_logic_vector(7 downto 0) := x"ff";
 	signal reset_i2 : std_logic_vector(7 downto 0) := x"ff";
+	signal reset_i3 : std_logic_vector(7 downto 0) := x"ff";
 	signal clockErrorTrigger : std_logic := '0';
 	signal clockErrorAdc : std_logic := '0';
-	signal clockErrorAll : std_logic := '0';
+--	signal clockErrorAll : std_logic := '0';
 	
 --	signal pllFeedBack2 : std_logic := '0';
 --	signal pllReset2 : std_logic := '0';
@@ -91,6 +95,8 @@ architecture Behavioral of clockConfig is
 	signal debugSync1 : clockConfig_debug_t;
 	signal debugSync2 : clockConfig_debug_t;
 	
+	signal commClock_i : std_logic := '0';
+	
 begin
 
 	--drs4Clocks.drs4Clock_125MHz <= dcm2FxClock;
@@ -106,13 +112,15 @@ begin
 		DIVIDE => 1,         	-- The DIVCLK divider divide-by value
 		DIVIDE_BYPASS => TRUE  	-- DIVCLK output sourced from Divider (FALSE) or from I input, by-passing Divider (TRUE); default TRUE
 	)
-   port map (
-      I => clockPin,				-- from GCLK input pin
-      IOCLK => open,				-- Output Clock to IO
-      DIVCLK => clockBufio2ToDcm,	-- to PLL/DCM
-      SERDESSTROBE => open			-- Output strobe for IOSERDES2
+	port map (
+		I => clockPin,				-- from GCLK input pin
+		IOCLK => open,				-- Output Clock to IO
+		DIVCLK => clockBufio2ToDcm,	-- to PLL/DCM
+		SERDESSTROBE => open			-- Output strobe for IOSERDES2
 	);
 
+-------------------------------------------------------------------------------
+g0: if SYSTEM_TYPE = ICE_SCINT generate  
 	DCM_SP_inst : DCM_SP
     generic map (
       CLKDV_DIVIDE => 2.0,                   -- CLKDV divide value (1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16).
@@ -146,8 +154,46 @@ begin
       PSEN => '0',         		-- 1-bit input: Phase shift enable
       PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
       RST => dcm1Reset        		-- 1-bit input: Active high reset input
+	);
+end generate;
+-------------------------------------------------------------------------------
+g1: if SYSTEM_TYPE = UV_LOGGER generate  
+   	DCM_SP_inst : DCM_SP
+    generic map (
+      CLKDV_DIVIDE => 2.0,                   -- CLKDV divide value (1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16).
+      CLKFX_DIVIDE => 2,                     -- Divide value on CLKFX outputs - D - (1-32)
+      CLKFX_MULTIPLY => 2,                   -- Multiply value on CLKFX outputs - M - (2-32)
+      CLKIN_DIVIDE_BY_2 => FALSE,            -- CLKIN divide by two (TRUE/FALSE)
+      CLKIN_PERIOD => 40.0,						-- Input clock period specified in nS
+      CLKOUT_PHASE_SHIFT => "NONE",          -- Output phase shift (NONE, FIXED, VARIABLE)
+      CLK_FEEDBACK => "1X",                  -- Feedback source (NONE, 1X, 2X)
+      DESKEW_ADJUST => "SOURCE_SYNCHRONOUS", -- SYSTEM_SYNCHRNOUS or SOURCE_SYNCHRONOUS
+      PHASE_SHIFT => 0,                      -- Amount of fixed phase shift (-255 to 255)
+      STARTUP_WAIT => FALSE                  -- Delay config DONE until DCM_SP LOCKED (TRUE/FALSE)
+   )
+   port map (
+      CLK0 => dcm1Clock0,			-- 1-bit output: 0 degree clock output
+      CLK180 => open,     			-- 1-bit output: 180 degree clock output
+      CLK270 => open,     			-- 1-bit output: 270 degree clock output
+      CLK2X => open,       		-- 1-bit output: 2X clock frequency clock output
+      CLK2X180 => open, 			-- 1-bit output: 2X clock frequency, 180 degree clock output
+      CLK90 => open,       		-- 1-bit output: 90 degree clock output
+      CLKDV => open,      			-- 1-bit output: Divided clock output
+      CLKFX => clockDcm1ToPll,   	-- 1-bit output: Digital Frequency Synthesizer output (DFS)
+      CLKFX180 => open, 			-- 1-bit output: 180 degree CLKFX output
+      LOCKED => dcm1Locked,   		-- 1-bit output: DCM_SP Lock Output
+      PSDONE => open,     			-- 1-bit output: Phase shift done output
+      STATUS => dcm1Status,	   	-- 8-bit output: DCM_SP status output
+      CLKFB => dcm1Clock0,   		-- 1-bit input: Clock feedback input
+      CLKIN => clockBufio2ToDcm,	-- 1-bit input: Clock input
+      DSSEN => '0',       			-- 1-bit input: Unsupported, specify to GND.
+      PSCLK => '0',       			-- 1-bit input: Phase shift clock input
+      PSEN => '0',         		-- 1-bit input: Phase shift enable
+      PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
+      RST => dcm1Reset        		-- 1-bit input: Active high reset input
    );
-
+end generate;
+-------------------------------------------------------------------------------
 	pll_base_inst : PLL_BASE
 	generic map (
         BANDWIDTH            => "OPTIMIZED",
@@ -173,7 +219,7 @@ begin
         CLKOUT4_DIVIDE       => 1,
         CLKOUT4_PHASE        => 0.000,
         CLKOUT4_DUTY_CYCLE   => 0.500,
-        CLKOUT5_DIVIDE       => 1,
+        CLKOUT5_DIVIDE       => 16,
         CLKOUT5_PHASE        => 0.000,
         CLKOUT5_DUTY_CYCLE   => 0.500
     )
@@ -184,7 +230,7 @@ begin
         CLKOUT2             => discriminatorSerdesSlowClock,
         CLKOUT3             => open,
         CLKOUT4             => open,
-        CLKOUT5             => open,
+        CLKOUT5             => commClock_i,
         LOCKED              => pllLocked1,
         RST                 => '0', --pllReset1,
         CLKFBIN             => pllFeedBack1,
@@ -229,11 +275,12 @@ begin
 	clockErrorTrigger <= '1' when ((pllLocked1 = '0') or (asyncReset = '1')) else '0';
 	--clockErrorAdc <= '1' when ((bufpllLocked3 = '0') or (pllLocked3 = '0') or (asyncReset = '1')) else '0';
 	clockErrorAdc <= '1' when ((pllLocked3 = '0') or (asyncReset = '1')) else '0';
-	clockErrorAll <= clockErrorTrigger or clockErrorAdc;
+--	clockErrorAll <= clockErrorTrigger or clockErrorAdc;
 --	clockError <= '1' when ((dcm1Locked = '0') or (bufpllLocked1 = '0') or (bufpllLocked2 = '0') or (pllLocked1 = '0') or (pllLocked2 = '0')) else '0';
 	
 -------------------------------------------------------------------------------
 
+g3a: if SYSTEM_TYPE = ICE_SCINT generate  
 DCM_SP_inst3 : DCM_SP
     generic map (
       CLKDV_DIVIDE => 2.0,                   -- CLKDV divide value (1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16).
@@ -268,6 +315,45 @@ DCM_SP_inst3 : DCM_SP
       PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
       RST => dcm3Reset        		-- 1-bit input: Active high reset input
    );
+end generate;
+g3b: if SYSTEM_TYPE = UV_LOGGER generate  
+DCM_SP_inst3 : DCM_SP
+    generic map (
+      CLKDV_DIVIDE => 2.0,                   -- CLKDV divide value (1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16).
+      CLKFX_DIVIDE => 5,                     -- Divide value on CLKFX outputs - D - (1-32)
+      CLKFX_MULTIPLY => 6,                   -- Multiply value on CLKFX outputs - M - (2-32)
+      CLKIN_DIVIDE_BY_2 => FALSE,            -- CLKIN divide by two (TRUE/FALSE)
+      CLKIN_PERIOD => 40.0,						-- Input clock period specified in nS
+      CLKOUT_PHASE_SHIFT => "NONE",          -- Output phase shift (NONE, FIXED, VARIABLE)
+      CLK_FEEDBACK => "1X",                  -- Feedback source (NONE, 1X, 2X)
+      DESKEW_ADJUST => "SOURCE_SYNCHRONOUS", -- SYSTEM_SYNCHRNOUS or SOURCE_SYNCHRONOUS
+      PHASE_SHIFT => 0,                      -- Amount of fixed phase shift (-255 to 255)
+      STARTUP_WAIT => FALSE                  -- Delay config DONE until DCM_SP LOCKED (TRUE/FALSE)
+   )
+   port map (
+      CLK0 => dcm3Clock0,			-- 1-bit output: 0 degree clock output
+      CLK180 => open,     			-- 1-bit output: 180 degree clock output
+      CLK270 => open,     			-- 1-bit output: 270 degree clock output
+      CLK2X => open,       		-- 1-bit output: 2X clock frequency clock output
+      CLK2X180 => open, 			-- 1-bit output: 2X clock frequency, 180 degree clock output
+      CLK90 => open,       		-- 1-bit output: 90 degree clock output
+      CLKDV => open,      			-- 1-bit output: Divided clock output
+      CLKFX => clockDcm3ToPll,   	-- 1-bit output: Digital Frequency Synthesizer output (DFS)
+      CLKFX180 => open, 			-- 1-bit output: 180 degree CLKFX output
+      LOCKED => dcm3Locked,   		-- 1-bit output: DCM_SP Lock Output
+      PSDONE => open,     			-- 1-bit output: Phase shift done output
+      STATUS => dcm3Status,	   	-- 8-bit output: DCM_SP status output
+      CLKFB => dcm3Clock0,   		-- 1-bit input: Clock feedback input
+      CLKIN => clockBufio2ToDcm,	-- 1-bit input: Clock input
+      DSSEN => '0',       			-- 1-bit input: Unsupported, specify to GND.
+      PSCLK => '0',       			-- 1-bit input: Phase shift clock input
+      PSEN => '0',         		-- 1-bit input: Phase shift enable
+      PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
+      RST => dcm3Reset        		-- 1-bit input: Active high reset input
+   );
+end generate;
+
+
 
 	pll_base_inst3 : PLL_BASE
 	generic map (
@@ -331,6 +417,7 @@ DCM_SP_inst3 : DCM_SP
 
 -------------------------------------------------------------------------------
 
+g2a: if SYSTEM_TYPE = ICE_SCINT generate  
 	DCM_SP_inst_2 : DCM_SP
    generic map (
       CLKDV_DIVIDE => 2.0,                   -- CLKDV divide value (1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16).
@@ -365,6 +452,43 @@ DCM_SP_inst3 : DCM_SP
       PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
       RST => '0' --dcm2Reset        		-- 1-bit input: Active high reset input
    );
+end generate;
+g2b: if SYSTEM_TYPE = UV_LOGGER generate  
+	DCM_SP_inst_2 : DCM_SP
+   generic map (
+      CLKDV_DIVIDE => 2.0,                   -- CLKDV divide value (1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16).
+      CLKFX_DIVIDE => 1,                     -- Divide value on CLKFX outputs - D - (1-32)
+      CLKFX_MULTIPLY => 5,                   -- Multiply value on CLKFX outputs - M - (2-32)
+      CLKIN_DIVIDE_BY_2 => FALSE,            -- CLKIN divide by two (TRUE/FALSE)
+      CLKIN_PERIOD => 40.0,						-- Input clock period specified in nS
+      CLKOUT_PHASE_SHIFT => "NONE",          -- Output phase shift (NONE, FIXED, VARIABLE)
+      CLK_FEEDBACK => "1X",                  -- Feedback source (NONE, 1X, 2X)
+      DESKEW_ADJUST => "SOURCE_SYNCHRONOUS", -- SYSTEM_SYNCHRNOUS or SOURCE_SYNCHRONOUS
+      PHASE_SHIFT => 0,                      -- Amount of fixed phase shift (-255 to 255)
+      STARTUP_WAIT => FALSE                  -- Delay config DONE until DCM_SP LOCKED (TRUE/FALSE)
+   )
+   port map (
+      CLK0 => dcm2Clock0,			-- 1-bit output: 0 degree clock output
+      CLK180 => open,     			-- 1-bit output: 180 degree clock output
+      CLK270 => open,     			-- 1-bit output: 270 degree clock output
+      CLK2X => open,       		-- 1-bit output: 2X clock frequency clock output
+      CLK2X180 => open, 			-- 1-bit output: 2X clock frequency, 180 degree clock output
+      CLK90 => open,       		-- 1-bit output: 90 degree clock output
+      CLKDV => open,      			-- 1-bit output: Divided clock output
+      CLKFX => dcm2FxClock,   	-- 1-bit output: Digital Frequency Synthesizer output (DFS)
+      CLKFX180 => open, 			-- 1-bit output: 180 degree CLKFX output
+      LOCKED => dcm2Locked,   		-- 1-bit output: DCM_SP Lock Output
+      PSDONE => open,     			-- 1-bit output: Phase shift done output
+      STATUS => dcm2Status,	   	-- 8-bit output: DCM_SP status output
+      CLKFB => dcm2Clock0,   		-- 1-bit input: Clock feedback input
+      CLKIN => clockBufio2ToDcm,	-- 1-bit input: Clock input
+      DSSEN => '0',       			-- 1-bit input: Unsupported, specify to GND.
+      PSCLK => '0',       			-- 1-bit input: Phase shift clock input
+      PSEN => '0',         		-- 1-bit input: Phase shift enable
+      PSINCDEC => '0', 				-- 1-bit input: Phase shift increment/decrement input
+      RST => '0' --dcm2Reset        		-- 1-bit input: Active high reset input
+   );
+end generate;
 
    	p3: process(dcm2FxClock)
 	begin
@@ -422,12 +546,24 @@ DCM_SP_inst3 : DCM_SP
 	adcClocks.serdesDivClockPhase <= adcSerdesSlowClockPhase;
 	adcClocks.serdesDivClockReset <= reset_i1(0);
 	adcClocks.serdesDivClockPhaseReset <= reset_i2(0);
-
 	
 	triggerSerdesClocks.serdesDivClock <= discriminatorSerdesSlowClockGlobal;
 	triggerSerdesClocks.serdesDivClockReset <= reset_i0(0);
 	--triggerSerdesClocks.asyncReset <= clockErrorAll;
 	triggerSerdesClocks.asyncReset <= clockErrorTrigger;
 
+
+	process(commClock_i, clockErrorTrigger)
+	begin
+		if(rising_edge(commClock_i)) then
+			reset_i3 <= '0' & reset_i3(reset_i3'length-1 downto 1);
+		end if;
+		if(clockErrorTrigger = '1') then
+			reset_i3(reset_i3'length-1 downto 3) <= (others => '1');
+		end if;
+	end process;
+	
+	commClock <= commClock_i;
+	commClockReset <= reset_i3(0);
 
 end Behavioral;
