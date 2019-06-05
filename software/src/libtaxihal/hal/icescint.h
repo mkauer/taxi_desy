@@ -324,6 +324,17 @@ static inline void icescint_doForceMiscData(void)
 	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_MISCDATAFORCE, 0x0);
 }
 
+////DEBUG
+static inline void icescint_setDebugSetDrs4Chip(uint16_t _value)
+{
+	IOWR_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_DRS4CHIPSELECTOR, _value);
+}
+
+static inline uint16_t icescint_getDebugSetDrs4Chip(void)
+{
+	return IORD_16DIRECT(BASE_ICESCINT, OFFS_ICESCINT_READOUT_DRS4CHIPSELECTOR);
+}
+
 //// GPS
 //static inline uint16_t icescint_isNewGpsData(void)
 //{

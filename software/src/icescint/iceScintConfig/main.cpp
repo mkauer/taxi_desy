@@ -54,6 +54,8 @@ int main(int argc, char** argv)
 		("getDrs4ReadoutMode", "")
 		("setDrs4NumberOfSamplesToRead", po::value<int>(), "[10-1024] more than 1024 will reread old samples")
 		("getDrs4NumberOfSamplesToRead", "")
+		("setDebugDrs4Chip", po::value<int>(), "[0-2] debug: select DRS4 to take data from")
+		("getDebugDrs4Chip", "")
 		("setTriggerMask", po::value<std::string>(), "8 bit mask in hex, each bit corresponds to one channel, '1' will disable and '0' will enable the channel")
 		("getTriggerMask", "in hex")
 		("setPanelPower", po::value<int>(), "[0-1] needs {channel} (remember: the panel needs some time to boot)")
@@ -80,6 +82,8 @@ int main(int argc, char** argv)
 		("getPacketDrs4Baseline", "")
 		("setPacketDrs4Charge", po::value<int>(), "[0-1] enables data type for fifo")
 		("getPacketDrs4Charge", "")
+		("setPacketDrs4Cascading", po::value<int>(), "[0-1] enables data type for fifo")
+		("getPacketDrs4Cascading", "")
 //		("setPacketDrs4Timing", po::value<int>(), "[0-1] enables data type for fifo")
 //		("getPacketDrs4Timing", "")
 		("setPacketTriggerTiming", po::value<int>(), "[0-1] enables data type for fifo")
@@ -219,6 +223,17 @@ int main(int argc, char** argv)
 		return EXIT_OK;
 	}
 
+	if(vm.count("setDebugDrs4Chip"))
+	{
+		icescint_setDebugSetDrs4Chip(vm["setDebugDrs4Chip"].as<int>());
+		return EXIT_OK;
+	}
+	if(vm.count("getDebugDrs4Chip"))
+	{
+		std::cout << int(icescint_getDebugSetDrs4Chip()) << std::endl;
+		return EXIT_OK;
+	}
+
 	if(vm.count("setTriggerMask"))
 	{
 		icescint_setTriggerMask(stringToInt(vm["setTriggerMask"].as<std::string>()));
@@ -345,6 +360,20 @@ int main(int argc, char** argv)
 	{
 		uint16_t temp = icescint_getEventFifoPacketConfig();
 		std::cout << ((temp & MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4TIMING)?1:0) << std::endl;
+		return EXIT_OK;
+	}
+
+	if(vm.count("setPacketDrs4Cascading"))
+	{
+		uint16_t temp = icescint_getEventFifoPacketConfig();
+		temp = changeMask16(temp, MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4CASCADING, vm["setPacketDrs4Cascading"].as<int>());
+		icescint_setEventFifoPacketConfig(temp);
+		return EXIT_OK;
+	}
+	if(vm.count("getPacketDrs4Cascading"))
+	{
+		uint16_t temp = icescint_getEventFifoPacketConfig();
+		std::cout << ((temp & MASK_ICESCINT_READOUT_EVENTFIFOPACKETCONFIG_DRS4CASCADING)?1:0) << std::endl;
 		return EXIT_OK;
 	}
 
@@ -513,17 +542,17 @@ int main(int argc, char** argv)
 
 
 		// panels
-		usleep(1000*6000);
-		for(int i=0;i<7;i++)
-		{
-			icescint_pannelPowerOn(i);
-		}
-		usleep(1000*100);
-
-		for(int i=0;i<7;i++)
-		{
-			icescint_pannelSwitchToLg(i);
-		}
+//		usleep(1000*6000);
+//		for(int i=0;i<7;i++)
+//		{
+//			icescint_pannelPowerOn(i);
+//		}
+//		usleep(1000*100);
+//
+//		for(int i=0;i<7;i++)
+//		{
+//			icescint_pannelSwitchToLg(i);
+//		}
 //		usleep(1000*100);
 //
 //		for(int i=0;i<7;i++)
