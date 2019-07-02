@@ -1,0 +1,17 @@
+#:C0     
+#Xilinx FPGA Editor Command Log File
+#Editor Version:
+#:V   NT M2.1 P.20131013
+#Current Working Directory:
+#:D   C:\Xilinx\projects\taxi\firmware\uvLogger
+#Date/Time:
+#:T   Fri Jan 04 16:15:28 2019
+#------------------------------
+	#Reading uvl_mb_pinout_top.ncd...
+	#Loading device for application Rf_Device from file '6slx45.nph' in environment C:\Xilinx\14.7\ISE_DS\ISE\.
+	#   "uvl_mb_pinout_top" is an NCD, version 3.2, device xc6slx45, package csg324, speed -3
+	#Design creation date: 2019.01.04.15.06.54
+	#Building chip graphics...
+	#Loading speed info...
+	#1
+setattr main edit-mode no-logic-changes

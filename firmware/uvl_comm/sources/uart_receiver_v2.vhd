@@ -7,19 +7,24 @@
 -------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
-use ieee.numeric_bit.all;
+use ieee.numeric_std.all;
 
 entity uart_receiver_v2 is
+	generic(
+		SYSTEM_FREQUENCY_HZ : natural := 60_000_000;
+		BAUD_RATE : natural := 115200;
+		OVERSAMPLING_FACTOR : natural := 10;
+		SAMPLING_POINT : natural := 4
+	);
 	port(
-		reset          : in  std_logic;
-		clk            : in  std_logic;
-		rx_ena         : in  std_logic;        -- single clock length pulse from baudrate generator
-		rx_in          : in  std_logic;        -- serial data on the line
---		fifoOut10B : out std_logic_vector(9 downto 0);
-		fifoOut8B : out std_logic_vector(7 downto 0);
-		fifoRead : in std_logic;
-		fifoEmpty : out std_logic
+		reset : in std_logic;
+		clk : in std_logic;
+		rxIn : in std_logic;
+		
+		dataOut : out std_logic_vector(7 downto 0);
+		newData : out std_logic;
+		
+		baudRateDivisor : in unsigned(15 downto 0)
 	);
 end entity;
 
@@ -27,118 +32,119 @@ architecture uart_receiver_arch of uart_receiver_v2 is
 
 	attribute keep : string; 
 
-	signal rx_in1     : std_logic;
-	signal rx_in2     : std_logic;
-	signal rx_reg     : std_logic_vector (9 downto 0);
-	signal sample_cnt : integer range 0 to 9; -- tenfold oversampling used here
-	signal bit_cnt    : integer range 0 to 9; -- 1_8_1_nP
+	signal rxIn1 : std_logic;
+	signal rxIn2 : std_logic;
+	signal rxInSync : std_logic;
+	signal rxBuffer : std_logic_vector(dataOut'length+1 downto 0); -- +2 bits for start and stop
+	signal sampleCounter : integer range 0 to OVERSAMPLING_FACTOR-1; -- tenfold oversampling used here
+	signal bitCounter : integer range 0 to rxBuffer'length-1; -- 1_8_1
 
-	type state_type is (REC_IDLE, REC_BITS);
-	signal state : state_type := REC_IDLE;
+	type uartRxState_t is (idle, sampleWord, samplingDone);
+	signal uartRxState : uartRxState_t;
 	
 	signal rx_data_out : std_logic_vector(7 downto 0);
 	signal rx_data_valid : std_logic;
 	
-	signal fifoOut : std_logic_vector(7 downto 0);
-	signal fifoWords : std_logic_vector(9 downto 0);
-	attribute keep of fifoWords: signal is "true"; 
+	signal rx_ena : std_logic;
+	constant RX_BAUD_DIV : natural := (SYSTEM_FREQUENCY_HZ / BAUD_RATE / OVERSAMPLING_FACTOR) - 1; -- TODO: fix this.... has to be programmable
+	
+	signal errorStartBit : std_logic;
+	signal errorStopBit : std_logic;
+	signal errorStartBitLatched : std_logic;
+	signal errorStopBitLatched : std_logic;
+	attribute keep of errorStartBit : signal is "true";
+	attribute keep of errorStopBit : signal is "true";
+	attribute keep of errorStartBitLatched : signal is "true";
+	attribute keep of errorStopBitLatched : signal is "true";
+	
+	signal rxIn_pipe : std_logic_vector(1 downto 0);
 
 begin
-  -- purpose: receive data 1_8_1_nP
-  -- RS232 transceiver circuit uses internal inverters !!!
+	process(clk)
+		--variable clockCounter : integer range 0 to RX_BAUD_DIV := 0;
+		variable clockCounter : unsigned(baudRateDivisor'range);
+	begin
+		if(rising_edge(clk)) then
+			rx_ena <= '0'; -- autoreset
+			if(reset = '1') then
+				clockCounter := (others=>'0');
+			else
+				if(clockCounter = baudRateDivisor) then
+					rx_ena <= '1'; -- autoreset
+					clockCounter := (others=>'0');
+				else
+					clockCounter := clockCounter + 1;
+				end if;
+			end if;
+		end if; 
+	end process;
+	
+	-- TODO: out source this...
+	--process(clk)
+	--begin
+	--	if(rising_edge(clk)) then
+	--		if(reset = '1') then
+	--			rxIn_pipe <= (others=>'0');
+	--		else
+	--			rxIn_pipe <= rxIn & rxIn_pipe(rxIn_pipe'left downto rxIn_pipe'right+1);
+	--		end if; 
+	--	end if; 
+	--end process;
+	--rxInSync <= rxIn_pipe(0);
 
-	fifoOut8B <= fifoOut;
+	w0: entity work.pipeline_v1 generic map(pipeLength=>2, vectorWidth=>1) port map(clk=>clk, reset=>reset, pipeIn(0)=>rxIn, pipeOut(0)=>rxInSync);
 
 	process(clk)
 	begin
-		if (rising_edge(clk)) then
-			if (reset = '1') or (state = REC_IDLE) then
-				sample_cnt <= 0;
-				bit_cnt <= 0;
-			elsif (rx_ena = '1') then
-				if (sample_cnt = 4) then
-					if (bit_cnt /= 9) then
-						bit_cnt <= bit_cnt+1;
-					else
-						bit_cnt <= 0; 
-					end if;
-				end if;
-				if (sample_cnt = 9) then
-					sample_cnt <= 0;
-				else
-					sample_cnt <= sample_cnt + 1;
-				end if;
-			end if;
-		end if;
-	end process;
-
-	process (clk)
-	begin
-		if (rising_edge(clk)) then
-			rx_in1 <= rx_in;                  -- synchronize asynchronous input signal
-			rx_in2 <= rx_in1;
-			rx_data_valid <= '0';           -- to get a single pulse of one clock period
-			if (reset = '1') then
-				state <= REC_IDLE;
+		if(rising_edge(clk)) then
+			newData <= '0'; -- autoreset
+			errorStartBit <= '0'; -- autoreset
+			errorStopBit <= '0'; -- autoreset
+			if(reset = '1') then
+				uartRxState <= idle;
+				errorStartBitLatched <= '0';
+				errorStopBitLatched <= '0';
 			else 
-				if (rx_ena = '1') then
-					case (state) is
-						when REC_IDLE =>
-							if (rx_in2 = '0') then
-								state <= REC_BITS;
+				if(rx_ena = '1') then
+					case(uartRxState) is
+						when idle =>
+							if(rxInSync = '0') then -- start bit
+								uartRxState <= sampleWord;
+								sampleCounter <= 0;
+								bitCounter <= 0; 
 							end if;
 
-						when REC_BITS =>
-							if (sample_cnt = 4) then
-								rx_reg(9) <= rx_in2;
-								rx_reg(8 downto 0) <= rx_reg(9 downto 1);
-								if (bit_cnt = 9) then
-									rx_data_out <= rx_reg(9 downto 2);
-									rx_data_valid <= '1';
-									state <= REC_IDLE;
+						when sampleWord =>
+							sampleCounter <= sampleCounter + 1;
+							if(sampleCounter = SAMPLING_POINT) then
+								rxBuffer <= rxInSync & rxBuffer(rxBuffer'left downto rxBuffer'right+1); -- lsb first
+								
+								if(bitCounter = rxBuffer'length-1) then
+									uartRxState <= samplingDone;
+								else
+									bitCounter <= bitCounter + 1;
 								end if;
-						end if;  
+							elsif(sampleCounter = OVERSAMPLING_FACTOR-1) then
+								sampleCounter <= 0;
+							end if;  
+						
+						when samplingDone =>
+							dataOut <= rxBuffer(rxBuffer'left-1 downto rxBuffer'right+1);
+							newData <= '1'; -- autoreset
+							uartRxState <= idle;
+							if(rxBuffer(rxBuffer'right) = '1') then
+								errorStartBit <= '1'; -- autoreset
+								errorStartBitLatched <= '1';
+							end if;
+							if(rxBuffer(rxBuffer'left) = '0') then
+								errorStopBit <= '1'; -- autoreset
+								errorStopBitLatched <= '1';
+							end if;
 
 					end case;
 				end if;
 			end if;
 		end if;
 	end process;
-
---	z0: entity work.fifo_4kx8_dual_clk port map
---	(
---		rst         => reset,
---		wr_clk      => clk,
---		rd_clk      => clk,
---		din         => rx_data_out,
---		wr_en       => rx_data_valid,
---		rd_en       => fifoReadEnable,
---		dout        => fifoOut_2, 
---		full        => open,
---		prog_full   => open,
---		empty       => fifoEmpty
---	);
-	z0: entity work.fifo_4kx8 port map
-	(
-		clk         => clk,
-		srst        => reset,
-		din         => rx_data_out,
-		wr_en       => rx_data_valid,
-		rd_en       => fifoRead,
-		dout        => fifoOut, 
-		full        => open,
-		empty       => fifoEmpty,
-		data_count	=> fifoWords
-	);
-
---	z1: entity work.free_8b10b_enc port map
---	(
---		RESET    => reset,
---		SBYTECLK => clk,
---		KI       => '0',
---		data8b   => fifoOut,
---		ENA      => '1',			-- Global enable input
---		data10b  => fifoOut10B
---	);
 
 end architecture uart_receiver_arch;

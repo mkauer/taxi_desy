@@ -95,7 +95,7 @@ ARCHITECTURE simulation_arch OF fifo_4kx8_synth IS
 
     -- FIFO interface signal declarations
     SIGNAL clk_i	                  :   STD_LOGIC;
-    SIGNAL data_count                     :   STD_LOGIC_VECTOR(10-1 DOWNTO 0);
+    SIGNAL data_count                     :   STD_LOGIC_VECTOR(12-1 DOWNTO 0);
     SIGNAL srst                           :   STD_LOGIC;
     SIGNAL wr_en                          :   STD_LOGIC;
     SIGNAL rd_en                          :   STD_LOGIC;

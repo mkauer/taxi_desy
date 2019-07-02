@@ -1,0 +1,14 @@
+#Fileversion\b
+#@FILE_VERSION=1.0.0\b
+#Defaulttokenvalue\b
+#@DEFAULT_TOKEN=ERROR\b
+#Explicittokenvalues\b
+synctobaseline0=0000\b
+synctobaseline1=0001\b
+trackbaseline=0010\b
+s00=0011\b
+autobaud=0100\b
+s0=0101\b
+s1=0110\b
+s2=0111\b
+frameend=1000\b

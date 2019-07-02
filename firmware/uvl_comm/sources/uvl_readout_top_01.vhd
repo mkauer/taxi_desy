@@ -27,13 +27,13 @@ entity uvl_readout_top_01 is
 		FT_RESETn       : out std_logic;  -- 
 		CLK_6MHZ        : out  std_logic;  -- clock used by the USB to UART bridge
 		TEST_IO0        : out std_logic;   --
-		TEST_IO1        : in  std_logic;   --
+		TEST_IO1        : inout  std_logic;   --
 		TEST_IO2        : out std_logic;   --
-		TEST_IO3        : in  std_logic;   --
+		TEST_IO3        : inout  std_logic;   --
 		TEST_IO4        : out std_logic;   --
-		TEST_IO5        : in  std_logic;   --
+		TEST_IO5        : inout  std_logic;   --
 		TEST_IO6        : out std_logic;   --
-		TEST_IO7        : in  std_logic;   --
+		TEST_IO7        : inout  std_logic;   --
 		TEST_IO8        : out std_logic;   --
 		TEST_IO9        : in  std_logic;   --
 		TEST_IO10       : out std_logic;   --
@@ -104,11 +104,11 @@ architecture uvl_readout_top_01_arch of uvl_readout_top_01 is
 	
 	attribute keep : string;
 	
-	signal reset         : std_logic := '0'; -- synchronous power up reset
-	signal clk           : std_logic := '0'; -- by PLL
-	signal com_reset     : std_logic := '0'; -- synchronous power up reset
-	signal com_clk       : std_logic := '0'; -- by PLL, 8b10b communication clock domain
-	signal not_com_clk   : std_logic := '0'; -- by PLL
+	signal reset         : std_logic; -- synchronous power up reset
+	signal clk           : std_logic; -- by PLL
+	signal com_reset     : std_logic; -- synchronous power up reset
+	signal com_clk       : std_logic; -- by PLL, 8b10b communication clock domain
+	signal not_com_clk   : std_logic; -- by PLL
 	
 	signal baudrate_adj : std_logic_vector(3 downto 0);
 	signal com_thr_adj : std_logic_vector(2 downto 0);
@@ -116,6 +116,8 @@ architecture uvl_readout_top_01_arch of uvl_readout_top_01 is
 	
 	signal commDebug_0w : commDebug_registerWrite_t;
 	attribute keep of commDebug_0w : signal is "true";
+	
+	signal fifo_avrFactor : std_logic_vector(3 downto 0);
 
 begin 
 
@@ -151,30 +153,39 @@ begin
 		BDBUS0, --STAMP_TXD1    : in  std_logic -- PB4, 
 		debugOut,
 		commDebug_0w
-	  	--TEST_IO     : out std_logic_vector(3 downto 0) -- 3.3V CMOS / LVDS bidir. test port, p/n=1/0 or 3/2  
-		--TEST_IO0    : out std_logic;
-		--TEST_IO1    : out std_logic;
-		--TEST_IO2    : out std_logic;
-		--TEST_IO3    : out std_logic
 	);
 
+	process(clk)
+	begin
+		if(rising_edge(clk)) then	
+			fifo_avrFactor <= not(TEST_IO7 & TEST_IO5 & TEST_IO3 & TEST_IO1);
+		end if;
+	end process;
 
-	commDebug_0w.tx_baud_div <= x"0130"; 
+
+	commDebug_0w.tx_baud_div <= i2v(300,16); 
 --	commDebug_0w.tx_baud_div <= x"0100"; 
 	commDebug_0w.dU_1mV <= x"0190";
 	commDebug_0w.com_adc_thr <= x"0083";
+	commDebug_0w.dac_incDacValue <= x"200";
 	commDebug_0w.dac_valueIdle <= x"800";
-	commDebug_0w.dac_valueLow <= x"000";
-	commDebug_0w.dac_valueHigh <= x"fff";
-	commDebug_0w.dac_time1 <= x"003c";
-	commDebug_0w.dac_time2 <= x"0037";
---	commDebug_0w.dac_time3 <= x"0050";
-	commDebug_0w.dac_time3 <= x"0010";
+	commDebug_0w.dac_valueLow <= x"001";
+	commDebug_0w.dac_valueHigh <= x"ffe";
+	commDebug_0w.dac_time1 <= i2v(60,16);
+	commDebug_0w.dac_time2 <= i2v(62,16);
+	commDebug_0w.dac_time3 <= i2v(10,16);
 	commDebug_0w.dac_clkTime <= x"0001";
 	commDebug_0w.com_thr_adj <= "000";
 	commDebug_0w.adc_deadTime <= x"0f0";
 	commDebug_0w.adc_syncTimeout <= x"1000";
 	commDebug_0w.adc_baselineAveragingTime <= x"03ff";
+	--commDebug_0w.adc_threshold_p <= i2v(8500,16);
+	--commDebug_0w.adc_threshold_n <= i2v(7900,16);
+	commDebug_0w.adc_threshold_p <= i2v(8400,16);
+	commDebug_0w.adc_threshold_n <= i2v(8000,16);
+	commDebug_0w.fifo_avrFactor <= fifo_avrFactor;
+	commDebug_0w.uartDebugLoop0Enable <= not(TEST_IO9);
+	commDebug_0w.uartDebugLoop1Enable <= not(TEST_IO11);
 
   -- USB to comm. DAC chain, see below -----------------------------------------------------------
 
@@ -188,16 +199,20 @@ begin
 	baudrate_adj(1) <= TEST_IO3;
 	baudrate_adj(2) <= TEST_IO5;
 	baudrate_adj(3) <= TEST_IO7;
-
+	TEST_IO1 <= 'Z';
+	TEST_IO3 <= 'Z';
+	TEST_IO5 <= 'Z';
+	TEST_IO7 <= 'Z';
+	
 	com_thr_adj(0) <= TEST_IO9;
 	com_thr_adj(1) <= TEST_IO11;
 	com_thr_adj(2) <= TEST_IO13;
 
-	TEST_IO0 <= debugOut(0);
-	TEST_IO2 <= debugOut(1);
-	TEST_IO4 <= debugOut(2);
-	TEST_IO6 <= debugOut(3);
-	TEST_IO8 <= debugOut(4);
+	TEST_IO0 <= '0'; --debugOut(0);
+	TEST_IO2 <= '0'; --debugOut(1);
+	TEST_IO4 <= '0'; --debugOut(2);
+	TEST_IO6 <= '0'; --debugOut(3);
+	TEST_IO8 <= '0'; --debugOut(4);
   --TEST_IO9 <= rx_lh            ;--rx_data_valid_8b10b;
 	TEST_IO10 <= '0'; --dec_8b10b_valid;
 					 -- TEST_IO11 <= rx_syncd         ;--dec_8b10b_ko;

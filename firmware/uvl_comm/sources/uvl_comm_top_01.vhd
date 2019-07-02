@@ -9,10 +9,6 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
---use IEEE.std_logic_unsigned.all ;
---use ieee.numeric_bit.all;
---use ieee.std_logic_arith.all;
-
 use ieee.numeric_std.all;
 use work.types.all;
 library unisim ;
@@ -42,10 +38,10 @@ entity uvl_comm_top_01 is
 		COM_DAC_DB    : out std_logic_vector(11 downto 0);    -- connected to communication DAC
 		COM_DAC_CLOCK : out std_logic;  -- 
 										-- naming based on stamp view
-		STAMP_DRXD    : out std_logic;  -- stamp debug uart 
-		STAMP_DTXD    : in  std_logic; --     
-		STAMP_RXD1    : out std_logic; -- PB5, stamp uart
-		STAMP_TXD1    : in  std_logic; -- PB4, 
+		uartCableToArm0    : out std_logic;  -- stamp debug uart 
+		uartArmToCable0    : in  std_logic; --     
+		uartCableToArm1    : out std_logic; -- PB5, stamp uart
+		uartArmToCable1    : in  std_logic; -- PB4, 
 		
 		debugOut : out std_logic_vector(7 downto 0);
 
@@ -57,20 +53,9 @@ entity uvl_comm_top_01 is
 --		commDebug_0r : out commDebug_registerRead_t;
 		commDebug_0w_x : in commDebug_registerWrite_t
 	);
-end uvl_comm_top_01 ;
+end uvl_comm_top_01;
 
 architecture arch_uvl_comm_top_01 of uvl_comm_top_01 is
-
-	constant K28_0    : std_logic_vector(7 downto 0) := B"000_11100"; -- H...A
-	constant K28_2    : std_logic_vector(7 downto 0) := B"010_11100"; -- H...A
-	constant K28_4    : std_logic_vector(7 downto 0) := B"100_11100"; -- H...A
-	constant K28_6    : std_logic_vector(7 downto 0) := B"110_11100"; -- H...A
-
-	constant K28_0M   : std_logic_vector(9 downto 0) := B"0010_111100"; -- j...a
-	constant K28_0P   : std_logic_vector(9 downto 0) := B"1101_000011"; -- j...a
-
---	constant COM_ADC_THR_mV    : natural range 0 to 255 := 2;  -- ADC data difference between consecutive ADC samples to detect signal edges
---	constant COM_ADC_THRESHOLD : std_logic_vector :=  CONV_STD_LOGIC_VECTOR((COM_ADC_THR_mV * 1000)/ 61, 9); -- 14bit, Vref=1V, 0.061mV / digit
 
 	signal reset         : std_logic := '0'; -- synchronous power up reset
   --signal clk           : std_logic := '0'; -- by PLL
@@ -125,7 +110,7 @@ architecture arch_uvl_comm_top_01 of uvl_comm_top_01 is
 
 	signal rx_fifo_wr_en_b        : std_logic;
 	signal rx_fifo_rd_en_b        : std_logic;
-	signal rx_fifo_din            : std_logic_vector (7 downto 0);
+	signal com_adc_data            : std_logic_vector (7 downto 0);
 	signal rx_fifo_dout_b         : std_logic_vector (7 downto 0);
 	signal rx_fifo_full_b         : std_logic;
 	signal rx_fifo_almost_full_b  : std_logic;
@@ -137,7 +122,7 @@ architecture arch_uvl_comm_top_01 of uvl_comm_top_01 is
 	signal enc_8b10b_in           : std_logic_vector (7 downto 0);
 	signal enc_8b10b_ena          : std_logic;
 	signal enc_comma_stb          : std_logic;
-	signal tx_ena_8b10b           : std_logic;
+	--signal tx_ena_8b10b           : std_logic;
 	signal tx_data_in_8b10b       : std_logic_vector (9 downto 0);
 	signal tx_run_8b10b           : std_logic;
 	signal tx_done_8b10b          : std_logic;
@@ -145,7 +130,6 @@ architecture arch_uvl_comm_top_01 of uvl_comm_top_01 is
 	signal tx_out_8b10b           : std_logic;
 	signal tx_out_8b10b_valid     : std_logic;
 	signal tx_quiet_8b10b         : std_logic;
-	--signal baudrate_adj           : std_logic_vector(3 downto 0);
 
 	--signal rx_in_8b10b            : std_logic;
 	signal rx_ena_8b10b           : std_logic;
@@ -168,8 +152,8 @@ architecture arch_uvl_comm_top_01 of uvl_comm_top_01 is
 		
 	signal commDebug_0w : commDebug_registerWrite_t;
 	
-	signal STAMP_DRXD_x : std_logic;
-	signal STAMP_RXD1_x : std_logic;
+	signal uartCableToArm0_i : std_logic;
+	signal uartCableToArm1_i : std_logic;
 	
 	signal uart0_10b : std_logic_vector(9 downto 0);
 	signal uart0_8b : std_logic_vector(7 downto 0);
@@ -178,15 +162,50 @@ architecture arch_uvl_comm_top_01 of uvl_comm_top_01 is
 	signal uart1_8b : std_logic_vector(7 downto 0);
 	signal uart1_fifoRead : std_logic;
 	signal uart1_fifoEmpty : std_logic;
-	signal rxFifoWrite0 : std_logic;
-	signal rxFifoWrite1 : std_logic;
+	signal comAdcDataReady0 : std_logic;
+	signal comAdcDataReady1 : std_logic;
+	
+	signal byte_out_debug : std_logic;
+	
+	signal uartDebugLoop0Enable : std_logic;
+	signal uartDebugLoop1Enable : std_logic;
+	signal uartArmToCable0_i : std_logic;
+	signal uartArmToCable1_i : std_logic;
+	
+	attribute keep : string;
+	attribute DONT_TOUCH : string;
+	--signal adcAvg : std_logic_vector(15 downto 0);
+	--attribute keep of adcAvg : signal is "true";
+	--attribute DONT_TOUCH of adcAvg : signal is "true";
+	
+	signal baudRateDivisorRx : unsigned(15 downto 0);	
+	signal baudRateDivisorTx : unsigned(15 downto 0);	
 
 begin
 
-	STAMP_DRXD <= STAMP_DRXD_x;
-	STAMP_RXD1 <= STAMP_RXD1_x;
+	uartCableToArm0 <= uartCableToArm0_i;
+	uartCableToArm1 <= uartCableToArm1_i;
+
+	uartArmToCable0_i <= uartArmToCable0 when uartDebugLoop0Enable = '0' else uartCableToArm0_i; 
+	uartArmToCable1_i <= uartArmToCable1 when uartDebugLoop1Enable = '0' else uartCableToArm1_i; 
 
 	commDebug_0w <= commDebug_0w_x;
+	
+	uartDebugLoop0Enable <= commDebug_0w.uartDebugLoop0Enable;
+	uartDebugLoop1Enable <= commDebug_0w.uartDebugLoop1Enable;
+	
+	--constant BAUD_RATE    : natural :=  115_200; --3_000_000; -- 256_000, 2_000_000
+	--constant TX_BAUD_DIV  : natural := (59_375_000 / BAUD_RATE) -1; -- ~514
+	--constant RX_BAUD_DIV : natural := (SYSTEM_FREQUENCY_HZ / BAUD_RATE / OVERSAMPLING_RATE) - 1; -- 60M, 115200, 10
+	--115200
+	baudRateDivisorTx <= i2u(514,16); 
+	baudRateDivisorRx <= i2u(51,16); 
+	--115200 +2.75%
+	--baudRateDivisorTx <= i2u(500,16);
+	--baudRateDivisorRx <= i2u(51,16); 
+	--57600
+	--baudRateDivisorTx <= i2u(1029,16); 
+	--baudRateDivisorRx <= i2u(102,16); 
 	
 	y01: entity work.sync_reset_gen port map
 	(
@@ -196,56 +215,69 @@ begin
 		reset         => reset
 	);
 
-	y02: entity work.uart_baudrate_generator port map
-	( 
-		reset    => reset,
-		clk      => clk,
-		tx_ena   => tx_uart_ena,
-		rx_ena   => rx_uart_ena
-	);
+--	y05: entity work.uart_receiver_v2 port map
+--	(
+--		reset          => reset,
+--		clk            => clk,
+--		rx_in          => uartArmToCable0_i,
+--		fifoOut8B      => uart0_8b,
+--		fifoRead       => uart0_fifoRead,
+--		fifoEmpty      => uart0_fifoEmpty,
+--		baudRateDivisor => baudRateDivisorRx
+--	);
+--
+--	y06: entity work.uart_receiver_v2 port map
+--	(
+--		reset          => reset,
+--		clk            => clk,
+--		rx_in          => uartArmToCable1_i,
+--		fifoOut8B      => uart1_8b,
+--		fifoRead       => uart1_fifoRead,
+--		fifoEmpty      => uart1_fifoEmpty,
+--		baudRateDivisor => baudRateDivisorRx
+--	);
 
-	y03: entity work.var_baudrate_generator_8b10b port map
-	( 
-		reset        => com_reset,
-		clk          => com_clk,
-		--baudrate_adj => baudrate_adj,
-		tx_ena       => tx_ena_8b10b,
-		commDebug_0w => commDebug_0w
-	);
-
-	y05: entity work.uart_receiver_v2 port map
+	z0: entity work.uart_v2 port map
 	(
-		reset          => reset,
-		clk            => clk,
-		rx_ena         => rx_uart_ena,
-		rx_in          => STAMP_DTXD,
-		fifoOut8B      => uart0_8b,
-		fifoRead       => uart0_fifoRead,
-		fifoEmpty      => uart0_fifoEmpty
+		com_reset,
+		com_clk,
+		uartArmToCable0_i,
+		uartCableToArm0_i,
+		uart0_8b,
+		uart0_fifoRead,
+		uart0_fifoEmpty,
+		com_adc_data,
+		comAdcDataReady0,
+		open
 	);
 
-	y06: entity work.uart_receiver_v2 port map
+	z1: entity work.uart_v2 port map
 	(
-		reset          => reset,
-		clk            => clk,
-		rx_ena         => rx_uart_ena,
-		rx_in          => STAMP_TXD1,
-		fifoOut8B      => uart1_8b,
-		fifoRead       => uart1_fifoRead,
-		fifoEmpty      => uart1_fifoEmpty
+		com_reset,
+		com_clk,
+		uartArmToCable1_i,
+		uartCableToArm1_i,
+		uart1_8b,
+		uart1_fifoRead,
+		uart1_fifoEmpty,
+		com_adc_data,
+		comAdcDataReady1,
+		open
 	);
 
 	y11: entity work.com_dac_enc port map
 	(
 		reset           => com_reset,
 		clk             => com_clk,
-		bitStrobe       => tx_ena_8b10b,
+		
 		dataIn0         => uart0_8b,
 		fifoEmpty0    	=> uart0_fifoEmpty,
 		fifoRead0       => uart0_fifoRead,
+		
 		dataIn1         => uart1_8b,
 		fifoEmpty1    	=> uart1_fifoEmpty,
 		fifoRead1       => uart1_fifoRead,
+		
 		com_dac_data    => COM_DAC_DB, -- upper 8 bits used only here
 		com_dac_clock   => COM_DAC_CLOCK,
 		commDebug_0w => commDebug_0w
@@ -262,34 +294,35 @@ begin
 		COM_ADC_D       => COM_ADC_D,    
 		COM_ADC_CLK_N   => COM_ADC_CLK_N,
 		COM_ADC_CLK_P   => COM_ADC_CLK_P,
-		word_out => rx_fifo_din,
-		word_ready0 => rxFifoWrite0,
-		word_ready1 => rxFifoWrite1,
+		byte_out_debug => byte_out_debug,
+		word_out => com_adc_data,
+		word_ready0 => comAdcDataReady0,
+		word_ready1 => comAdcDataReady1,
 		notSync => dec_8b10b_reset,
 		commDebug_0w => commDebug_0w
 	);
 
-	x18: entity work.uart_transmitter_v2 port map
-	(
-		reset          		=> reset,
-		clk            		=> clk,
-		tx_ena         		=> tx_uart_ena,
-		tx_out         		=> STAMP_DRXD_x,
-		dataIn 				=> rx_fifo_din,
-		writeEnableDataIn 	=> rxFifoWrite0,
-		fifoAlmostFull 		=> open
-	);
-
-	x19: entity work.uart_transmitter_v2 port map
-	(
-		reset          		=> reset,
-		clk            		=> clk,
-		tx_ena         		=> tx_uart_ena,
-		tx_out         		=> STAMP_RXD1_x,
-		dataIn 				=> rx_fifo_din,
-		writeEnableDataIn 	=> rxFifoWrite1,
-		fifoAlmostFull 		=> open
-	);
+--	x18: entity work.uart_transmitter_v2 port map
+--	(
+--		reset          		=> reset,
+--		clk            		=> clk,
+--		tx_out         		=> uartCableToArm0_i,
+--		dataIn 				=> com_adc_data,
+--		writeEnableDataIn 	=> comAdcDataReady0,
+--		fifoAlmostFull 		=> open,
+--		baudRateDivisor		=> baudRateDivisorTx
+--	);
+--
+--	x19: entity work.uart_transmitter_v2 port map
+--	(
+--		reset          		=> reset,
+--		clk            		=> clk,
+--		tx_out         		=> uartCableToArm1_i,
+--		dataIn 				=> com_adc_data,
+--		writeEnableDataIn 	=> comAdcDataReady1,
+--		fifoAlmostFull 		=> open,
+--		baudRateDivisor		=> baudRateDivisorTx
+--	);
 
 
 	--baudrate_adj(0) <= '1'; --TEST_IO1;
@@ -304,12 +337,12 @@ begin
 	debugOut <= (
 		--0=>com_adc_sdout,
 		--1=>edge_valid,
-		--2=>dec_8b10b_valid,
+		2=>byte_out_debug, --dec_8b10b_valid,
 		--3=>dec_8b10b_ko,
 		--4=>rx_fifo_wr_en_a,
 		--5=>rx_fifo_wr_en_b,
-		6=>STAMP_DRXD_x,
-		7=>STAMP_RXD1_x,
+		6=>uartCableToArm0_i,
+		7=>uartCableToArm1_i,
 		others=>'0'
 	);
 

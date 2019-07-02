@@ -167,9 +167,7 @@ architecture arch_uvl_mb_pinout_top of uvl_mb_pinout_top is
 
 	signal clocks : clocks_t;
 	signal clockConfig_debug : clockConfig_debug_t;
-	signal commClock : std_logic;
-	signal commClockReset : std_logic;
-	
+	signal uv_loggerClocks : uv_loggerClocks_t;
 	signal ebiNotWrite : std_logic := '0';
 	signal ebiNotRead : std_logic := '0';
 	signal ebiNotChipSelect : std_logic := '0';
@@ -252,6 +250,24 @@ architecture arch_uvl_mb_pinout_top of uvl_mb_pinout_top is
 	
 	signal jumper : std_logic_vector(15 downto 0);
 	
+	signal drs4AndAdcData : drs4AndAdcData_t;
+
+	signal notChipSelectA : std_logic;
+	signal notChipSelectB : std_logic;
+	signal enc : std_logic;
+	signal notReset : std_logic;
+	signal denable : std_logic;
+	signal dwrite : std_logic;
+	signal rsrload : std_logic;
+	signal mosi : std_logic;
+	signal miso : std_logic;
+	signal srclk : std_logic;
+	signal dtap : std_logic;
+	signal plllck : std_logic;
+	signal address : std_logic_vector(3 downto 0);
+	
+	signal com_debug : std_logic_vector(7 downto 0);
+	
 begin
 
 	i00: IBUFDS generic map(DIFF_TERM => true) port map (I=>ADC_FRAP, IB=>ADC_FRAN, O=>open);
@@ -274,18 +290,17 @@ begin
 	--end generate;
 
 	id00: OBUFDS port map(O => DRS4_REFCLKp, OB => DRS4_REFCLKn, I => clocks.drs4RefClock);
-	id01: OBUF port map(O => DRS4_RESETn, I => drs4_pins_A.notReset);
-	g8: for i in 0 to 3 generate k: OBUF port map(O => DRS4_A(i), I => drs4_pins_A.address(i)); end generate;
-	id03: OBUF port map(O => DRS4_SRIN, I => drs4_pins_A.mosi);
-	id04: OBUF port map(O => DRS4_SRCLK, I => drs4_pins_A.sclk);
-	id05: OBUF port map(O => DRS4_RSLOAD, I => drs4_pins_A.rsrload);
-	id06: OBUF port map(O => DRS4_DWRITE, I => drs4_pins_A.dwrite);
-	id07: OBUF port map(O => DRS4_DENABLE, I => drs4_pins_A.denable);
-	id08: IBUF port map(I => DRS4_SROUT, O => drs4_pins_B.miso);
-	id09: IBUF port map(I => DRS4_DTAP, O => drs4_pins_B.dtap);
-	id10: IBUF port map(I => DRS4_PLLLCK, O => drs4_pins_B.plllck);
+--	id01: OBUF port map(O => DRS4_RESETn, I => drs4_pins_A.notReset);
+--	g8: for i in 0 to 3 generate k: OBUF port map(O => DRS4_A(i), I => drs4_pins_A.address(i)); end generate;
+--	id03: OBUF port map(O => DRS4_SRIN, I => drs4_pins_A.mosi);
+--	id04: OBUF port map(O => DRS4_SRCLK, I => drs4_pins_A.sclk);
+--	id05: OBUF port map(O => DRS4_RSLOAD, I => drs4_pins_A.rsrload);
+--	id06: OBUF port map(O => DRS4_DWRITE, I => drs4_pins_A.dwrite);
+--	id07: OBUF port map(O => DRS4_DENABLE, I => drs4_pins_A.denable);
+--	id08: IBUF port map(I => DRS4_SROUT, O => drs4_pins_B.miso);
+--	id09: IBUF port map(I => DRS4_DTAP, O => drs4_pins_B.dtap);
+--	id10: IBUF port map(I => DRS4_PLLLCK, O => drs4_pins_B.plllck);
 	id11: OBUF port map(O => DRS4_WSRIN, I => '0'); -- drs4_pins_A.wsrin);
---	id12: IBUF port map(I => DRS4_WSROUT, O => open); -- drs4_pins_B.wsrout);
 	id12: IOBUF port map (O=>open, IO=>DRS4_WSROUT, I=> drs4_pins_A.address(0), T=>'1');
 
 --	g2: for i in 1 to 4 generate
@@ -340,10 +355,10 @@ begin
 
 
 -------------------------------------------------------------------------------
-	testIo <= (0 => trigger.triggerNotDelayed, 3 => flasherSumOut, others=>'0') when enableJ24TestPins = '1' else (others=>'0');
+	testIo <= (0=>trigger.triggerNotDelayed, 3=>flasherSumOut, 1=>com_debug(2), others=>'0') when enableJ24TestPins = '1' else (others=>'0');
 
 	clockConfig_debug.drs4RefClockPeriod <= x"7f";
-	x0: entity work.clockConfig port map(QOSC_OUT, '0', clocks.triggerSerdesClocks, clocks.adcClocks, commClock, commClockReset, open, clockConfig_debug, clocks.drs4RefClock);
+	x0: entity work.clockConfig port map(QOSC_OUT, '0', clocks.triggerSerdesClocks, clocks.adcClocks, uv_loggerClocks, open, clockConfig_debug, clocks.drs4RefClock);
 	
 	x1: entity work.smcBusWrapper port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), clocks.triggerSerdesClocks.serdesDivClockReset, clocks.triggerSerdesClocks.serdesDivClock, addressAndControlBus);
 	
@@ -405,17 +420,63 @@ begin
 	--x12: entity work.pixelRateCounter_v2 port map(discriminatorSerdesDelayed2, trigger, rateCounterTimeOut, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 	x12: entity work.pixelRateCounter_v2 port map(discriminatorSerdes, trigger.flasherTriggerGate, rateCounterTimeOut, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 
-	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut, irq2arm, triggerTiming, drs4Data, internalTiming, pixelRates, dac1_stats, eventFifoSystem_0r, eventFifoSystem_0w);
+	--x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut, irq2arm, triggerTiming, drs4Data, internalTiming, pixelRates, dac1_stats, eventFifoSystem_0r, eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut, irq2arm, triggerTiming, drs4AndAdcData, internalTiming, pixelRates, dac1_stats, eventFifoSystem_0r, eventFifoSystem_0w);
 	
 	x14a: entity work.internalTiming generic map(globalClockRate_kHz) port map(internalTiming, internalTiming_0r, internalTiming_0w);
-	
-	x16: entity work.drs4 port map(drs4_pins_A.notReset, drs4_pins_A.address, drs4_pins_A.denable, drs4_pins_A.dwrite, drs4_pins_A.dwriteSerdes, drs4_pins_A.rsrload, drs4_pins_B.miso, drs4_pins_A.mosi, drs4_pins_A.sclk, drs4_pins_B.dtap, drs4_pins_B.plllck, deadTime, trigger.timingAndDrs4, internalTiming, clocks.adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
-	
---	x17: entity work.ltm9007_14 port map(ADC_ENCp, ADC_ENCn, ADC_OUTAP, ADC_OUTAN, ADC_CSAn, ADC_CSBn,
+
+
+
+
+
+--	x16: entity work.drs4 port map(drs4_pins_A.notReset, drs4_pins_A.address, drs4_pins_A.denable, drs4_pins_A.dwrite, drs4_pins_A.dwriteSerdes, drs4_pins_A.rsrload, drs4_pins_B.miso, drs4_pins_A.mosi, drs4_pins_A.sclk, drs4_pins_B.dtap, drs4_pins_B.plllck, deadTime, trigger.timingAndDrs4, internalTiming, clocks.adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+--	
+--	x17: entity work.ltm9007_14_icescint generic map(
+--		system_type=>"UV_LOGGER")
+--	port map(
+--		ADC_ENCp, ADC_ENCn, ADC_OUTAP, ADC_OUTAN, ADC_CSAn, ADC_CSBn,	
+--		open,open,x"00",x"00",open,open,	
+--		open,open,x"00",x"00",open,open,	
 --		adcSdi, adcSck, drs4_to_ltm9007_14, drs4Data, clocks.adcClocks, ltm9007_14_0r, ltm9007_14_0w);
-	
-	x17: entity work.ltm9007_14 port map(ADC_ENCp, ADC_ENCn, ADC_OUTAP, ADC_OUTAN, ADC_CSAn, ADC_CSBn,
-		adcSdi, adcSck, drs4_to_ltm9007_14, drs4Data, clocks.adcClocks, ltm9007_14_0r, ltm9007_14_0w);
+
+
+
+--	x16: entity work.drs4adc port map(
+--		DRS4_A, DRS4_RESETn, DRS4_DENABLE, DRS4_DWRITE, DRS4_RSLOAD, DRS4_SROUT, DRS4_SRIN, DRS4_SRCLK, DRS4_DTAP, DRS4_PLLLCK,
+--		deadTime, trigger.timingAndDrs4, internalTiming, clocks.adcClocks,
+--		drs4_0r, drs4_0w,
+--		ADC_CSAn, ADC_CSBn, adcSdi, adcSck, ADC_ENCp, ADC_ENCn, ADC_OUTAP, ADC_OUTAN,
+--		drs4AndAdcData,
+--		ltm9007_14_0r, ltm9007_14_0w
+--		);
+
+
+
+	z10: OBUF port map(O => DRS4_RESETn, I => notReset);
+	z11: OBUF port map(O => DRS4_DENABLE, I => denable);
+	z12: OBUF port map(O => DRS4_DWRITE, I => dwrite);
+	z13: OBUF port map(O => DRS4_RSLOAD, I => rsrload);
+	z14: OBUF port map(O => DRS4_SRIN, I => mosi);
+	z15: IBUF port map(I => DRS4_SROUT, O => miso);
+	z16: OBUF port map(O => DRS4_SRCLK, I => srclk);
+	z17: IBUF port map(I => DRS4_DTAP, O => dtap);
+	z18: IBUF port map(I => DRS4_PLLLCK, O => plllck);
+	z19: for i in 0 to 3 generate k: OBUF port map(O => DRS4_A(i), I => address(i)); end generate;
+
+	l00: OBUF port map(O => ADC_CSAn, I => notChipSelectA);
+	l01: OBUF port map(O => ADC_CSBn, I => notChipSelectB);
+	w00: OBUFDS port map(O => ADC_ENCp, OB => ADC_ENCn, I => enc);
+
+	x16: entity work.drs4adc port map(
+		address, 
+		notReset, denable, dwrite, rsrload, miso, mosi, srclk, dtap, plllck,
+		deadTime, trigger.timingAndDrs4, internalTiming, clocks.adcClocks, drs4_0r, drs4_0w,
+		notChipSelectA, notChipSelectB, adcSdi, adcSck, enc, ADC_OUTAP, ADC_OUTAN,
+		drs4AndAdcData,
+		ltm9007_14_0r, ltm9007_14_0w
+		);
+
+
 
 	x20: entity work.i2c_dac1_uvLogger port map(DAC_SCL, DAC_SDA, dac1_stats, dac1_uvLogger_0r, dac1_uvLogger_0w);
 	
@@ -431,90 +492,28 @@ begin
 	
 	x23: entity work.houseKeeping port map(nLED_ENA, nLED_GREEN, nLED_RED, enableJ24TestPins, houseKeeping_0r, houseKeeping_0w);
 	
---	x30: entity work.uvl_comm_top_01 port map
---	(
---	commClock,
---	commClock,
---	COM_ADC_D,
---	COM_ADC_OR,
---	COM_ADC_CSBn,
---	open, --COM_ADC_SCLK,
---	open, --COM_ADC_SDIO,
---	COM_ADC_DCO,
---	COM_ADC_CLK_P,
---	COM_ADC_CLK_N,
---	COM_DAC_DB,
---	COM_DAC_CLOCK,
---	STAMP_DRXD,
---	STAMP_DTXD,
---	STAMP_RXD1,
---	STAMP_TXD1,
---	open,
---	commDebug_0w
---	);
-
-	x31a: entity work.syncTig generic map (commDebug_0w.jumper'length) port map (commClock, commDebug_0w.jumper, jumper);
-
-	x31: entity work.uvl_readout_top_01 port map
-	(	
-		clk => commClock,
-		reset => commClockReset,
-		com_clk => commClock,
-		com_reset => commClockReset,
-
-		PWRENn => '0', --          : in  std_logic ;  --   
-		FT_TEST => open, --         : out std_logic;   -- 
-		FT_RESETn => open, --       : out std_logic;  -- 
-		--CLK_6MHZ => open, --    : out  std_logic;  -- clock used by the USB to UART bridge
-		TEST_IO0 => open, --        : out std_logic;   --
-		TEST_IO1 => jumper(0), --        : in  std_logic;   --
-		TEST_IO2 => open, --        : out std_logic;   --
-		TEST_IO3 => jumper(1), --        : in  std_logic;   --
-		TEST_IO4 => open, --        : out std_logic;   --
-		TEST_IO5 => jumper(2), --        : in  std_logic;   --
-		TEST_IO6 => open, --        : out std_logic;   --
-		TEST_IO7 => open, --        : out std_logic;   --
-		TEST_IO8 => open, --        : out std_logic;   --
-		TEST_IO9 => jumper(3), --        : in  std_logic;   --
-		TEST_IO10 => open, --       : out std_logic;   --
-		TEST_IO11 => jumper(4), --       : in  std_logic;   --
-		TEST_IO12 => open, --       : out std_logic;   --
-		TEST_IO13 => jumper(5), --       : in  std_logic;   --
-		TEST_IO14 => open, --       : out std_logic;   --
-		TEST_IO15 => open, --       : out std_logic;   --
-		I2C_DATA => open, --        : inout std_logic; --
-		I2C_SCL => open, --         : out std_logic;   --
-
-		-- bank_1, 1.8V
-		COM_ADC_CSBn => COM_ADC_CSBn, --    : out std_logic;   --
-		COM_ADC_SCLK => open, --    : out std_logic;   --
-		COM_ADC_SDIO => open, --    : inout std_logic;   --
-		COM_ADC_D => COM_ADC_D, --       : in  std_logic_vector (13 downto 0);
-		--     COM_ADC_DCO     : in  std_logic;  -- 
-		--     COM_ADC_OR      : in  std_logic;  -- 
-		RX_LEDn => open, --         : out std_logic;   --
-		QOSCL_SCL => open, --       : out std_logic;   --
-		QOSCL_SDA => open, --       : inout std_logic;   --
-
-		-- bank_2, 3.3V
-		COM_DAC_DB => COM_DAC_DB, --      : out std_logic_vector (11 downto 0);
-		COM_DAC_CLOCK => COM_DAC_CLOCK, --   : out std_logic;   --
-		
-		TX_LEDn => open, --         : out std_logic;   --
-		COM_ADC_CLK_N => COM_ADC_CLK_N, --   : out std_logic;   --
-		COM_ADC_CLK_P => COM_ADC_CLK_P, --   : out std_logic;   --
-
-		-- bank_3, 3.3V
-		BDBUS0 => STAMP_TXD1, --          : in  std_logic;   -- TXD_B
-		BDBUS1 => STAMP_RXD1, --          : out std_logic;   -- RXD_B
-		BCBUS2 => '0', --          : in  std_logic;   -- RXLEDn_B, transmitting data via USB
-		BCBUS3 => '0', --          : in  std_logic;   -- TXLEDn_B, receiving data via USB   
-		--     SI_WUB          : in  std_logic;   --
-		ADBUS0 => STAMP_DTXD, --          : in  std_logic;   -- TXD_A
-		ADBUS1 => STAMP_DRXD, --          : out std_logic;   -- RXD_A
-		ACBUS2 => '0', --          : in  std_logic;   -- RXLEDn_A, transmitting data via USB
-		ACBUS3 => '0' --          : in  std_logic   -- TXLEDn_A, receiving data via USB   
-		--     SI_WUA
+	x30: entity work.uvl_comm_top_01 port map
+	(
+	uv_loggerClocks.communicationClock,
+	uv_loggerClocks.communicationClock,
+	COM_ADC_D,
+	COM_ADC_OR,
+	COM_ADC_CSBn,
+	open, --COM_ADC_SCLK,
+	open, --COM_ADC_SDIO,
+	COM_ADC_DCO,
+	COM_ADC_CLK_P,
+	COM_ADC_CLK_N,
+	COM_DAC_DB,
+	COM_DAC_CLOCK,
+	STAMP_DRXD,
+	STAMP_DTXD,
+	STAMP_RXD1,
+	STAMP_TXD1,
+	com_debug,
+	commDebug_0w
 	);
+
+	x31a: entity work.syncTig generic map (commDebug_0w.jumper'length) port map (uv_loggerClocks.communicationClock, commDebug_0w.jumper, jumper);
 
 end arch_uvl_mb_pinout_top;

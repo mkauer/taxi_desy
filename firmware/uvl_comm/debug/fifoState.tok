@@ -1,0 +1,9 @@
+#Fileversion\b
+#@FILE_VERSION=1.0.0\b
+#Defaulttokenvalue\b
+#@DEFAULT_TOKEN=ERROR\b
+#Explicittokenvalues\b
+s0=00\b
+s1=01\b
+s2=10\b
+s3=11\b

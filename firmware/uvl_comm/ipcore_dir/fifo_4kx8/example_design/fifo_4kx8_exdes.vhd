@@ -74,7 +74,7 @@ use unisim.vcomponents.all;
 entity fifo_4kx8_exdes is
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(10-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(12-1 DOWNTO 0);
            SRST                      : IN  std_logic;
            WR_EN 		     : IN  std_logic;
            RD_EN                     : IN  std_logic;
@@ -96,7 +96,7 @@ architecture xilinx of fifo_4kx8_exdes is
   component fifo_4kx8 is
    PORT (
            CLK                       : IN  std_logic;
-     	   DATA_COUNT                : OUT std_logic_vector(10-1 DOWNTO 0);
+     	   DATA_COUNT                : OUT std_logic_vector(12-1 DOWNTO 0);
            SRST                      : IN  std_logic;
            WR_EN 		     : IN  std_logic;
            RD_EN                     : IN  std_logic;

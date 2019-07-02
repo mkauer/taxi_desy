@@ -3,103 +3,66 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="H:/zn/Projects/UV_Logger/main_board/FPGA/uvl_comm/uvl_comm_tb_01_isim_beh.wdb" id="1" type="auto">
+      <db_ref path="C:/Xilinx/projects/taxi/firmware/uvl_comm/sim_avg_isim_beh.wdb" id="1" type="auto">
          <top_modules>
-            <top_module name="numeric_bit" />
             <top_module name="numeric_std" />
+            <top_module name="sim_avg" />
             <top_module name="std_logic_1164" />
             <top_module name="std_logic_arith" />
             <top_module name="std_logic_unsigned" />
-            <top_module name="uvl_comm_tb_01" />
-            <top_module name="vcomponents" />
          </top_modules>
       </db_ref>
    </db_ref_list>
-   <WVObjectSize size="21" />
-   <wvobject fp_name="/uvl_comm_tb_01/clk" type="logic" db_ref_id="1">
+   <WVObjectSize size="11" />
+   <wvobject fp_name="/sim_avg/uut/clk" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">clk</obj_property>
       <obj_property name="ObjectShortName">clk</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_clk" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_clk</obj_property>
-      <obj_property name="ObjectShortName">com_clk</obj_property>
+   <wvobject fp_name="/sim_avg/uut/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/rx_data_valid" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">rx_data_valid</obj_property>
-      <obj_property name="ObjectShortName">rx_data_valid</obj_property>
+   <wvobject fp_name="/sim_avg/uut/datain" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">datain[15:0]</obj_property>
+      <obj_property name="ObjectShortName">datain[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_adc_csbn" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_adc_csbn</obj_property>
-      <obj_property name="ObjectShortName">com_adc_csbn</obj_property>
+   <wvobject fp_name="/sim_avg/uut/avgout" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">avgout[15:0]</obj_property>
+      <obj_property name="ObjectShortName">avgout[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_adc_sclk" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_adc_sclk</obj_property>
-      <obj_property name="ObjectShortName">com_adc_sclk</obj_property>
+   <wvobject fp_name="/sim_avg/uut/avgfactor" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">avgfactor[3:0]</obj_property>
+      <obj_property name="ObjectShortName">avgfactor[3:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_adc_sdio" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_adc_sdio</obj_property>
-      <obj_property name="ObjectShortName">com_adc_sdio</obj_property>
+   <wvobject fp_name="/sim_avg/uut/fifowords" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">fifowords[15:0]</obj_property>
+      <obj_property name="ObjectShortName">fifowords[15:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_adc_d" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">com_adc_d[13:0]</obj_property>
-      <obj_property name="ObjectShortName">com_adc_d[13:0]</obj_property>
+   <wvobject fp_name="/sim_avg/uut/counter" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">counter[15:0]</obj_property>
+      <obj_property name="ObjectShortName">counter[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_dac_db" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">com_dac_db[11:0]</obj_property>
-      <obj_property name="ObjectShortName">com_dac_db[11:0]</obj_property>
-      <obj_property name="Radix">HEXRADIX</obj_property>
+   <wvobject fp_name="/sim_avg/uut/avrstate" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">avrstate</obj_property>
+      <obj_property name="ObjectShortName">avrstate</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_dac_clock" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_dac_clock</obj_property>
-      <obj_property name="ObjectShortName">com_dac_clock</obj_property>
+   <wvobject fp_name="/sim_avg/uut/fifoin" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">fifoin[15:0]</obj_property>
+      <obj_property name="ObjectShortName">fifoin[15:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_adc_clk_n" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_adc_clk_n</obj_property>
-      <obj_property name="ObjectShortName">com_adc_clk_n</obj_property>
+   <wvobject fp_name="/sim_avg/uut/fifoout" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">fifoout[15:0]</obj_property>
+      <obj_property name="ObjectShortName">fifoout[15:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/com_adc_clk_p" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">com_adc_clk_p</obj_property>
-      <obj_property name="ObjectShortName">com_adc_clk_p</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/stamp_drxd" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">stamp_drxd</obj_property>
-      <obj_property name="ObjectShortName">stamp_drxd</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/stamp_dtxd" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">stamp_dtxd</obj_property>
-      <obj_property name="ObjectShortName">stamp_dtxd</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/stamp_rxd1" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">stamp_rxd1</obj_property>
-      <obj_property name="ObjectShortName">stamp_rxd1</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/uart_reset" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">uart_reset</obj_property>
-      <obj_property name="ObjectShortName">uart_reset</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/tx_data_valid" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">tx_data_valid</obj_property>
-      <obj_property name="ObjectShortName">tx_data_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/rx_in" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">rx_in</obj_property>
-      <obj_property name="ObjectShortName">rx_in</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/tx_data_in" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">tx_data_in[7:0]</obj_property>
-      <obj_property name="ObjectShortName">tx_data_in[7:0]</obj_property>
-      <obj_property name="Radix">ASCIIRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/tx_ack" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">tx_ack</obj_property>
-      <obj_property name="ObjectShortName">tx_ack</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/tx_out" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">tx_out</obj_property>
-      <obj_property name="ObjectShortName">tx_out</obj_property>
-   </wvobject>
-   <wvobject fp_name="/uvl_comm_tb_01/uvl_comm_top_01_port_map/transmitter_8b10b_port_map/tx_out_8b10b" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">tx_out_8b10b</obj_property>
-      <obj_property name="ObjectShortName">tx_out_8b10b</obj_property>
+   <wvobject fp_name="/sim_avg/uut/avgsum" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">avgsum[25:0]</obj_property>
+      <obj_property name="ObjectShortName">avgsum[25:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
 </wave_config>

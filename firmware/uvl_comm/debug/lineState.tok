@@ -1,0 +1,17 @@
+#Fileversion\b
+#@FILE_VERSION=1.0.0\b
+#Defaulttokenvalue\b
+#@DEFAULT_TOKEN=ERROR\b
+#Explicittokenvalues\b
+init_1=0000\b
+init_2=0001\b
+init_3=0010\b
+idle=0011\b
+changesource=0100\b
+getfirstbit_1=0101\b
+getfirstbit_2=0110\b
+waitforstrobe=0111\b
+getnextbit=1000\b
+sendpulse_1=1001\b
+sendpulse_2=1010\b
+sendpulse_3=1011\b

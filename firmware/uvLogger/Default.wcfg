@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="C:/Xilinx/projects/taxi/firmware/uvLogger/sim_avg_isim_beh.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="numeric_std" />
+            <top_module name="sim_avg" />
+            <top_module name="std_logic_1164" />
+            <top_module name="std_logic_arith" />
+            <top_module name="std_logic_unsigned" />
+            <top_module name="types" />
+            <top_module name="types_platformspecific" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="18" />
+   <wvobject fp_name="/sim_avg/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/avgfactor" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">avgfactor[3:0]</obj_property>
+      <obj_property name="ObjectShortName">avgfactor[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/counter" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">counter</obj_property>
+      <obj_property name="ObjectShortName">counter</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/delta" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">delta</obj_property>
+      <obj_property name="ObjectShortName">delta</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/clk_period" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_period</obj_property>
+      <obj_property name="ObjectShortName">clk_period</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/start" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/inc" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">inc</obj_property>
+      <obj_property name="ObjectShortName">inc</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/datain" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">datain[15:0]</obj_property>
+      <obj_property name="ObjectShortName">datain[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/avgout" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">avgout[15:0]</obj_property>
+      <obj_property name="ObjectShortName">avgout[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/avgsum" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">avgsum[19:0]</obj_property>
+      <obj_property name="ObjectShortName">avgsum[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/fifoinbuffer" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">fifoinbuffer[15:0]</obj_property>
+      <obj_property name="ObjectShortName">fifoinbuffer[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/fifooutbuffer" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">fifooutbuffer[15:0]</obj_property>
+      <obj_property name="ObjectShortName">fifooutbuffer[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/fifowrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fifowrite</obj_property>
+      <obj_property name="ObjectShortName">fifowrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/fiforead" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fiforead</obj_property>
+      <obj_property name="ObjectShortName">fiforead</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/fifoempty" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fifoempty</obj_property>
+      <obj_property name="ObjectShortName">fifoempty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/fifoclear" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fifoclear</obj_property>
+      <obj_property name="ObjectShortName">fifoclear</obj_property>
+   </wvobject>
+   <wvobject fp_name="/sim_avg/uut/avrstate" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">avrstate</obj_property>
+      <obj_property name="ObjectShortName">avrstate</obj_property>
+   </wvobject>
+</wave_config>

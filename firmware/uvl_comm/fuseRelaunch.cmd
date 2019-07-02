@@ -1,1 +1,1 @@
--intstyle "ise" -incremental -lib "secureip" -o "H:/zn/Projects/UV_Logger/main_board/FPGA/uvl_comm/uvl_comm_tb_01_isim_beh.exe" -prj "H:/zn/Projects/UV_Logger/main_board/FPGA/uvl_comm/uvl_comm_tb_01_beh.prj" "work.uvl_comm_tb_01" 
+-intstyle "ise" -incremental -lib "secureip" -o "C:/Xilinx/projects/taxi/firmware/uvl_comm/sim_avg_isim_beh.exe" -prj "C:/Xilinx/projects/taxi/firmware/uvl_comm/sim_avg_beh.prj" "work.sim_avg" 

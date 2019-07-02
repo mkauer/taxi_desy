@@ -22,7 +22,7 @@
 --    devices, or systems.  Use in such applications are expressly            --
 --    prohibited.                                                             --
 --                                                                            --
---    (c) Copyright 1995-2018 Xilinx, Inc.                                    --
+--    (c) Copyright 1995-2019 Xilinx, Inc.                                    --
 --    All rights reserved.                                                    --
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ ENTITY fifo_4kx8 IS
     dout : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    data_count : OUT STD_LOGIC_VECTOR(9 DOWNTO 0)
+    data_count : OUT STD_LOGIC_VECTOR(11 DOWNTO 0)
   );
 END fifo_4kx8;
 
@@ -66,7 +66,7 @@ COMPONENT wrapped_fifo_4kx8
     dout : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    data_count : OUT STD_LOGIC_VECTOR(9 DOWNTO 0)
+    data_count : OUT STD_LOGIC_VECTOR(11 DOWNTO 0)
   );
 END COMPONENT;
 
@@ -98,7 +98,7 @@ END COMPONENT;
       c_axis_type => 0,
       c_common_clock => 1,
       c_count_type => 0,
-      c_data_count_width => 10,
+      c_data_count_width => 12,
       c_default_value => "BlankString",
       c_din_width => 8,
       c_din_width_axis => 1,

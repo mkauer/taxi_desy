@@ -20,14 +20,17 @@ entity com_dac_enc is
 	port(
 		reset            :in  std_logic;
 		clk              :in  std_logic;
-		bitStrobe	     :in  std_logic; -- from baudrate generator
 		
 		dataIn0			 :in  std_logic_vector (7 downto 0);
 		fifoEmpty0       :in  std_logic; -- like tx_fifo_not_empty
 		fifoRead0	     :out std_logic;
+		
 		dataIn1			 :in  std_logic_vector (7 downto 0);
 		fifoEmpty1       :in  std_logic; -- like tx_fifo_not_empty
 		fifoRead1	     :out std_logic;
+
+		--sendXOff : in std_logic_vector(1 downto 0);
+		--sendXOn : in std_logic_vector(1 downto 0);
 		
 		com_dac_data     :out std_logic_vector (11 downto 0); 
 		com_dac_clock    :out std_logic;
@@ -58,7 +61,7 @@ architecture com_dac_enc_arch of com_dac_enc is
 	signal dac_clkTime : unsigned(15 downto 0);
 	signal dac_clkTime_TPTHRU_TIG : unsigned(15 downto 0);
 
-	type lineState_t is (init_1, init_2, init_3, idle, changeSource, getFirstBit_1, getFirstBit_2, waitForStrobe, getNextBit, sendPulse_1, sendPulse_2, sendPulse_3);
+	type lineState_t is (init_1, init_2, init_3, idle, changeSource, getFirstBit_1, getFirstBit_2, waitForStrobe, getNextBit, sendPulse_1, sendPulse_2, sendPulse_3, sendCommand0, sendCommand1);
 	signal lineState : lineState_t;
 
 	signal DAC_CLK_HIGH_TIME : unsigned(15 downto 0) := x"0002";
@@ -69,8 +72,28 @@ architecture com_dac_enc_arch of com_dac_enc is
 	signal fifoEmpty : std_logic;
 	signal dataBuffer : std_logic_vector(dataIn'length downto 0);
 	signal source : std_logic;
+	
+	signal bitStrobe : std_logic;
+
+	signal commandQueue : std_logic_vector(3 downto 0);
+	
+	signal currentDacValue : unsigned(com_dac_data'range);
+	signal currentDacValue_old : unsigned(com_dac_data'range);
+	signal targetDacValue : std_logic_vector(com_dac_data'range);
+	signal incDacValue : unsigned(11 downto 0);
+	signal incDacValue_TPTHRU_TIG : unsigned(11 downto 0);
 
 begin
+
+	z0: entity work.var_baudrate_generator_8b10b port map
+	( 
+		reset        => reset,
+		clk          => clk,
+		tx_ena       => bitStrobe,
+		commDebug_0w => commDebug_0w
+	);
+
+
 
 	process(clk)
 	begin
@@ -81,6 +104,9 @@ begin
 			dac_valueLow_TPTHRU_TIG <= commDebug_0w.dac_valueLow;
 			dac_valueHigh <= dac_valueHigh_TPTHRU_TIG; 
 			dac_valueHigh_TPTHRU_TIG <= commDebug_0w.dac_valueHigh;
+
+			incDacValue <= incDacValue_TPTHRU_TIG;
+			incDacValue_TPTHRU_TIG <= unsigned(commDebug_0w.dac_incDacValue);
 			
 			dac_time1 <= dac_time1_TPTHRU_TIG; 
 			dac_time1_TPTHRU_TIG <= unsigned(commDebug_0w.dac_time1);
@@ -101,6 +127,8 @@ begin
 	fifoRead1 <= fifoRead when source = '1' else '0';
 	dataIn <= dataIn0 when source = '0' else dataIn1;
 
+	com_dac_data <= std_logic_vector(currentDacValue);
+	
 	process (clk)
 	begin
 		if(rising_edge(clk)) then
@@ -110,29 +138,56 @@ begin
 				lineState <= init_1;
 				counter <= (others=>'0');
 				--bitToSend <= '0';
-				com_dac_data <= dac_valueIdle;
+				targetDacValue <= dac_valueIdle;
 				bitCounter <= 0;
 				dataBuffer <= (others=>'0');
 				source <= '0';
+				commandQueue <= (others=>'0');
+				currentDacValue <= unsigned(dac_valueIdle);
+				currentDacValue_old <= (others=>'0'); -- force reprogramming
 			else
+				--commandQueue <= commandQueue or (sendXOn & sendXOff);
+
+				-- dac ramping; trying to reduce cros talk
+				currentDacValue_old <= currentDacValue;
+				if(currentDacValue_old /= currentDacValue) then -- ## laaag!!
+					com_dac_clock <= '1'; -- autoreset
+				else
+					if(currentDacValue > unsigned(targetDacValue)) then
+						currentDacValue <= currentDacValue - incDacValue;
+						if((unsigned(targetDacValue)+incDacValue) > currentDacValue) then
+							currentDacValue <= unsigned(targetDacValue);
+						end if;
+					end if;
+					if(currentDacValue < unsigned(targetDacValue)) then
+						currentDacValue <= currentDacValue + incDacValue;
+						if((unsigned(targetDacValue)-incDacValue) < currentDacValue) then
+							currentDacValue <= unsigned(targetDacValue);
+						end if;
+					end if;
+				end if;
+
 				case(lineState) is
 					when init_1 =>
-						com_dac_data <= dac_valueIdle;
-						counter <= counter + 1;
-						com_dac_clock <= '0';
+					--	targetDacValue <= dac_valueIdle;
+					--	counter <= counter + 1;
+					--	com_dac_clock <= '0'; -- autoreset
 						lineState <= init_2;
 
 					when init_2 =>
-						com_dac_clock <= '0';
+					--	com_dac_clock <= '1';
 						lineState <= init_3;
 
 					when init_3 =>
-						com_dac_clock <= '0';
+					--	com_dac_clock <= '0';
 						lineState <= idle;
 					
 					when idle =>
 						lineState <= changeSource; 
-						com_dac_data <= dac_valueIdle;
+						targetDacValue <= dac_valueIdle;
+						--if(commandQueue /= x"0") then
+						--	lineState <= sendCommand0;
+						--elsif(fifoEmpty = '0') then
 						if(fifoEmpty = '0') then
 							fifoRead <= '1'; -- autoreset
 							counter <= (others=>'0');
@@ -143,7 +198,33 @@ begin
 
 					when changeSource =>
 						source <= not(source);
-						lineState <= idle; 
+						lineState <= idle;
+
+					when sendCommand0 =>
+						if(commandQueue(0) = '1') then
+							commandQueue(0) <= '0';
+							dataBuffer <= "0" & x"13";
+							lineState <= sendCommand1;
+						elsif(commandQueue(1) = '1') then
+							commandQueue(1) <= '0';
+							dataBuffer <= "1" & x"13";
+							lineState <= sendCommand1;
+						elsif(commandQueue(2) = '1') then
+							commandQueue(2) <= '0';
+							dataBuffer <= "0" & x"11";
+							lineState <= sendCommand1;
+						elsif(commandQueue(3) = '1') then
+							commandQueue(3) <= '0';
+							dataBuffer <= "1" & x"11";
+							lineState <= sendCommand1;
+						else
+							lineState <= idle;
+						end if;
+					
+					when sendCommand1 =>
+						counter <= (others=>'0');
+						bitCounter <= 0;
+						lineState <= waitForStrobe; 
 
 					when getFirstBit_1 =>
 						lineState <= getFirstBit_2; 
@@ -168,41 +249,41 @@ begin
 
 					when sendPulse_1 =>
 						if(bitToSend = '1') then 
-							com_dac_data <= dac_valueLow;
+							targetDacValue <= dac_valueLow;
 						else
-							com_dac_data <= dac_valueHigh;
+							targetDacValue <= dac_valueHigh;
 						end if;
 						counter <= counter + 1;
 						if(counter > dac_time1) then
 							counter <= (others=>'0');
 							lineState <= sendPulse_2;
 						end if;
-						if(counter <= dac_clkTime) then com_dac_clock <= '1'; end if; -- autoreset
-						if(counter = x"0000") then com_dac_clock <= '0'; end if; -- autoreset
+					--	if(counter <= dac_clkTime) then com_dac_clock <= '1'; end if; -- autoreset
+					--	if(counter = x"0000") then com_dac_clock <= '0'; end if; -- autoreset
 					
 					when sendPulse_2 =>
 						if(bitToSend = '1') then 
-							com_dac_data <= dac_valueHigh;
+							targetDacValue <= dac_valueHigh;
 						else
-							com_dac_data <= dac_valueLow;
+							targetDacValue <= dac_valueLow;
 						end if;
 						counter <= counter + 1;
 						if(counter > dac_time2) then
 							counter <= (others=>'0');
 							lineState <= sendPulse_3;
 						end if;
-						if(counter <= dac_clkTime) then com_dac_clock <= '1'; end if; -- autoreset
-						if(counter = x"0000") then com_dac_clock <= '0'; end if; -- autoreset
+					--	if(counter <= dac_clkTime) then com_dac_clock <= '1'; end if; -- autoreset
+					--	if(counter = x"0000") then com_dac_clock <= '0'; end if; -- autoreset
 
 					when sendPulse_3 =>
-						com_dac_data <= dac_valueIdle;
+						targetDacValue <= dac_valueIdle;
 						counter <= counter + 1;
 						if(counter > dac_time3) then
 							counter <= (others=>'0');
 							lineState <= getNextBit;
 						end if;
-						if(counter <= dac_clkTime) then com_dac_clock <= '1'; end if; -- autoreset
-						if(counter = x"0000") then com_dac_clock <= '0'; end if; -- autoreset
+					--	if(counter <= dac_clkTime) then com_dac_clock <= '1'; end if; -- autoreset
+					--	if(counter = x"0000") then com_dac_clock <= '0'; end if; -- autoreset
 
 					when others => lineState <= idle;
 				end case;
