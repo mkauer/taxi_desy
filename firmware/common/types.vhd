@@ -13,11 +13,15 @@ use IEEE.numeric_std.all;
 use work.types_platformSpecific.all;
 
 package types is
+	attribute keep : string;
+	attribute DONT_TOUCH : string;
 
 	constant numberOfChannels : integer := numberOfChannels_platformSpecific;
 	--constant numberOfChannels : integer := 8, 24 or may be 16;
 	constant globalClockRate_Hz : integer := globalClockRate_platformSpecific_hz;
 	constant globalClockRate_kHz : integer := globalClockRate_platformSpecific_hz/1000;
+
+	constant LTM9007_14_BITSLIPPATTERN : std_logic_vector(6 downto 0) := "1100101";
 	
 	type dataNumberOfChannelsX8Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(7 downto 0);
 	type dataNumberOfChannelsX12Bit_t is array (0 to numberOfChannels-1) of std_logic_vector(11 downto 0);
@@ -80,6 +84,14 @@ package types is
 
 	function capValue(value : unsigned; newSize : integer) return unsigned;
 	function capValue(value : std_logic_vector; newSize : integer) return std_logic_vector;
+	
+	function std_logic_TIG(value : std_logic) return std_logic;
+	function std_logic_vector_TIG(value : std_logic_vector) return std_logic_vector;
+	
+	procedure std_logic_TIG_p(signal i: in std_logic; signal o: out std_logic);
+	
+	function i2v(value : integer; width : integer) return std_logic_vector;
+	function i2u(value : integer; width : integer) return unsigned;
 
 -------------------------------------------------------------------------------
 	
@@ -145,6 +157,8 @@ package types is
 		eventRateCounter : std_logic_vector(15 downto 0);
 		eventLostRateCounter : std_logic_vector(15 downto 0);
 		deviceId : std_logic_vector(15 downto 0);
+		drs4ChipSelector : std_logic_vector(3 downto 0);
+		debugFifoOut : std_logic_vector(15 downto 0);
 	end record;
 	type eventFifoSystem_registerWrite_t is record
 		clock : std_logic;
@@ -163,6 +177,7 @@ package types is
 		deviceId : std_logic_vector(15 downto 0);
 		miscSlotA : data8x16Bit_t;
 		miscSlotB : data8x16Bit_t;
+		drs4ChipSelector : std_logic_vector(3 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -430,21 +445,43 @@ package types is
 	end record;
 	
 -------------------------------------------------------------------------------
-	
-	type drs4_to_ltm9007_14_t is record
+
+	type drs4_to_ltm9007_14_old_t is record
 		adcDataStart_66 : std_logic;
-		--drs4RoiValid : std_logic;
 		roiBuffer : std_logic_vector(9 downto 0);
 		roiBufferReady : std_logic;
 		realTimeCounter_latched : std_logic_vector(63 downto 0);
 	end record;
 
-	type drs4_registerRead_t is record
+	type drs4_to_eventFifoSystem_t is record
+		cascadingData : std_logic_vector(7 downto 0);
+		cascadingDataShort : std_logic_vector(3 downto 0);
+		cascadingDataReady : std_logic;
+		realTimeCounter_latched : std_logic_vector(63 downto 0);
 		regionOfInterest : std_logic_vector(9 downto 0);
+		regionOfInterestReady : std_logic;
+	end record;
+	
+	type drs4_to_eventFifoSystem_vector_t is array (0 to 2) of drs4_to_eventFifoSystem_t;
+	
+	type drs4_to_ltm9007_14_t is record
+		adcDataStart_66 : std_logic;
+		regionOfInterest : std_logic_vector(9 downto 0);
+		regionOfInterestReady : std_logic;
+		--drs4_to_eventFifoSystem : drs4_to_eventFifoSystem_t;
+	end record;
+	
+	type drs4_to_ltm9007_14_vector_t is array (0 to 2) of drs4_to_ltm9007_14_t;
+
+	type drs4_registerRead_t is record
+		regionOfInterest : std_logic_vector(9 downto 0); -- ## debug
 		numberOfSamplesToRead : std_logic_vector(15 downto 0);
 		sampleMode : std_logic_vector(3 downto 0);
 		readoutMode : std_logic_vector(3 downto 0);
+		writeShiftRegister : std_logic_vector(7 downto 0);
+		cascadingDataDebug : std_logic_vector(7 downto 0);
 	end record;
+
 	type drs4_registerWrite_t is record
 		clock : std_logic;
 		reset : std_logic;
@@ -453,6 +490,7 @@ package types is
 		sampleMode : std_logic_vector(3 downto 0);
 		readoutMode : std_logic_vector(3 downto 0);
 		offsetCorrectionRamData : std_logic_vector(15 downto 0);
+		writeShiftRegister : std_logic_vector(7 downto 0);
 	end record;
 
 	type drs4_pins_A_t is record
@@ -474,8 +512,8 @@ package types is
 	end record;
 
 -------------------------------------------------------------------------------
-	
-	type ltm9007_14_to_eventFifoSystem_t is record
+
+	type ltm9007_14_to_eventFifoSystem_old_t is record
 		realTimeCounter_latched : std_logic_vector(63 downto 0);
 		channel : data8x16Bit_t;	
 		newData : std_logic;
@@ -487,8 +525,25 @@ package types is
 		chargeDone : std_logic;
 		baseline : data8x24Bit_t;
 		baselineDone : std_logic;
-	--	timing : data8x16Bit_t;
-	--	timingDone : std_logic;
+	end record;
+
+	type ltm9007_14_to_eventFifoSystem_t is record
+		channel : data8x16Bit_t;	
+		newData : std_logic;
+		samplingDone : std_logic;
+		charge : data8x24Bit_t;
+		maxValue : data8x16Bit_t;
+		chargeDone : std_logic;
+		baseline : data8x24Bit_t;
+		baselineDone : std_logic;
+		debugFifoOut : std_logic_vector(15 downto 0);
+		--cascadingData : std_logic_vector(7 downto 0);
+		--cascadingDataReady : std_logic;
+		--realTimeCounter_latched : std_logic_vector(63 downto 0);
+		--roiBuffer : std_logic_vector(9 downto 0);
+		--roiBufferReady : std_logic;
+
+		--drs4_to_eventFifoSystem : drs4_to_eventFifoSystem_t;
 	end record;
 
 	type adcClocks_t is record
@@ -509,6 +564,14 @@ package types is
 
 -------------------------------------------------------------------------------
 	
+	type drs4AndAdcData_t is record
+		adcData : ltm9007_14_to_eventFifoSystem_t;
+		drs4Data : drs4_to_eventFifoSystem_t;
+	end record;
+	type drs4AndAdcData_vector_t is array (0 to 2) of drs4AndAdcData_t;
+
+-------------------------------------------------------------------------------
+	
 	type ltm9007_14_registerRead_t is record
 		--fifoA : std_logic_vector(4*14-1 downto 0);
 		--fifoB : std_logic_vector(4*14-1 downto 0);
@@ -525,6 +588,8 @@ package types is
 		--fifoWordsA2 : std_logic_vector(7 downto 0);
 		baselineStart : std_logic_vector(9 downto 0);
 		baselineEnd : std_logic_vector(9 downto 0);
+		debugChannelSelector : std_logic_vector(2 downto 0);
+		debugFifoOut : std_logic_vector(15 downto 0);
 	end record;
 	type ltm9007_14_registerWrite_t is record
 		clock : std_logic;
@@ -540,6 +605,7 @@ package types is
 		offsetCorrectionRamWrite : std_logic_vector(7 downto 0);
 		baselineStart : std_logic_vector(9 downto 0);
 		baselineEnd : std_logic_vector(9 downto 0);
+		debugChannelSelector : std_logic_vector(2 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -555,11 +621,11 @@ package types is
 		
 		drs4Decimator : std_logic_vector(15 downto 0);
 		
-		--rate : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
-		--rateLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
-		--rateDeadTimeLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
-		--counterPeriod : std_logic_vector(15 downto 0);
-		--sameEventTime : std_logic_vector(11 downto 0);
+	rate : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
+	rateLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
+	rateDeadTimeLatched : std_logic_vector(15 downto 0); -- dataNumberOfChannelsX16Bit_t;
+	counterPeriod : std_logic_vector(15 downto 0);
+	sameEventTime : std_logic_vector(11 downto 0);
 		
 		gateTime : std_logic_vector(15 downto 0);
 	end record;
@@ -580,9 +646,10 @@ package types is
 		
 		drs4Decimator : std_logic_vector(15 downto 0);
 		
-		--counterPeriod : std_logic_vector(15 downto 0);
-		--resetCounter : std_logic; --_vector(15 downto 0);
-		--sameEventTime : std_logic_vector(11 downto 0);
+	counterPeriod : std_logic_vector(15 downto 0);
+	resetCounter : std_logic; --_vector(15 downto 0);
+	sameEventTime : std_logic_vector(11 downto 0);
+	softTrigger : std_logic;
 		
 		gateTime : std_logic_vector(15 downto 0);
 	end record;
@@ -593,8 +660,9 @@ package types is
 		triggerDelayed : std_logic;
 		triggerNotDelayed : std_logic;
 		
-		--singleSoftTrigger : std_logic;
-		--sumTriggerSameEvent : std_logic;
+	softTrigger : std_logic;
+	--singleSoftTrigger : std_logic;
+	sumTriggerSameEvent : std_logic;
 		
 		flasherTrigger : std_logic;
 		flasherTriggerGate : std_logic;
@@ -669,7 +737,14 @@ package types is
 	type clockConfig_debug_t is record
 		drs4RefClockPeriod : std_logic_vector(7 downto 0);
 	end record;
-	
+
+-------------------------------------------------------------------------------
+
+	type uv_loggerClocks_t is record
+		communicationClock : std_logic;
+		communicationClockReset : std_logic;
+	end record;
+
 -------------------------------------------------------------------------------
 	
 	type clocks_t is record
@@ -787,6 +862,7 @@ package types is
 		dac_valueIdle : std_logic_vector(11 downto 0);
 		dac_valueLow : std_logic_vector(11 downto 0);
 		dac_valueHigh : std_logic_vector(11 downto 0);
+		dac_incDacValue : std_logic_vector(11 downto 0);
 		dac_time1 : std_logic_vector(15 downto 0);
 		dac_time2 : std_logic_vector(15 downto 0);
 		dac_time3 : std_logic_vector(15 downto 0);
@@ -796,6 +872,20 @@ package types is
 		adc_syncTimeout : std_logic_vector(15 downto 0);
 		adc_baselineAveragingTime : std_logic_vector(15 downto 0);
 		jumper : std_logic_vector(15 downto 0);
+		adc_threshold_p : std_logic_vector(15 downto 0);
+		adc_threshold_n : std_logic_vector(15 downto 0);
+		fifo_avrFactor : std_logic_vector(3 downto 0);
+		decoder2frameWidth : std_logic_vector(15 downto 0);
+		
+		uartDebugLoop0Enable : std_logic;
+		uartDebugLoop1Enable : std_logic;
+		
+		adc_decoder_t1 : std_logic_vector(15 downto 0);
+		adc_decoder_t2 : std_logic_vector(15 downto 0);
+		adc_decoder_t3 : std_logic_vector(15 downto 0);
+		adc_decoder_t4 : std_logic_vector(15 downto 0);
+		adc_decoder_bits : std_logic_vector(15 downto 0);
+		adc_debug : std_logic_vector(15 downto 0);
 	end record;
 
 -------------------------------------------------------------------------------
@@ -1155,6 +1245,48 @@ package body types is
 	begin
 		return std_logic_vector(capValue(unsigned(value),newSize));
 	end;
+	
+	function std_logic_TIG(value : std_logic) return std_logic is
+		variable temp_TPTHRU_TIG : std_logic;
+		attribute keep of temp_TPTHRU_TIG : variable is "true";
+		attribute DONT_TOUCH of temp_TPTHRU_TIG : variable is "true";
+	begin
+		temp_TPTHRU_TIG := value;
+		return temp_TPTHRU_TIG;
+	end;
+
+	function std_logic_vector_TIG(value : std_logic_vector) return std_logic_vector is
+		--variable temp_TPTHRU_TIG : std_logic_vector(value'length-1 downto 0);
+		variable temp : std_logic_vector(value'range);
+		--attribute keep of temp_TPTHRU_TIG: variable is "true";
+	begin
+		--temp_TPTHRU_TIG := value;
+		for i in value'range loop
+			temp(i) := std_logic_TIG(value(i));
+		end loop;
+		return temp;
+	end;
+
+	procedure std_logic_TIG_p(signal i: in std_logic; signal o: out std_logic) is
+		variable temp_TPTHRU_TIG : std_logic;
+		attribute keep of temp_TPTHRU_TIG : variable is "true";
+		attribute DONT_TOUCH of temp_TPTHRU_TIG : variable is "true";
+	begin
+		temp_TPTHRU_TIG := i;
+		o <= temp_TPTHRU_TIG;
+	end;
+
+	function i2v(value : integer; width : integer) return std_logic_vector is
+	begin
+		return std_logic_vector(to_unsigned(value, width));
+	end;
+
+	function i2u(value : integer; width : integer) return unsigned is
+	begin
+		return to_unsigned(value, width);
+	end;
+
+
 
 ---- Example 1
 --  function <function_name>  (signal <signal_name> : in <type_declaration>  ) return <type_declaration> is

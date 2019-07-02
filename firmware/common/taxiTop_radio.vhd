@@ -487,104 +487,104 @@ begin
 
 	vcxoQ2Enable <= '0'; -- Q2 not mounted
 
-	x0: entity work.clockConfig port map(QOSC2_OUT, "not"(PON_RESETn), triggerSerdesClocks, adcClocks, clockValid, clockConfig_debug, drs4RefClock );
-	x1: entity work.smcBusWrapper port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), triggerSerdesClocks.serdesDivClockReset, triggerSerdesClocks.serdesDivClock, addressAndControlBus);
-	--x2: entity work.smcBusEntry port map(triggerSerdesClocks.serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
-	
-	x6: entity work.serdesIn_1to8 port map('0', DISCR_OUT_1P, DISCR_OUT_1N, triggerSerdesClocks, '0', "00", discriminatorSerdes, open);	
---	x7a: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(7 downto 0), LVDS_IO_P(5 downto 5), LVDS_IO_N(5 downto 5));
---	x7b: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(15 downto 8), LVDS_IO_P(0 downto 0), LVDS_IO_N(0 downto 0));
-
-	x8: entity work.triggerLogic generic map(8) port map(discriminatorSerdes, deadTime, internalTiming, trigger, triggerLogic_0r, triggerLogic_0w);
-	
-	x9a: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
-	x9b: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed2, triggerDataDelay_1r, triggerDataDelay_1w);
-
-	x10: entity work.triggerTimeToRisingEdge generic map(8) port map(discriminatorSerdesDelayed, trigger.triggerNotDelayed, edgeData, edgeDataReady, triggerTimeToRisingEdge_0r, triggerTimeToRisingEdge_0w, triggerTiming);
-
-	x12: entity work.pixelRateCounter port map(discriminatorSerdesDelayed2, deadTime, trigger.sumTriggerSameEvent, rateCounterTimeOut, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
-
-	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut,irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
-
-	drs4Denable(1) <= drs4Denable(0);
-	drs4Dwrite(1) <= drs4Dwrite(0);
-	drs4Rsrload(1) <= drs4Rsrload(0);
-	drs4Srin(1) <= drs4Srin(0);
-	drs4Srclk(1) <= drs4Srclk(0);
-
-	drs4Denable(2) <= drs4Denable(0);
-	drs4Dwrite(2) <= drs4Dwrite(0);
-	drs4Rsrload(2) <= drs4Rsrload(0);
-	drs4Srin(2) <= drs4Srin(0);
-	drs4Srclk(2) <= drs4Srclk(0);
-	
-	--drs4Srout(0)
-	--drs4Dtap(0)
-	--drs4Plllck(0)
-
-	lvdsDebugOut(1) <= trigger.triggerDelayed;
-	lvdsDebugOut(2) <= trigger.triggerNotDelayed;
-
-	x14a: entity work.internalTiming generic map(globalClockRate_kHz) port map(internalTiming, internalTiming_0r, internalTiming_0w);
-	x14b: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, internalTiming, gpsTiming, gpsTiming_0r, gpsTiming_0w);
-	x14c: entity work.whiteRabbitTiming port map(whiteRabbitPpsIregbIn, whiteRabbitClockIn, internalTiming, whiteRabbitTiming, whiteRabbitTiming_0r, whiteRabbitTiming_0w);
-	
-	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), deadTime, trigger, internalTiming, adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
-	
-	--x7: entity work.serdesOut_8to1 generic map(4,1,"PER_CHANL","SINGLEENDED") port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, (drs4DwriteSerdes(0)(6),drs4DwriteSerdes(0)(4),drs4DwriteSerdes(0)(2),drs4DwriteSerdes(0)(0)), DRS4_DWRITE(1 to 1), open);
-	--x17: entity work.ltm9007_14 port map(ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1), ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1), ADC_DCOA_P(1), ADC_DCOA_N(1), ADC_DCOB_P(1), ADC_DCOB_N(1), adcNcsA(0), adcNcsB(0), adcSdi, adcSck, '1', drs4Clocks, adcFifo, ltm9007_14_0r, ltm9007_14_0w);
-	
-	x17: entity work.ltm9007_14 port map(
-		ADC_ENC_P(1), ADC_ENC_N(1),
-		ADC_OUTA_1P, ADC_OUTA_1N,
-		adcNcsA(0), adcNcsB(0), adcSdi, adcSck,
-		drs4_to_ltm9007_14, drs4Data, adcClocks,
-		ltm9007_14_0r, ltm9007_14_0w);
-
-	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_0r, dac088s085_x3_0w);
-	
-	x15: entity work.ad56x1 port map(vcxoQ3DacNotSync, vcxoQ1DacNotSync, vcxoQ13DacMosi, vcxoQ13DacSclk, ad56x1_0r, ad56x1_0w);
-	
-	x18: entity work.iceTad port map(nP24VOn, nP24VOnTristate, rs485DataIn, rs485DataOut, rs485DataTristate, rs485DataEnable, iceTad_0r, iceTad_0w);
-	
-	x19: entity work.panelPower port map(nPanelPowerOn, panelPower_0r, panelPower_0w);
-	
-	x20: entity work.tmp05 port map(TEMPERATURE, tmp05_0r, tmp05_0w);
-
-	x3: entity work.registerInterface_iceScint port map(addressAndControlBus, ebiDataIn, ebiDataOut, 
-		triggerTimeToRisingEdge_0r,
-		triggerTimeToRisingEdge_0w,
-		eventFifoSystem_0r,
-		eventFifoSystem_0w,
-		triggerDataDelay_0r,
-		triggerDataDelay_0w,
-		triggerDataDelay_1r,
-		triggerDataDelay_1w,
-		pixelRateCounter_0r,
-		pixelRateCounter_0w,
-		dac088s085_x3_0r,
-		dac088s085_x3_0w,
-		gpsTiming_0r,
-		gpsTiming_0w,
-		whiteRabbitTiming_0r,
-		whiteRabbitTiming_0w,
-		internalTiming_0r,
-		internalTiming_0w,
-		ad56x1_0r,
-		ad56x1_0w,
-		drs4_0r,
-		drs4_0w,
-		ltm9007_14_0r,
-		ltm9007_14_0w,
-		triggerLogic_0r,
-		triggerLogic_0w,
-		iceTad_0r,
-		iceTad_0w,
-		panelPower_0r,
-		panelPower_0w,
-		tmp05_0r,
-		tmp05_0w,
-		clockConfig_debug
-	);
+--	x0: entity work.clockConfig port map(QOSC2_OUT, "not"(PON_RESETn), triggerSerdesClocks, adcClocks, clockValid, clockConfig_debug, drs4RefClock );
+--	x1: entity work.smcBusWrapper port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), triggerSerdesClocks.serdesDivClockReset, triggerSerdesClocks.serdesDivClock, addressAndControlBus);
+--	--x2: entity work.smcBusEntry port map(triggerSerdesClocks.serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
+--	
+--	x6: entity work.serdesIn_1to8 port map('0', DISCR_OUT_1P, DISCR_OUT_1N, triggerSerdesClocks, '0', "00", discriminatorSerdes, open);	
+----	x7a: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(7 downto 0), LVDS_IO_P(5 downto 5), LVDS_IO_N(5 downto 5));
+----	x7b: entity work.serdesOut_8to1 port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, discriminatorSerdes(15 downto 8), LVDS_IO_P(0 downto 0), LVDS_IO_N(0 downto 0));
+--
+--	x8: entity work.triggerLogic generic map(8) port map(discriminatorSerdes, deadTime, internalTiming, trigger, triggerLogic_0r, triggerLogic_0w);
+--	
+--	x9a: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed, triggerDataDelay_0r, triggerDataDelay_0w);
+--	x9b: entity work.triggerDataDelay port map(discriminatorSerdes, discriminatorSerdesDelayed2, triggerDataDelay_1r, triggerDataDelay_1w);
+--
+--	x10: entity work.triggerTimeToRisingEdge generic map(8) port map(discriminatorSerdesDelayed, trigger.triggerNotDelayed, edgeData, edgeDataReady, triggerTimeToRisingEdge_0r, triggerTimeToRisingEdge_0w, triggerTiming);
+--
+--	x12: entity work.pixelRateCounter port map(discriminatorSerdesDelayed2, deadTime, trigger.sumTriggerSameEvent, rateCounterTimeOut, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
+--
+--	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut,irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
+--
+--	drs4Denable(1) <= drs4Denable(0);
+--	drs4Dwrite(1) <= drs4Dwrite(0);
+--	drs4Rsrload(1) <= drs4Rsrload(0);
+--	drs4Srin(1) <= drs4Srin(0);
+--	drs4Srclk(1) <= drs4Srclk(0);
+--
+--	drs4Denable(2) <= drs4Denable(0);
+--	drs4Dwrite(2) <= drs4Dwrite(0);
+--	drs4Rsrload(2) <= drs4Rsrload(0);
+--	drs4Srin(2) <= drs4Srin(0);
+--	drs4Srclk(2) <= drs4Srclk(0);
+--	
+--	--drs4Srout(0)
+--	--drs4Dtap(0)
+--	--drs4Plllck(0)
+--
+--	lvdsDebugOut(1) <= trigger.triggerDelayed;
+--	lvdsDebugOut(2) <= trigger.triggerNotDelayed;
+--
+--	x14a: entity work.internalTiming generic map(globalClockRate_kHz) port map(internalTiming, internalTiming_0r, internalTiming_0w);
+--	x14b: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, internalTiming, gpsTiming, gpsTiming_0r, gpsTiming_0w);
+--	x14c: entity work.whiteRabbitTiming port map(whiteRabbitPpsIregbIn, whiteRabbitClockIn, internalTiming, whiteRabbitTiming, whiteRabbitTiming_0r, whiteRabbitTiming_0w);
+--	
+--	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), deadTime, trigger, internalTiming, adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+--	
+--	--x7: entity work.serdesOut_8to1 generic map(4,1,"PER_CHANL","SINGLEENDED") port map(triggerSerdesClocks.serdesIoClock, triggerSerdesClocks.serdesStrobe, reset, triggerSerdesClocks.serdesDivClock, (drs4DwriteSerdes(0)(6),drs4DwriteSerdes(0)(4),drs4DwriteSerdes(0)(2),drs4DwriteSerdes(0)(0)), DRS4_DWRITE(1 to 1), open);
+--	--x17: entity work.ltm9007_14 port map(ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, ADC_FRA_P(1 to 1), ADC_FRA_N(1 to 1), ADC_FRB_P(1 to 1), ADC_FRB_N(1 to 1), ADC_DCOA_P(1), ADC_DCOA_N(1), ADC_DCOB_P(1), ADC_DCOB_N(1), adcNcsA(0), adcNcsB(0), adcSdi, adcSck, '1', drs4Clocks, adcFifo, ltm9007_14_0r, ltm9007_14_0w);
+--	
+--	x17: entity work.ltm9007_14 port map(
+--		ADC_ENC_P(1), ADC_ENC_N(1),
+--		ADC_OUTA_1P, ADC_OUTA_1N,
+--		adcNcsA(0), adcNcsB(0), adcSdi, adcSck,
+--		drs4_to_ltm9007_14, drs4Data, adcClocks,
+--		ltm9007_14_0r, ltm9007_14_0w);
+--
+--	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_0r, dac088s085_x3_0w);
+--	
+--	x15: entity work.ad56x1 port map(vcxoQ3DacNotSync, vcxoQ1DacNotSync, vcxoQ13DacMosi, vcxoQ13DacSclk, ad56x1_0r, ad56x1_0w);
+--	
+--	x18: entity work.iceTad port map(nP24VOn, nP24VOnTristate, rs485DataIn, rs485DataOut, rs485DataTristate, rs485DataEnable, iceTad_0r, iceTad_0w);
+--	
+--	x19: entity work.panelPower port map(nPanelPowerOn, panelPower_0r, panelPower_0w);
+--	
+--	x20: entity work.tmp05 port map(TEMPERATURE, tmp05_0r, tmp05_0w);
+--
+--	x3: entity work.registerInterface_iceScint port map(addressAndControlBus, ebiDataIn, ebiDataOut, 
+--		triggerTimeToRisingEdge_0r,
+--		triggerTimeToRisingEdge_0w,
+--		eventFifoSystem_0r,
+--		eventFifoSystem_0w,
+--		triggerDataDelay_0r,
+--		triggerDataDelay_0w,
+--		triggerDataDelay_1r,
+--		triggerDataDelay_1w,
+--		pixelRateCounter_0r,
+--		pixelRateCounter_0w,
+--		dac088s085_x3_0r,
+--		dac088s085_x3_0w,
+--		gpsTiming_0r,
+--		gpsTiming_0w,
+--		whiteRabbitTiming_0r,
+--		whiteRabbitTiming_0w,
+--		internalTiming_0r,
+--		internalTiming_0w,
+--		ad56x1_0r,
+--		ad56x1_0w,
+--		drs4_0r,
+--		drs4_0w,
+--		ltm9007_14_0r,
+--		ltm9007_14_0w,
+--		triggerLogic_0r,
+--		triggerLogic_0w,
+--		iceTad_0r,
+--		iceTad_0w,
+--		panelPower_0r,
+--		panelPower_0w,
+--		tmp05_0r,
+--		tmp05_0w,
+--		clockConfig_debug
+--	);
 
 end behaviour;

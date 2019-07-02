@@ -45,6 +45,7 @@ architecture Behavioral of triggerLogic is
 	
 	signal triggerSerdesNotDelayed : std_logic_vector(7 downto 0) := (others=>'0');
 	signal triggerSerdesDelayed : std_logic_vector(7 downto 0) := (others=>'0');
+	signal triggerSerdesDelayed_r : std_logic_vector(7 downto 0) := (others=>'0');
 	--variable triggerOutSerdes_v : std_logic_vector(7 downto 0) := (others=>'0');
 	signal triggerMasked : data8x8Bit_t := (others=>(others=>'0'));
 	
@@ -101,17 +102,17 @@ begin
 	--registerRead.trigger.triggerNotDelayed <= triggerNotDelayed;
 	--registerRead.trigger.triggerDelayed <= triggerDelayed;
 	--registerRead.trigger.triggerSerdesNotDelayed <= triggerSerdesNotDelayed;
-	--registerRead.trigger.triggerSerdesDelayed <= triggerSerdesDelayed;
+	--registerRead.trigger.triggerSerdesDelayed <= triggerSerdesDelayed_r;
 	
 	trigger.triggerNotDelayed <= triggerNotDelayed;
 	trigger.triggerDelayed <= triggerDelayed;
 	trigger.triggerSerdesNotDelayed <= triggerSerdesNotDelayed;
-	trigger.triggerSerdesDelayed <= triggerSerdesDelayed;
+	trigger.triggerSerdesDelayed <= triggerSerdesDelayed_r;
 	trigger.softTrigger <= softTrigger or triggerGeneratorTrigger;
 	trigger.sumTriggerSameEvent <= sumTriggerSameEvent;
 	--triggerNotDelayed <= '1' when (((triggerPixelIn /= (triggerPixelIn'range => '0')) or (softTrigger = '1')) and (triggerDisabled = '0')) else '0';
 	triggerNotDelayed <= '1' when (triggerSerdesNotDelayed /= x"00") else '0';
-	triggerDelayed <= '1' when (triggerSerdesDelayed /= x"00") else '0';
+	triggerDelayed <= '1' when (triggerSerdesDelayed_r /= x"00") else '0';
 
 
 	triggerToRate(0) <= triggerDelayed; -- ## hack!!11!
@@ -139,6 +140,12 @@ begin
 	
 	e0: entity work.triggerLogicDelayFifo port map(registerWrite.clock, fifoClear, triggerSerdesNotDelayed, fifoWrite, fifoRead, triggerSerdesDelayed, open, open);
 
+	process (registerWrite.clock)
+	begin
+		if rising_edge(registerWrite.clock) then
+			triggerSerdesDelayed_r <= triggerSerdesDelayed;
+		end if;
+	end process;
 	
 	P0:process (registerWrite.clock)
 	begin

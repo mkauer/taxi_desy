@@ -16,7 +16,7 @@ package types_platformSpecific is
 constant numberOfChannels_platformSpecific : integer := 8;
 constant globalClockRate_platformSpecific_hz : integer := 118750000;
 
-type system_type_t is (ICE_SCINT);
+type system_type_t is (ICE_SCINT, UV_LOGGER, ICE_SCINT_RADIO, INVALID);
 constant SYSTEM_TYPE : system_type_t := ICE_SCINT;
 --alias numberOfChannels : integer is numberOfChannels_platformSpecific;
 

@@ -290,6 +290,7 @@ g0: if moduleEnabled /= 0 generate
 				numberOfSamplesToRead <= x"0040";
 				drs4_0w.sampleMode <= x"0";
 				drs4_0w.readoutMode <= x"5"; 
+				drs4_0w.writeShiftRegister <= "11111111"; 
 				ltm9007_14_0w.testMode <= x"0";
 				ltm9007_14_0w.init <= '1'; --autoreset
 				triggerLogic_0w.triggerMask <= x"00"; -- "00" = all on 
@@ -344,21 +345,34 @@ g0: if moduleEnabled /= 0 generate
 				houseKeeping_0w.enablePcbLeds <= '0';
 				houseKeeping_0w.enableJ24TestPins <= '0';
 				--triggerTimeToRisingEdge_0w.timeout <= x"0164"; -- 0x164 == 356 ~ 3us@118.75MHz
-				commDebug_0w.tx_baud_div <= x"0130"; 
+				commDebug_0w.tx_baud_div <= i2v(300,16); 
 				commDebug_0w.dU_1mV <= x"0190";
 				commDebug_0w.com_adc_thr <= x"0083";
 				commDebug_0w.dac_valueIdle <= x"800";
-				commDebug_0w.dac_valueLow <= x"000";
-				commDebug_0w.dac_valueHigh <= x"fff";
-				commDebug_0w.dac_time1 <= x"003c";
-				commDebug_0w.dac_time2 <= x"0037";
-				commDebug_0w.dac_time3 <= x"0010";
+				commDebug_0w.dac_valueLow <= x"001";
+				commDebug_0w.dac_valueHigh <= x"ffe";
+				commDebug_0w.dac_incDacValue <= x"200";
+				commDebug_0w.dac_time1 <= i2v(60,16);
+				commDebug_0w.dac_time2 <= i2v(62,16);
+				commDebug_0w.dac_time3 <= i2v(10,16);
 				commDebug_0w.dac_clkTime <= x"0001";
 				commDebug_0w.com_thr_adj <= "000";
 				commDebug_0w.adc_deadTime <= x"0f0";
 				commDebug_0w.adc_syncTimeout <= x"1000";
 				commDebug_0w.adc_baselineAveragingTime <= x"03ff";
 				commDebug_0w.jumper <= x"0000";
+				commDebug_0w.adc_threshold_p <= i2v(8400,16);
+				commDebug_0w.adc_threshold_n <= i2v(8000,16);
+				commDebug_0w.fifo_avrFactor <= x"4";
+				commDebug_0w.adc_decoder_t1 <= x"1000";
+				commDebug_0w.adc_decoder_t2 <= x"0030";
+				commDebug_0w.adc_decoder_t3 <= x"0100";
+				commDebug_0w.adc_decoder_t4 <= x"0130";
+				commDebug_0w.adc_decoder_bits <= x"0008";
+				commDebug_0w.decoder2frameWidth <= x"0009";
+				commDebug_0w.adc_debug <= x"0000";
+				commDebug_0w.uartDebugLoop0Enable <= '0';
+				commDebug_0w.uartDebugLoop1Enable <= '0';
 			else
 				--valuesChangedChip0Temp <= valuesChangedChip0Temp and not(dac088s085_x3_0r.valuesChangedChip0Reset); -- ## move to module.....
 				--valuesChangedChip1Temp <= valuesChangedChip1Temp and not(dac088s085_x3_0r.valuesChangedChip1Reset);
@@ -601,6 +615,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"10a6" => numberOfSamplesToRead <= dataBusIn;
 						when x"10a8" => drs4_0w.sampleMode <= dataBusIn(3 downto 0);
 						when x"10aa" => drs4_0w.readoutMode <= dataBusIn(3 downto 0);
+						when x"10ac" => drs4_0w.writeShiftRegister <= dataBusIn(7 downto 0);
 						when others => null;
 					end case;
 
@@ -686,6 +701,7 @@ g0: if moduleEnabled /= 0 generate
 						when x"d000" => commDebug_0w.tx_baud_div <= dataBusIn(15 downto 0);
 						when x"d002" => commDebug_0w.dU_1mV <= dataBusIn(15 downto 0);
 						when x"d004" => commDebug_0w.com_adc_thr <= dataBusIn(15 downto 0);
+						--when x"d008" => commDebug_0w.dac_incDacValue <= dataBusIn(11 downto 0);
 						when x"d010" => commDebug_0w.dac_valueIdle <= dataBusIn(11 downto 0);
 						when x"d012" => commDebug_0w.dac_valueLow <= dataBusIn(11 downto 0);
 						when x"d014" => commDebug_0w.dac_valueHigh <= dataBusIn(11 downto 0);
@@ -698,6 +714,12 @@ g0: if moduleEnabled /= 0 generate
 						when x"d022" => commDebug_0w.adc_syncTimeout <= dataBusIn(15 downto 0);
 						when x"d024" => commDebug_0w.adc_baselineAveragingTime <= dataBusIn(15 downto 0);
 						when x"d026" => commDebug_0w.jumper <= dataBusIn(15 downto 0);
+						when x"d028" => commDebug_0w.adc_threshold_p <= dataBusIn(15 downto 0);
+						when x"d02a" => commDebug_0w.adc_threshold_n <= dataBusIn(15 downto 0);
+						when x"d02c" => commDebug_0w.fifo_avrFactor <= dataBusIn(3 downto 0);
+						when x"d02e" => commDebug_0w.uartDebugLoop0Enable <= dataBusIn(0);
+							commDebug_0w.uartDebugLoop1Enable <= dataBusIn(1);
+						when x"d030" => commDebug_0w.adc_debug <= dataBusIn(15 downto 0);
 						when others => null;
 					end case;
 
@@ -894,6 +916,8 @@ g0: if moduleEnabled /= 0 generate
 						when x"10a6" => readDataBuffer <= drs4_0r.numberOfSamplesToRead;
 						when x"10a8" => readDataBuffer <= x"000" & drs4_0r.sampleMode;
 						when x"10aa" => readDataBuffer <= x"000" & drs4_0r.readoutMode;
+						when x"10ac" => readDataBuffer <= x"00" & drs4_0r.writeShiftRegister;
+						when x"10ae" => readDataBuffer <= x"00" & drs4_0r.cascadingDataDebug;
 						
 						when x"10b0" => readDataBuffer <= x"000" & ltm9007_14_0r.testMode;
 						when x"10b2" => readDataBuffer <= "00" & ltm9007_14_0r.testPattern;

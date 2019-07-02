@@ -106,13 +106,10 @@ entity taxiTop_iceScint is
 		EBI1_NWAIT    : out std_logic; --PC15/NWAIT, low active
 									   -- Stamp9G45 3.3V signals
 		PC1_ARM_IRQ0  : out std_logic; -- PIO port PC1, used as edge (both) triggered interrupt signal
-									   -- single wire 64 bit EEPROM
-									   --     ADDR_64BIT    : inout std_logic; -- 2.5V CMOS, one wire serial EPROM DS2431P
-		ADDR_64BIT    : inout std_logic;
+		ADDR_64BIT    : inout std_logic; -- one wire serial EPROM DS2431P
 
 		-- DRS4 (Domino Ring Sampler) chips #1..3, 2.5V CMOS outputs
 		DRS4_SROUT   : in  std_logic_vector(1 to 3); -- Multiplexed Shift Register Output
-													 --     DRS4_WSROUT  : in  std_logic_vector(1 to 3); -- Double function: Write Shift Register
 													 -- Output if DWRITE=1, Read Shift Register Output if DWRITE=0
 		DRS4_DTAP    : in  std_logic_vector(1 to 3); -- Domino Tap Signal Output toggling on each domino revolution
 		DRS4_PLLLCK  : in  std_logic_vector(1 to 3); -- PLL Lock Indicator Output
@@ -184,43 +181,33 @@ architecture behaviour of taxiTop_iceScint is
 
 	--signal asyncAddressAndControlBus : std_logic_vector(27 downto 0);
 	signal addressAndControlBus : std_logic_vector(31 downto 0);
-	--signal clock0 : std_logic := '0';
-	--signal notClock0 : std_logic := '1';
-	--signal clock0out : std_logic;
 	signal clockValid : std_logic;
 	signal asyncReset : std_logic;
 
-	signal ebiNotWrite : std_logic := '0';
-	signal ebiNotRead : std_logic := '0';
-	signal ebiNotChipSelect : std_logic := '0';
-	signal ebiAddress : std_logic_vector(23 downto 0) := (others=>'0');
-	signal ebiDataIn : std_logic_vector(15 downto 0) := (others=>'0');
-	signal ebiDataOut : std_logic_vector(15 downto 0) := (others=>'0');
-	--	signal ebiDataOutActive : std_logic_vector(0 downto 0) := (others=>'0');
+	signal ebiNotWrite : std_logic;
+	signal ebiNotRead : std_logic;
+	signal ebiNotChipSelect : std_logic;
+	signal ebiAddress : std_logic_vector(23 downto 0);
+	signal ebiDataIn : std_logic_vector(15 downto 0);
+	signal ebiDataOut : std_logic_vector(15 downto 0);
 
 	constant numberOfDsr : integer := 3;
 	type drsChannel_t is array(0 to numberOfDsr-1) of std_logic_vector(7 downto 0);
 	signal discriminator : drsChannel_t;
 
-	type adcData_t is array(0 to 6) of std_logic_vector(11 downto 0); --adc4channel_r;
-	signal adcData : adcData_t;
+	--type adcData_t is array(0 to 6) of std_logic_vector(11 downto 0); --adc4channel_r;
+	--signal adcData : adcData_t;
 
-	--	signal serdesDivClock : std_logic := '0';
-	--	signal serdesIoClock_1 : std_logic := '0';
-	--	signal serdesIoClock_2 : std_logic := '0';
-	--	signal serdesStrobe_1 : std_logic := '0';
-	--	signal serdesStrobe_2 : std_logic := '0';
-	--signal reset : std_logic := '0';
-	signal discriminatorSerdes : std_logic_vector(8*8-1 downto 0) := (others=>'0');
-	signal discriminatorSerdesDelayed : std_logic_vector(discriminatorSerdes'length-1 downto 0) := (others=>'0');
-	signal discriminatorSerdesDelayed2 : std_logic_vector(discriminatorSerdes'length-1 downto 0) := (others=>'0');
+	signal discriminatorSerdes : std_logic_vector(8*8-1 downto 0);
+	signal discriminatorSerdesDelayed : std_logic_vector(discriminatorSerdes'length-1 downto 0);
+	signal discriminatorSerdesDelayed2 : std_logic_vector(discriminatorSerdes'length-1 downto 0);
 	attribute keep of discriminatorSerdes : signal is "true";
-	signal drs4RefClock : std_logic := '0';
+	signal drs4RefClock : std_logic;
 
-	signal lvdsDebugOut : std_logic_vector(5 downto 0) := (others=>'0');
+	signal lvdsDebugOut : std_logic_vector(5 downto 0);
 
 	signal edgeData : std_logic_vector(8*16-1 downto 0);
-	signal edgeDataReady : std_logic := '0';
+	signal edgeDataReady : std_logic;
 
 	signal triggerTimeToRisingEdge_0r : triggerTimeToRisingEdge_registerRead_t;
 	signal triggerTimeToRisingEdge_0w : triggerTimeToRisingEdge_registerWrite_t;
@@ -244,8 +231,16 @@ architecture behaviour of taxiTop_iceScint is
 	signal ad56x1_0w : ad56x1_registerWrite_t;
 	signal drs4_0r : drs4_registerRead_t;
 	signal drs4_0w : drs4_registerWrite_t;
+	signal drs4_1r : drs4_registerRead_t;
+	signal drs4_1w : drs4_registerWrite_t;
+	signal drs4_2r : drs4_registerRead_t;
+	signal drs4_2w : drs4_registerWrite_t;
 	signal ltm9007_14_0r : ltm9007_14_registerRead_t;
 	signal ltm9007_14_0w : ltm9007_14_registerWrite_t;
+	signal ltm9007_14_1r : ltm9007_14_registerRead_t;
+	signal ltm9007_14_1w : ltm9007_14_registerWrite_t;
+	signal ltm9007_14_2r : ltm9007_14_registerRead_t;
+	signal ltm9007_14_2w : ltm9007_14_registerWrite_t;
 	signal triggerLogic_0r : triggerLogic_registerRead_t;
 	signal triggerLogic_0w : triggerLogic_registerWrite_t;
 	signal iceTad_0r : iceTad_registerRead_t;
@@ -257,117 +252,105 @@ architecture behaviour of taxiTop_iceScint is
 	--signal _0r : _registerRead_t;
 	--signal _0w : _registerWrite_t;
 
-	signal triggerSerdesClocks : triggerSerdesClocks_t := (others=>'0');
+	signal triggerSerdesClocks : triggerSerdesClocks_t;
 	signal triggerTiming : triggerTiming_t;
-	signal drs4Data : ltm9007_14_to_eventFifoSystem_t; -- := (newData => '0', samplingDone => '0', channel => (others=>(others=>'0')), roiBufferReady => '0', roiBuffer => (others=>'0'), charge => (others=>(others=>'0')), chargeDone => '0', baseline => (others=>(others=>'0')), baselineDone => '0');
-	signal gpsTiming : gpsTiming_t := (newData => '0', others => (others=>'0'));
-	signal internalTiming : internalTiming_t; -- := (tick_ms => '0', others => (others=>'0'));
-	signal whiteRabbitTiming : whiteRabbitTiming_t := (newData => '0', others => (others=>'0'));
-	--signal drs4Clocks : drs4Clocks_t := (others=>'0');
-	signal adcFifo : adcFifo_t := (channel=>(others=>(others=>'0')) ,others=>(others=>'0'));
-	signal adcClocks : adcClocks_t := (others=>'0');
-	signal trigger : triggerLogic_t; -- := (triggerNotDelayed => '0', triggerDelayed => '0', softTrigger => '0', others=>(others=>'0'));
-	signal pixelRates : pixelRateCounter_t; -- := (newData => '0', counterPeriod => (others=>'0') , channelLatched => (others=>(others=>'0')));
+	signal adcData : ltm9007_14_to_eventFifoSystem_old_t;
+	signal adcData2 : ltm9007_14_to_eventFifoSystem_old_t;
+	signal adcData3 : ltm9007_14_to_eventFifoSystem_old_t;
+	signal gpsTiming : gpsTiming_t;
+	signal internalTiming : internalTiming_t;
+	signal whiteRabbitTiming : whiteRabbitTiming_t;
+	--signal drs4Clocks : drs4Clocks_t;
+	signal adcFifo : adcFifo_t;
+	signal adcClocks : adcClocks_t;
+	signal trigger : triggerLogic_t;
+	signal triggerDRS4 : std_logic;
+	signal pixelRates : pixelRateCounter_t;
 	signal clockConfig_debug : clockConfig_debug_t;
 
-	signal dacMosi : std_logic_vector(2 downto 0) := "000";
-	signal dacSclk : std_logic_vector(2 downto 0) := "000";
-	signal dacNSync : std_logic_vector(2 downto 0) := "111";
+	signal dacMosi : std_logic_vector(2 downto 0);
+	signal dacSclk : std_logic_vector(2 downto 0);
+	signal dacNSync : std_logic_vector(2 downto 0);
 
-	signal gpsPps : std_logic := '0';
-	signal gpsTimePulse2 : std_logic := '0';
-	signal gpsRx : std_logic := '0';
-	signal gpsTx : std_logic := '0';
-	signal gpsNotReset : std_logic := '0';
-	signal gpsIrq : std_logic := '0';
+	signal gpsPps : std_logic;
+	signal gpsTimePulse2 : std_logic;
+	signal gpsRx : std_logic;
+	signal gpsTx : std_logic;
+	signal gpsNotReset : std_logic;
+	signal gpsIrq : std_logic;
 
-	signal vcxoQ1DacNotSync : std_logic := '0';
-	signal vcxoQ3DacNotSync : std_logic := '0';
-	signal vcxoQ13DacSclk : std_logic := '0';
-	signal vcxoQ13DacMosi : std_logic := '0';
-	signal vcxoQ2Enable : std_logic := '0';
+	signal vcxoQ1DacNotSync : std_logic;
+	signal vcxoQ3DacNotSync : std_logic;
+	signal vcxoQ13DacSclk : std_logic;
+	signal vcxoQ13DacMosi : std_logic;
+	signal vcxoQ2Enable : std_logic;
 
-	signal drs4NotReset : std_logic := '1';
-	signal drs4Address : std_logic_vector(3 downto 0) := "1111";
-	signal drs4Srin : std_logic_vector(2 downto 0) := "000";
-	signal drs4Srclk : std_logic_vector(2 downto 0) := "000";
-	signal drs4Rsrload : std_logic_vector(2 downto 0) := "000";
-	signal drs4Dwrite : std_logic_vector(2 downto 0) := "000";
+	signal drs4NotReset : std_logic; -- := '1';
+	signal drs4Address : std_logic_vector(3 downto 0); -- := "1111";
+	signal drs4Srin : std_logic_vector(2 downto 0);
+	signal drs4Srclk : std_logic_vector(2 downto 0);
+	signal drs4Rsrload : std_logic_vector(2 downto 0);
+	signal drs4Dwrite : std_logic_vector(2 downto 0);
 	signal drs4DwriteSerdes : drsChannel_t;
-	signal drs4Denable : std_logic_vector(2 downto 0) := "000";
-	signal drs4Srout : std_logic_vector(2 downto 0) := "000";
-	signal drs4Dtap : std_logic_vector(2 downto 0) := "000";
-	signal drs4Plllck : std_logic_vector(2 downto 0) := "000";
+	signal drs4Denable : std_logic_vector(2 downto 0);
+	signal drs4Srout : std_logic_vector(2 downto 0);
+	signal drs4Dtap : std_logic_vector(2 downto 0);
+	signal drs4Plllck : std_logic_vector(2 downto 0);
 
-	signal adcEnc : std_logic_vector(2 downto 0) := "000";
-	signal adcNcsA : std_logic_vector(2 downto 0) := "111";
-	signal adcNcsB : std_logic_vector(2 downto 0) := "111";
-	signal adcSdi : std_logic := '0';
-	signal adcSck : std_logic := '0';
-	signal drs4_to_ltm9007_14 : drs4_to_ltm9007_14_t;
+	signal adcSdi : std_logic;
+	signal adcSck : std_logic;
+	signal drs4_to_ltm9007_14 : drs4_to_ltm9007_14_old_t;
+	--signal drs4_to_ltm9007_14_vector : drs4_to_ltm9007_14_vector_t;
 
-	signal rs485DataIn : std_logic_vector(7 downto 0) := (others=>'0');
-	signal rs485DataOut : std_logic_vector(7 downto 0) := (others=>'0');
-	signal rs485DataTristate : std_logic_vector(7 downto 0) := (others=>'0');
-	signal rs485DataEnable : std_logic_vector(7 downto 0) := (others=>'0');
-	signal nP24VOn : std_logic_vector(7 downto 0) := (others=>'0');
-	signal nP24VOnTristate : std_logic_vector(7 downto 0) := (others=>'1');
+	signal rs485DataIn : std_logic_vector(7 downto 0);
+	signal rs485DataOut : std_logic_vector(7 downto 0);
+	signal rs485DataTristate : std_logic_vector(7 downto 0);
+	signal rs485DataEnable : std_logic_vector(7 downto 0);
+	signal nP24VOn : std_logic_vector(7 downto 0);
+	signal nP24VOnTristate : std_logic_vector(7 downto 0); -- := (others=>'1');
 
-	signal nPanelPowerOn : std_logic := '0'; --_vector(2 downto 0) := (others=>'0');
-	signal irq2arm : std_logic := '0';
-	signal whiteRabbitPpsIregbIn : std_logic := '0';
-	signal whiteRabbitPpsIregbInX : std_logic := '0';
-	signal whiteRabbitPpsIregbInZ : std_logic := '0';
-	signal whiteRabbitClockIn : std_logic := '0';
+	signal nPanelPowerOn : std_logic; --_vector(2 downto 0);
+	signal irq2arm : std_logic;
+	signal whiteRabbitPpsIregbIn : std_logic;
+	signal whiteRabbitPpsIregbInX : std_logic;
+	signal whiteRabbitPpsIregbInZ : std_logic;
+	signal whiteRabbitClockIn : std_logic;
 
-	signal deadTime : std_logic := '0';
-	signal rateCounterTimeOut : std_logic := '0';
+	signal deadTime : std_logic;
+	signal rateCounterTimeOut : std_logic;
+
+	signal drs4AndAdcData : drs4AndAdcData_vector_t;
+	--signal drs4AndAdcData : drs4AndAdcData_t;
+	--signal drs4_to_eventFifoSystem : drs4_to_eventFifoSystem_vector_t;
+	signal drs4_to_eventFifoSystem : drs4_to_eventFifoSystem_t;
+
+
+	signal notReset : std_logic;
+	signal denable : std_logic;
+	signal dwrite : std_logic;
+	signal rsrload : std_logic;
+	signal mosi : std_logic;
+	signal miso : std_logic;
+	signal srclk : std_logic;
+	signal dtap : std_logic;
+	signal plllck : std_logic;
+	signal address : std_logic_vector(3 downto 0);
+	signal notChipSelectA : std_logic;
+	signal notChipSelectB : std_logic;
+	signal enc : std_logic;
 
 begin
 
-	s0: if SYSTEM_TYPE = ICE_SCINT generate
-		s1: for i in 0 to 7 generate
-			i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_2P(i), IB => ADC_OUTA_2N(i), O => open);
-			i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_3P(i), IB => ADC_OUTA_3N(i), O => open);
-		end generate;
-
-		g3: for i in 0 to 3 generate
-			i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_4P(i), IB => ADC_OUTA_4N(i), O => open);
-		end generate;
-		
-		i1: OBUFDS port map(O => ADC_ENC_P(2), OB => ADC_ENC_N(2), I => '0');
-		i2: OBUFDS port map(O => ADC_ENC_P(3), OB => ADC_ENC_N(3), I => '0');
-		
-		k1: OBUF port map(O => ADC_CSA(1), I => adcNcsA(0));
-		k1: OBUF port map(O => ADC_CSA(2), I => '0');
-		k1: OBUF port map(O => ADC_CSA(3), I => '0');
-		k2: OBUF port map(O => ADC_CSB(1), I => adcNcsB(0));
-		k2: OBUF port map(O => ADC_CSB(2), I => '0');
-		k2: OBUF port map(O => ADC_CSB(3), I => '0');
-
+	g0a: for i in 0 to 3 generate
+		i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_4P(i), IB => ADC_OUTA_4N(i), O => open);
 	end generate;
 
-	s0: if SYSTEM_TYPE = ICE_SCINT_RADIO generate
-		--s1: for i in 0 to 7 generate
-			--i5: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_2P(i), IB => ADC_OUTA_2N(i), O => open);
-			--i6: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_3P(i), IB => ADC_OUTA_3N(i), O => open);
-		--end generate;
-		g3: for i in 0 to 3 generate
-			i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_4P(i), IB => ADC_OUTA_4N(i), O => open);
-		end generate;
-		
-		k1: OBUF port map(O => ADC_CSA(1), I => adcNcsA(0));
-		k1: OBUF port map(O => ADC_CSA(2), I => adcNcsA(1));
-		k1: OBUF port map(O => ADC_CSA(3), I => adcNcsA(2));
-		k2: OBUF port map(O => ADC_CSB(1), I => adcNcsB(0));
-		k2: OBUF port map(O => ADC_CSB(2), I => adcNcsB(1));
-		k2: OBUF port map(O => ADC_CSB(3), I => adcNcsB(2));
-	end generate;
-	---------------------------------------------------------------------------
-	
+
 	g0: for i in 0 to 7 generate
 		--i1: IBUFDS generic map(DIFF_TERM => true) port map (I => DISCR_OUT_1P(i), IB => DISCR_OUT_1N(i), O => discriminator(0)(i));
 		--i4: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_1P(i), IB => ADC_OUTA_1N(i), O => open); --adcData(0)(i));
+		i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_2P(i), IB => ADC_OUTA_2N(i), O => open);
+		i2: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_OUTA_3P(i), IB => ADC_OUTA_3N(i), O => open);
 
 		--i2: IBUFDS generic map(DIFF_TERM => true) port map (I => DISCR_OUT_2P(i), IB => DISCR_OUT_2N(i), O => discriminator(1)(i));
 		--i3: IBUFDS generic map(DIFF_TERM => true) port map (I => DISCR_OUT_3P(i), IB => DISCR_OUT_3N(i), O => discriminator(2)(i));
@@ -387,7 +370,7 @@ begin
 
 	i25: OBUF port map(O => ADC_SDI, I => adcSdi);
 	i26: OBUF port map(O => ADC_SCK, I => adcSck);
-	--i27: OBUF port map(O => ADC_PAR_SERn, I => '0'); -- ## if gnd: enable serial mode
+	i27: OBUF port map(O => ADC_PAR_SERn, I => '0'); -- ## if gnd: enable serial mode
 
 
 	i1: IBUFDS generic map(DIFF_TERM => true) port map (I => ADC_FR_4P, IB => ADC_FR_4N, O => open);
@@ -403,24 +386,32 @@ begin
 	i9a: OBUF port map(O => ADC_CS_4, I => '0');
 	i9b: IBUF port map(I => ADC_SDO_4, O => open);
 
-
-	--	notClock0 <= not(triggerSerdesClocks.serdesDivClock);
-	--	c1: ODDR2 port map(Q => clock0out, C0 => triggerSerdesClocks.serdesDivClock, C1 => notClock0, CE => '1', D0 => '1', D1 => '0', R => '0', S => '0');
 	--i10: OBUFDS port map(O => LVDS_IO_P(0), OB => LVDS_IO_N(0), I => lvdsDebugOut(0));
 	--i11: OBUFDS port map(O => LVDS_IO_P(1), OB => LVDS_IO_N(1), I => lvdsDebugOut(1));
 	--i12: OBUFDS port map(O => LVDS_IO_P(2), OB => LVDS_IO_N(2), I => lvdsDebugOut(2));
 	--i13: OBUFDS port map(O => LVDS_IO_P(3), OB => LVDS_IO_N(3), I => lvdsDebugOut(3));
 	--i14: OBUFDS port map(O => LVDS_IO_P(4), OB => LVDS_IO_N(4), I => lvdsDebugOut(4));
 	--i15: OBUFDS port map(O => LVDS_IO_P(5), OB => LVDS_IO_N(5), I => lvdsDebugOut(5));
-	i10: IBUF port map(I => LVDS_IO_P(0), O => whiteRabbitPpsIregbInZ);
-	i11: OBUFT port map(O => LVDS_IO_N(0), I => '0', T => '1');
-	g3b: for i in 1 to 4 generate
-		i12a: OBUFT port map(O => LVDS_IO_N(i), I => '0', T => '1');
-		i12b: OBUFT port map(O => LVDS_IO_P(i), I => '0', T => '1');
-	end generate;
-	i13: IBUF port map(I => LVDS_IO_P(5), O => whiteRabbitPpsIregbInX);
-	i14: OBUFT port map(O => LVDS_IO_N(5), I => '0', T => '1');
 
+	i10a: IBUF port map(I => LVDS_IO_P(0), O => whiteRabbitPpsIregbInZ);
+	i11a: OBUFT port map(O => LVDS_IO_N(0), I => '0', T => '1');
+	
+	i10b: OBUFT port map(O => LVDS_IO_P(1), I => '0', T => '1');
+	i11b: OBUFT port map(O => LVDS_IO_N(1), I => '0', T => '1');
+
+	i10c: OBUFT port map(O => LVDS_IO_P(2), I => '0', T => '1');
+	i11c: OBUFT port map(O => LVDS_IO_N(2), I => '0', T => '1'); -- taxiIo in_2
+	
+	i10d: OBUFT port map(O => LVDS_IO_P(3), I => '0', T => '1');
+	i11d: OBUFT port map(O => LVDS_IO_N(3), I => '0', T => '1'); -- taxiIo in_1
+	
+	i10e: OBUFT port map(O => LVDS_IO_P(4), I => '0', T => '1');
+	i11e: OBUFT port map(O => LVDS_IO_N(4), I => '0', T => '1'); -- taxiIo out_2
+	
+	--i10f: OBUFT port map(O => LVDS_IO_P(5), I => '0', T => '1');
+	i10f: IBUF port map(I => LVDS_IO_P(5), O => whiteRabbitPpsIregbInX); -- old patch (used at KIT and PSL?) 
+	i11f: OBUFT port map(O => LVDS_IO_N(5), I => '0', T => '1'); -- taxiIo out_1
+	
 	i15: IBUF port map(I => EBI1_MCK, O => open);
 	i16: IBUF port map(I => EBI1_NWE, O => ebiNotWrite);
 	i17: IBUF port map(I => EBI1_NCS2, O => ebiNotChipSelect);
@@ -444,21 +435,38 @@ begin
 	i28: OBUF port map(O => EBI1_NWAIT, I => '1');
 	i29: OBUF port map(O => PC1_ARM_IRQ0, I => irq2arm);
 
-	g7: for i in 1 to 3 generate k: OBUF port map(O => DRS4_RESETn(i), I => drs4NotReset); end generate;
-	g8: for i in 0 to 3 generate k: OBUF port map(O => DRS4_A(i), I => drs4Address(i)); end generate;
+--	g7: for i in 1 to 3 generate k: OBUF port map(O => DRS4_RESETn(i), I => drs4NotReset); end generate;
+--	g8: for i in 0 to 3 generate k: OBUF port map(O => DRS4_A(i), I => drs4Address(i)); end generate;
 	g9: for i in 1 to 3 generate k: OBUFDS port map(O => DRS4_REFCLK_P(i), OB => DRS4_REFCLK_N(i), I => drs4RefClock); end generate;
-	g10: for i in 1 to 3 generate
-		k1: OBUF port map(O => DRS4_SRIN(i), I => drs4Srin(i-1));
-		k2: OBUF port map(O => DRS4_SRCLK(i), I => drs4Srclk(i-1));
-		k3: OBUF port map(O => DRS4_RSLOAD(i), I => drs4Rsrload(i-1));
-		k4: OBUF port map(O => DRS4_DWRITE(i), I => drs4Dwrite(i-1));
-		k5: OBUF port map(O => DRS4_DENABLE(i), I => drs4Denable(i-1));
-		k6: IBUF port map(I => DRS4_SROUT(i), O => drs4Srout(i-1));
-		k7: IBUF port map(I => DRS4_DTAP(i), O => drs4Dtap(i-1));
-		k8: IBUF port map(I => DRS4_PLLLCK(i), O => drs4Plllck(i-1));
-	end generate;
+--	g10: for i in 1 to 3 generate
+--		k1: OBUF port map(O => DRS4_SRIN(i), I => drs4Srin(i-1));
+--		k2: OBUF port map(O => DRS4_SRCLK(i), I => drs4Srclk(i-1));
+--		k3: OBUF port map(O => DRS4_RSLOAD(i), I => drs4Rsrload(i-1));
+--		k4: OBUF port map(O => DRS4_DWRITE(i), I => drs4Dwrite(i-1));
+--		k5: OBUF port map(O => DRS4_DENABLE(i), I => drs4Denable(i-1));
+--		k6: IBUF port map(I => DRS4_SROUT(i), O => drs4Srout(i-1));
+--		k7: IBUF port map(I => DRS4_DTAP(i), O => drs4Dtap(i-1));
+--		k8: IBUF port map(I => DRS4_PLLLCK(i), O => drs4Plllck(i-1));
+--	end generate;
 	--g10_a: OBUF port map(O => DRS4_DWRITE(2), I => drs4Dwrite(1));
 	--g10_b: OBUF port map(O => DRS4_DWRITE(3), I => drs4Dwrite(2));
+
+-------------------
+--	g10: for i in 2 to 3 generate
+--		k0: OBUF port map(O => DRS4_RESETn(i), I => '0');
+--		k1: OBUF port map(O => DRS4_SRIN(i), I => '0');
+--		k2: OBUF port map(O => DRS4_SRCLK(i), I => '0');
+--		k3: OBUF port map(O => DRS4_RSLOAD(i), I => '0');
+--		k4: OBUF port map(O => DRS4_DWRITE(i), I => '0');
+--		k5: OBUF port map(O => DRS4_DENABLE(i), I => '0');
+--		k6: IBUF port map(I => DRS4_SROUT(i), O => open);
+--		k7: IBUF port map(I => DRS4_DTAP(i), O => open);
+--		k8: IBUF port map(I => DRS4_PLLLCK(i), O => open);
+--	end generate;
+	--g10_a: OBUF port map(O => DRS4_DWRITE(2), I => drs4Dwrite(1));
+	--g10_b: OBUF port map(O => DRS4_DWRITE(3), I => drs4Dwrite(2));
+-------------------
+
 
 	g11: for i in 1 to 3 generate
 		k1: OBUF port map(O => DAC_DIN(i), I => dacMosi(i-1));
@@ -511,7 +519,8 @@ begin
 
 	vcxoQ2Enable <= '0'; -- Q2 not mounted
 
-	x0: entity work.clockConfig port map(QOSC2_OUT, "not"(PON_RESETn), triggerSerdesClocks, adcClocks, clockValid, clockConfig_debug, drs4RefClock );
+	x0: entity work.clockConfig port map(QOSC2_OUT, "not"(PON_RESETn), triggerSerdesClocks, adcClocks, open, clockValid, clockConfig_debug, drs4RefClock );
+	
 	x1: entity work.smcBusWrapper port map("not"(ebiNotChipSelect), ebiAddress, "not"(ebiNotRead), "not"(ebiNotWrite), triggerSerdesClocks.serdesDivClockReset, triggerSerdesClocks.serdesDivClock, addressAndControlBus);
 	--x2: entity work.smcBusEntry port map(triggerSerdesClocks.serdesDivClock, asyncAddressAndControlBus, addressAndControlBus);
 
@@ -528,21 +537,18 @@ begin
 
 	x12: entity work.pixelRateCounter port map(discriminatorSerdesDelayed2, deadTime, trigger.sumTriggerSameEvent, rateCounterTimeOut, pixelRates, internalTiming, pixelRateCounter_0r, pixelRateCounter_0w);
 
-	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut,irq2arm,triggerTiming,drs4Data,internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
+	x11: entity work.eventFifoSystem port map(trigger, rateCounterTimeOut, irq2arm, triggerTiming, drs4AndAdcData, internalTiming,gpsTiming,whiteRabbitTiming,pixelRates,eventFifoSystem_0r,eventFifoSystem_0w);
 
-	drs4Denable(1) <= drs4Denable(0);
-	drs4Dwrite(1) <= drs4Dwrite(0);
-	drs4Rsrload(1) <= drs4Rsrload(0);
-	drs4Srin(1) <= drs4Srin(0);
-	drs4Srclk(1) <= drs4Srclk(0);
-	drs4Denable(2) <= drs4Denable(0);
-	drs4Dwrite(2) <= drs4Dwrite(0);
-	drs4Rsrload(2) <= drs4Rsrload(0);
-	drs4Srin(2) <= drs4Srin(0);
-	drs4Srclk(2) <= drs4Srclk(0);
-	--drs4Srout(0)
-	--drs4Dtap(0)
-	--drs4Plllck(0)
+	--drs4Denable(1) <= drs4Denable(0);
+	--drs4Dwrite(1) <= drs4Dwrite(0);
+	--drs4Rsrload(1) <= drs4Rsrload(0);
+	--drs4Srin(1) <= drs4Srin(0);
+	--drs4Srclk(1) <= drs4Srclk(0);
+	--drs4Denable(2) <= drs4Denable(0);
+	--drs4Dwrite(2) <= drs4Dwrite(0);
+	--drs4Rsrload(2) <= drs4Rsrload(0);
+	--drs4Srin(2) <= drs4Srin(0);
+	--drs4Srclk(2) <= drs4Srclk(0);
 
 	lvdsDebugOut(1) <= trigger.triggerDelayed;
 	lvdsDebugOut(2) <= trigger.triggerNotDelayed;
@@ -551,18 +557,120 @@ begin
 	x14b: entity work.gpsTiming port map(gpsPps, gpsTimePulse2, gpsRx, gpsTx, gpsIrq, gpsNotReset, internalTiming, gpsTiming, gpsTiming_0r, gpsTiming_0w);
 	x14c: entity work.whiteRabbitTiming port map(whiteRabbitPpsIregbIn, whiteRabbitClockIn, internalTiming, whiteRabbitTiming, whiteRabbitTiming_0r, whiteRabbitTiming_0w);
 	
-	x16: entity work.drs4 port map(drs4NotReset, drs4Address, drs4Denable(0), drs4Dwrite(0), drs4DwriteSerdes(0), drs4Rsrload(0), drs4Srout(0), drs4Srin(0), drs4Srclk(0), drs4Dtap(0), drs4Plllck(0), deadTime, trigger, internalTiming, adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+	triggerDRS4 <= trigger.triggerDelayed or trigger.softTrigger;
+
+--	x16: entity work.drs4_x3 generic map(
+--		drs4_type=>"one_channel")
+--	port map(drs4Address, 
+--		DRS4_RESETn(1), DRS4_DENABLE(1), DRS4_DWRITE(1), DRS4_RSLOAD(1), DRS4_SROUT(1), DRS4_SRIN(1), DRS4_SRCLK(1), DRS4_DTAP(1), DRS4_PLLLCK(1),
+--		DRS4_RESETn(2), DRS4_DENABLE(2), DRS4_DWRITE(2), DRS4_RSLOAD(2), DRS4_SROUT(2), DRS4_SRIN(2), DRS4_SRCLK(2), DRS4_DTAP(2), DRS4_PLLLCK(2),
+--		DRS4_RESETn(3), DRS4_DENABLE(3), DRS4_DWRITE(3), DRS4_RSLOAD(3), DRS4_SROUT(3), DRS4_SRIN(3), DRS4_SRCLK(3), DRS4_DTAP(3), DRS4_PLLLCK(3),
+--		--deadTime, triggerDRS4, internalTiming, adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+--		deadTime, triggerDRS4, internalTiming, adcClocks, drs4_to_ltm9007_14_vector, drs4AndAdcData(0).drs4Data, drs4_0r, drs4_0w);
+--	
+--	--x17: entity work.ltm9007_14 port map(
+--	--	ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, adcNcsA(0), adcNcsB(0), 
+--	--	adcSdi, adcSck, drs4_to_ltm9007_14, drs4AndAdcData.adcData, adcClocks, ltm9007_14_0r, ltm9007_14_0w);
+--
+--
+--	x17: entity work.ltm9007_14_icescint generic map(
+--		system_type=>"ICE_SCINT")
+--	port map(
+--		ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, ADC_CSA(1), ADC_CSB(1), 
+--		ADC_ENC_P(2), ADC_ENC_N(2), ADC_OUTA_2P, ADC_OUTA_2N, ADC_CSA(2), ADC_CSB(2), 
+--		ADC_ENC_P(3), ADC_ENC_N(3), ADC_OUTA_3P, ADC_OUTA_3N, ADC_CSA(3), ADC_CSB(3), 
+--		adcSdi, adcSck, drs4_to_ltm9007_14_vector, drs4AndAdcData(0).adcData, adcClocks, ltm9007_14_0r, ltm9007_14_0w);
+
+
 	
-	--x17: entity work.ltm9007_14 port map(
-	--	ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, adcNcsA(0), adcNcsB(0), 
-	--	adcSdi, adcSck, drs4_to_ltm9007_14, drs4Data, adcClocks, ltm9007_14_0r, ltm9007_14_0w);
+	z10: OBUF port map(O => DRS4_RESETn(1), I => notReset);
+	z11: OBUF port map(O => DRS4_DENABLE(1), I => denable);
+	z12: OBUF port map(O => DRS4_DWRITE(1), I => dwrite);
+	z13: OBUF port map(O => DRS4_RSLOAD(1), I => rsrload);
+	z14: OBUF port map(O => DRS4_SRIN(1), I => mosi);
+	z15: IBUF port map(I => DRS4_SROUT(1), O => miso);
+	z16: OBUF port map(O => DRS4_SRCLK(1), I => srclk);
+	z17: IBUF port map(I => DRS4_DTAP(1), O => dtap);
+	z18: IBUF port map(I => DRS4_PLLLCK(1), O => plllck);
+	z19: for i in 0 to 3 generate k: OBUF port map(O => DRS4_A(i), I => address(i)); end generate;
 	
-	x17: entity work.ltm9007_14 port map(
-		ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, adcNcsA(0), adcNcsB(0), 
-		ADC_ENC_P(2), ADC_ENC_N(2), ADC_OUTA_2P, ADC_OUTA_2N, adcNcsA(1), adcNcsB(1), 
-		ADC_ENC_P(3), ADC_ENC_N(3), ADC_OUTA_3P, ADC_OUTA_3N, adcNcsA(2), adcNcsB(2), 
-		adcSdi, adcSck, drs4_to_ltm9007_14, drs4Data, adcClocks, ltm9007_14_0r, ltm9007_14_0w);
+	z20: OBUF port map(O => DRS4_RESETn(2), I => notReset);
+	z21: OBUF port map(O => DRS4_DENABLE(2), I => denable);
+	z22: OBUF port map(O => DRS4_DWRITE(2), I => dwrite);
+	z23: OBUF port map(O => DRS4_RSLOAD(2), I => rsrload);
+	z24: OBUF port map(O => DRS4_SRIN(2), I => mosi);
+	z25: IBUF port map(I => DRS4_SROUT(2), O => open);
+	z26: OBUF port map(O => DRS4_SRCLK(2), I => srclk);
+	z27: IBUF port map(I => DRS4_DTAP(2), O => open);
+	z28: IBUF port map(I => DRS4_PLLLCK(2), O => open);
 	
+	z30: OBUF port map(O => DRS4_RESETn(3), I => notReset);
+	z31: OBUF port map(O => DRS4_DENABLE(3), I => denable);
+	z32: OBUF port map(O => DRS4_DWRITE(3), I => dwrite);
+	z33: OBUF port map(O => DRS4_RSLOAD(3), I => rsrload);
+	z34: OBUF port map(O => DRS4_SRIN(3), I => mosi);
+	z35: IBUF port map(I => DRS4_SROUT(3), O => open);
+	z36: OBUF port map(O => DRS4_SRCLK(3), I => srclk);
+	z37: IBUF port map(I => DRS4_DTAP(3), O => open);
+	z38: IBUF port map(I => DRS4_PLLLCK(3), O => open);
+		
+	l00: OBUF port map(O => ADC_CSA(1), I => notChipSelectA);
+	l01: OBUF port map(O => ADC_CSB(1), I => notChipSelectB);
+	l10: OBUF port map(O => ADC_CSA(2), I => notChipSelectA);
+	l11: OBUF port map(O => ADC_CSB(2), I => notChipSelectB);
+	l20: OBUF port map(O => ADC_CSA(3), I => notChipSelectA);
+	l21: OBUF port map(O => ADC_CSB(3), I => notChipSelectB);
+	
+	w00: OBUFDS port map(O => ADC_ENC_P(1), OB => ADC_ENC_N(1), I => enc);
+	w10: OBUFDS port map(O => ADC_ENC_P(2), OB => ADC_ENC_N(2), I => enc);
+	w20: OBUFDS port map(O => ADC_ENC_P(3), OB => ADC_ENC_N(3), I => enc);
+
+	x16: entity work.drs4adc port map(
+		address, notReset, denable, dwrite, rsrload, miso, mosi, srclk, dtap, plllck,
+		deadTime, triggerDRS4, internalTiming, adcClocks, drs4_0r, drs4_0w,
+		notChipSelectA, notChipSelectB, adcSdi, adcSck, enc, ADC_OUTA_1P, ADC_OUTA_1N,
+		drs4AndAdcData(0),	ltm9007_14_0r, ltm9007_14_0w
+		);
+	
+	x16b: entity work.drs4adc port map(
+		open, open, open, open, open, miso, open, open, dtap, plllck,
+		open, triggerDRS4, internalTiming, adcClocks, drs4_1r, drs4_0w,
+		open, open, open, open, open, ADC_OUTA_2P, ADC_OUTA_2N,
+		drs4AndAdcData(1),	ltm9007_14_1r, ltm9007_14_0w
+		);
+	
+	x16c: entity work.drs4adc port map(
+		open, open, open, open, open, miso, open, open, dtap, plllck,
+		open, triggerDRS4, internalTiming, adcClocks, drs4_2r, drs4_0w,
+		open, open, open, open, open, ADC_OUTA_3P, ADC_OUTA_3N,
+		drs4AndAdcData(2),	ltm9007_14_2r, ltm9007_14_0w
+		);
+
+
+
+--	x16a: entity work.drs4_pole port map(notReset, address, denable, dwrite, rsrload, miso, mosi, srclk, dtap, plllck, deadTime, triggerDRS4, internalTiming, adcClocks, drs4_to_ltm9007_14, drs4_0r, drs4_0w);
+--	x16b: entity work.ltm9007_14_pole port map(ADC_ENC_P(1), ADC_ENC_N(1), ADC_OUTA_1P, ADC_OUTA_1N, notChipSelectA, notChipSelectB, adcSdi, adcSck, drs4_to_ltm9007_14, adcData, adcClocks, ltm9007_14_0r, ltm9007_14_0w);
+--	
+--	x16c: entity work.drs4_pole port map(open, open, open, open, open, miso, open, open, dtap, plllck, open, triggerDRS4, internalTiming, adcClocks, open, open, drs4_0w);
+--	x16d: entity work.ltm9007_14_pole port map(ADC_ENC_P(2), ADC_ENC_N(2), ADC_OUTA_2P, ADC_OUTA_2N, open, open, open, open, drs4_to_ltm9007_14, adcData2, adcClocks, open, ltm9007_14_0w);
+--	
+--	x16e: entity work.drs4_pole port map(open, open, open, open, open, miso, open, open, dtap, plllck, open, triggerDRS4, internalTiming, adcClocks, open, open, drs4_0w);
+--	x16f: entity work.ltm9007_14_pole port map(ADC_ENC_P(3), ADC_ENC_N(3), ADC_OUTA_3P, ADC_OUTA_3N, open, open, open, open, drs4_to_ltm9007_14, adcData3, adcClocks, open, ltm9007_14_0w);
+--	
+--	
+--	drs4AndAdcData.adcData.channel <= adcData.channel; -- or adcData2.channel or adcData3.channel;
+--	drs4AndAdcData.adcData.newData <= adcData.newData; -- or adcData2.newData or adcData3.newData;
+--	drs4AndAdcData.adcData.samplingDone <= adcData.samplingDone; -- or adcData2.samplingDone or adcData3.samplingDone;
+--	drs4AndAdcData.adcData.charge <= adcData.charge; -- or adcData2.charge or adcData3.charge;
+--	drs4AndAdcData.adcData.maxValue <= adcData.maxValue; -- or adcData2.maxValue or adcData3.maxValue;
+--	drs4AndAdcData.adcData.chargeDone <= adcData.chargeDone; -- or adcData2.chargeDone or adcData3.chargeDone;
+--	drs4AndAdcData.adcData.baseline <= adcData.baseline; -- or adcData2.baseline or adcData3.baseline;
+--	drs4AndAdcData.adcData.baselineDone <= adcData.baselineDone; -- or adcData2.baselineDone or adcData3.baselineDone;
+--	drs4AndAdcData.drs4Data.realTimeCounter_latched <= adcData.realTimeCounter_latched; -- or adcData2.realTimeCounter_latched or adcData3.realTimeCounter_latched;
+--	drs4AndAdcData.drs4Data.regionOfInterest <= adcData.roiBuffer; -- or adcData2.roiBuffer or adcData3.roiBuffer;
+--	drs4AndAdcData.drs4Data.regionOfInterestReady <= adcData.roiBufferReady; -- or adcData2.roiBufferReady or adcData3.roiBufferReady;
+
+
 	x13: entity work.dac088s085_x3 port map(dacNSync(0), dacMosi(0), dacSclk(0), dac088s085_x3_0r, dac088s085_x3_0w);
 	
 	x15: entity work.ad56x1 port map(vcxoQ3DacNotSync, vcxoQ1DacNotSync, vcxoQ13DacMosi, vcxoQ13DacSclk, ad56x1_0r, ad56x1_0w);

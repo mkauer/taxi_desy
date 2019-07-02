@@ -24,21 +24,22 @@ use work.types.all;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
+library UNISIM;
+use UNISIM.VComponents.all;
 
 entity drs4 is
 	generic
 	(
-		adcPipelineStages : integer := 5
+		adcPipelineStages : integer := 5;
+		dummyImplementation : string := "FALSE"
 	);
 	port(
-		notReset : out std_logic;
 		address : out std_logic_vector(3 downto 0);
 		
+		notReset : out std_logic;
 		denable : out std_logic;
 		dwrite : out std_logic;
-		dwriteSerdes : out std_logic_vector(7 downto 0);
+		--dwriteSerdes_p : out std_logic_vector(7 downto 0);
 			
 		rsrload : out std_logic;
 		miso : in std_logic;
@@ -50,13 +51,11 @@ entity drs4 is
 		
 		deadTime : out std_logic;
 		
-		--stopDrs4 : in std_logic; -- should be truly async later on
-		--stopDrs4Serdes : in std_logic_vector(7 downto 0); -- should be truly async later on
-		--trigger : in triggerLogic_t;
 		trigger : in std_logic; -- should be truly async later on
 		internalTiming : in internalTiming_t;
 		adcClocks : in adcClocks_t;
 		drs4_to_ltm9007_14 : out drs4_to_ltm9007_14_t;
+		drs4_to_eventFifoSystem : out drs4_to_eventFifoSystem_t;
 		
 		registerRead : out drs4_registerRead_t;
 		registerWrite : in drs4_registerWrite_t	
@@ -75,6 +74,8 @@ architecture Behavioral of drs4 is
 	type stateDrs4Spi_t is (idle, transfer1, transfer2, readRegionOfInterest, transferEnd, readFullChip, readRegionOfInterest2, readRegionOfInterest3, readFullChip2, transferEnd2);
 	signal stateDrs4Spi : stateDrs4Spi_t := idle;
 
+	signal rxBuffer : std_logic_vector(spiNumberOfBits-1 downto 0); -- ## why is it 9 bit??
+	signal writeShiftRegister_readBack : std_logic_vector(rxBuffer'range);
 	signal txBuffer : std_logic_vector(spiNumberOfBits downto 0);
 	signal roiBuffer_66 : std_logic_vector(9 downto 0) := (others=>'0');
 	signal roiBufferLatched_66 : std_logic_vector(9 downto 0) := (others=>'0');
@@ -92,13 +93,14 @@ architecture Behavioral of drs4 is
 	signal sclkDivisorCounter : unsigned (3 downto 0) := x"0";
 	signal sclk_i : std_logic := '0';
 	signal sclkEnable : std_logic := '0';
+	signal sclkEdgeRisingDelayed : std_logic := '0';
 	signal sclkEdgeRising : std_logic := '0';
 	signal sclkEdgeFalling : std_logic := '0';
 	signal inhibitSclk : std_logic := '0';
 	signal enableRsrload : std_logic := '0';
 --	type readoutMode_t is (regionOfIntrest,fullReadout,configRegister);
 --	signal readoutMode : readoutMode_t := regionOfIntrest;
-	type spiTransferMode_t is (sampleNormalMode, sampleTransparentMode, standby, regionOfIntrest, fullReadout, readShiftRegister_write, writeShiftRegister_write, configRegister_write, writeConfigRegister_write, regionOfIntrest2, fullReadout2, regionOfIntrest3);
+	type spiTransferMode_t is (sampleNormalMode, sampleTransparentMode, standby, regionOfIntrest, fullReadout, readShiftRegister_write, writeShiftRegister_transfer, configRegister_write, writeConfigRegister_write, regionOfIntrest2, fullReadout2, regionOfIntrest3);
 	signal spiTransferMode : spiTransferMode_t := sampleNormalMode;
 	signal bitCounter1 : integer range 0 to 65535 := 0; --unsigned(15 downto 0) := x"0000";
 	signal bitCounter1_TPTHRU_TIG : integer range 0 to 65535 := 0;
@@ -107,7 +109,7 @@ architecture Behavioral of drs4 is
 	signal edgeCounter : integer range 0 to 3 := 0;
 	signal spiDone : std_logic := '0';
 	
-	type stateDrs4_t is (init1, init2, init3, init4, init5, init6, init7, drs4start0, drs4start1, startSampling, sampling, readRoi, readFull, debug, readRoi2, readRoi3, readFull2);
+	type stateDrs4_t is (init1, init2, init3, init4, init5, init6, init7, drs4start0, drs4start1, startSampling, sampling, readRoi, readFull, debug, readRoi2, readRoi3, readFull2, manageDrs4Cascading, manageDrs4Cascading2);
 	signal stateDrs4 : stateDrs4_t := init1;
 	
 --	signal readShiftRegister : std_logic_vector(7 downto 0);
@@ -116,7 +118,7 @@ architecture Behavioral of drs4 is
 	 alias configRegister_pllen_bit is configRegister(1);
 	 alias configRegister_wsrloop_bit is configRegister(2);
 	 --alias configRegister_reserved_bits is configRegister(7 downto 3); -- hast to be 1
-	signal writeShiftRegister : std_logic_vector(7 downto 0) := "11111111"; -- 8x1024 samples
+	--signal writeShiftRegister : std_logic_vector(7 downto 0) := "11111111"; -- 8x1024 samples
 	signal writeConfigRegister : std_logic_vector(7 downto 0) := "11111111";
 	
 	constant address_enableAllOutputs : std_logic_vector(3 downto 0) := "1001";
@@ -150,6 +152,7 @@ architecture Behavioral of drs4 is
 	signal stateSpi2 : stateSpi2_t := idle;
 	signal spi2Done : std_logic := '0';
 	signal misoSync : std_logic := '0';
+	signal misoSync125 : std_logic;
 	
 	signal rsrload1 : std_logic := '0';
 	signal srclk1 : std_logic := '0';
@@ -169,12 +172,36 @@ architecture Behavioral of drs4 is
 	signal stopDrs4 : std_logic := '0';
 	signal sumTrigger : std_logic := '0';
 
-	--signal deadTime : std_logic := '0'; 
+--	signal address : std_logic_vector(3 downto 0);
+--	signal notReset : std_logic;
+--	signal denable : std_logic;
+--	signal dwrite : std_logic;
+--	signal miso : std_logic;
+--	signal mosi : std_logic;
+--	signal rsrload : std_logic;
+--	signal srclk : std_logic;
+--	signal dtap : std_logic;
+--	signal plllck : std_logic;
 
-	--signal realTimeCounter_latched : std_logic_vector(63 downto 0) := (others=>'0');
 	
+	signal regionOfInterest : std_logic_vector(9 downto 0);
+	signal regionOfInterestReady : std_logic;
+	--signal drs4_to_eventFifoSystem : drs4_to_eventFifoSystem_t;
 	
 begin
+
+--g1: if dummyImplementation = "FALSE" generate
+--	z0: OBUF port map(O => notReset_p, I => notReset);
+--	z1: OBUF port map(O => denable_p, I => denable);
+--	z2: OBUF port map(O => dwrite_p, I => dwrite);
+--	z3: OBUF port map(O => rsrload_p, I => rsrload);
+--	z4: OBUF port map(O => mosi_p, I => mosi);
+--	z5: IBUF port map(I => miso_p, O => miso);
+--	z6: OBUF port map(O => srclk_p, I => srclk);
+--	z7: IBUF port map(I => dtap_p, O => dtap);
+--	z8: IBUF port map(I => plllck_p, O => plllck);
+--	z9: for i in 0 to 3 generate k: OBUF port map(O => address_p(i), I => address(i)); end generate;
+
 	sendFullReadout_TPTHRU_TIG <= sendFullReadout;
 	sendRoiReadout_TPTHRU_TIG <= sendRoiReadout;
 	sendRoiReadout2_TPTHRU_TIG <= sendRoiReadout2;
@@ -196,33 +223,30 @@ begin
 	--rsrload <= rsrload1 or (sclk2 and rsrload2Enabled); -- ## add fixed otput buffer for better timing
 	--srclk <= srclk1 or (sclk2 and sclk2Enabled); -- ## add fixed otput buffer for better timing
 
-	--drs4_to_ltm9007_14.realTimeCounter_latched <= realTimeCounter_latched;
-
 	stopDrs4 <= sumTrigger;
 	--sumTrigger <=  trigger.triggerNotDelayed or trigger.softTrigger;
 	--sumTrigger <=  trigger.triggerDelayed or trigger.softTrigger;
 	sumTrigger <=  trigger;
-	dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) when sumTrigger = '0' else x"00";
+	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) when sumTrigger = '0' else x"00";
 	dwrite <= dwrite_i when sumTrigger = '0' else '0';
-
-	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) and not(fillXFromY8("ONES","FROM_RIGHT",trigger.triggerSerdesNotDelayed));
-	
-	--dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) and not(stopDrs4Serdes);
 
 	--srclk <= sclkDefaultLevel when ((spiTransferMode = regionOfIntrest) and (edgeCounter < 2)) or (inhibitSclk = '1') else sclk_i;
 	
 	registerRead.numberOfSamplesToRead <= registerWrite.numberOfSamplesToRead; 
 	registerRead.sampleMode <= registerWrite.sampleMode; 
 	registerRead.readoutMode <= registerWrite.readoutMode; 
+	registerRead.writeShiftRegister <= registerWrite.writeShiftRegister; 
 
 	P0:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
+			sclkEdgeRisingDelayed <= sclkEdgeRising;
 			sclkEdgeRising <= '0'; -- autoreset
 			sclkEdgeFalling <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
 				sclkDivisorCounter <= to_unsigned(0, sclkDivisorCounter'length);
 				sclk_i <= sclkDefaultLevel;
+				--sclkEdgeRisingDelayed <= '0';
 			else
 				if (sclkEnable = '1') then
 					if (sclkDivisorCounter = sclkDivisor) then
@@ -380,11 +404,15 @@ begin
 							else
 								drs4_to_ltm9007_14.adcDataStart_66 <= '0';
 								if ((sendFullReadoutSync_66(0) = '0') and (sendRoiReadoutSync_66(0) = '0')) then
+									bitCounter2 <= 0;
 									spi2Done <= '0';
 									stateSpi2 <= idle; 
 								end if;
 							end if;
 						end if;
+
+				--	when manageDrs4WriteShiftRegister =>
+				--		stateSpi2 <= idle; 
 
 					when others =>
 						stateSpi2 <= idle;
@@ -392,18 +420,24 @@ begin
 			end if;
 		end if;
 	end process P01;
-								
+	
+	drs4_to_ltm9007_14.regionOfInterestReady <= regionOfInterestReady;
+	drs4_to_eventFifoSystem.regionOfInterestReady <= regionOfInterestReady;
+	drs4_to_ltm9007_14.regionOfInterest <= regionOfInterest;
+	drs4_to_eventFifoSystem.regionOfInterest <= regionOfInterest;
+	registerRead.regionOfInterest <= regionOfInterest;
+
 	P02:process (registerWrite.clock)
 	begin
 		if rising_edge(registerWrite.clock) then
 			roiBufferReadySync <= roiBufferReady_66_TPTHRU_TIG & roiBufferReadySync(roiBufferReadySync'length-1 downto 1);
-			drs4_to_ltm9007_14.roiBufferReady <= '0'; -- autoreset
+			regionOfInterestReady <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
-				drs4_to_ltm9007_14.roiBuffer <= (others=>'0');
+				regionOfInterest <= (others=>'0');
 			else
 				if((roiBufferReadySync(1) = '1') and (roiBufferReadySync(0) = '0')) then
-					drs4_to_ltm9007_14.roiBuffer <= roiBufferLatched_sync;
-					drs4_to_ltm9007_14.roiBufferReady <= '1'; -- autoreset
+					regionOfInterest <= roiBufferLatched_sync;
+					regionOfInterestReady <= '1'; -- autoreset
 				end if;
 			end if;
 		end if;
@@ -419,6 +453,7 @@ begin
 			sendRoiReadout2 <= '0'; -- autoreset
 			--drs4_to_ltm9007_14.roiBufferReady <= '0'; -- autoreset 
 			--drs4_to_ltm9007_14.drs4RoiValid <= '0'; -- autoreset
+			misoSync125 <= miso;
 			if (registerWrite.reset = '1') then				
 				stateDrs4Spi <= idle;
 				address <= address_stabdby;
@@ -426,8 +461,9 @@ begin
 				enableRsrload <= '0';
 				--drs4_to_ltm9007_14.roiBuffer <= (others=>'0');
 				configRegister <= "111";
-				writeShiftRegister <= "11111111";
+				--writeShiftRegister <= "11111111";
 				writeConfigRegister <= "11111111";
+				rxBuffer <= (others=>'0'); 
 			else
 				spiTransfer_old <= spiTransfer;
 				spi2DoneSync <= spi2Done_TPTHRU_TIG & spi2DoneSync(spi2DoneSync'length-1 downto 1);
@@ -447,12 +483,13 @@ begin
 								--stateDrs4Spi <= transfer2;
 								bitCounter1 <= 8;
 								txBuffer <= "011111" & configRegister;
-							elsif(spiTransferMode = writeShiftRegister_write) then
+							elsif(spiTransferMode = writeShiftRegister_transfer) then
 								address <= address_writeShiftRegister;
 								stateDrs4Spi <= transfer1;
 								--stateDrs4Spi <= transfer2;
 								bitCounter1 <= 8;
-								txBuffer <= "0" & writeShiftRegister;
+								txBuffer <= "0" & registerWrite.writeShiftRegister;
+								rxBuffer <= (others=>'0'); -- ## debug
 							elsif(spiTransferMode = standby) then
 								address <= address_stabdby;
 								spiDone <= '1'; -- autoreset
@@ -510,6 +547,7 @@ begin
 									txBuffer <= txBuffer(txBuffer'length-2 downto 0) & mosiDefaultLevel;
 								end if;
 							end if;
+
 							bitCounter1 <= bitCounter1 - 1;
 							if (bitCounter1 = 0) then
 								stateDrs4Spi <= transferEnd;
@@ -518,6 +556,11 @@ begin
 						end if;
 						if ((sclkEdgeFalling = '1') and (bitCounter1 = 0)) then
 							inhibitSclk <= '1';
+						end if;
+						if (sclkEdgeRisingDelayed = '1') then
+							-- ## omg simulate this!!11! there shold be no need for one more bit
+							--rxBuffer <= misoSync125 & rxBuffer(rxBuffer'length-1 downto 1); -- ## lag??
+							rxBuffer <= rxBuffer(rxBuffer'length-2 downto 0) & misoSync125; -- ## lag??
 						end if;
 						
 					when readFullChip2 =>
@@ -626,10 +669,13 @@ begin
 			spiTransfer <= '0'; -- autoreset
 			denable <= '0'; -- autoreset
 			dwrite_i <= '0'; -- autoreset
+			drs4_to_eventFifoSystem.cascadingDataReady <= '0'; -- autoreset
 			if (registerWrite.reset = '1') then
 				--denable <= '0';
 				--dwrite_i <= '0';
-				drs4_to_ltm9007_14.realTimeCounter_latched <= (others => '0');
+				drs4_to_eventFifoSystem.realTimeCounter_latched <= (others => '0');
+				drs4_to_eventFifoSystem.cascadingData <= (others=>'0');
+				drs4_to_eventFifoSystem.cascadingDataShort <= (others=>'0');
 				stateDrs4 <= init1;
 				deadTime <= '0';
 			else
@@ -674,7 +720,7 @@ begin
 						end if;
 						
 					when init5 =>
-						spiTransferMode <= writeShiftRegister_write;
+						spiTransferMode <= writeShiftRegister_transfer;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
 							--stateDrs4 <= drs4start0;
@@ -700,12 +746,12 @@ begin
 						
 					when drs4start0 =>
 						counter1 <= 0;
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						dwrite_i <= '1';
 						stateDrs4 <= drs4start1;
 						
 					when drs4start1 =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						dwrite_i <= '1';
 						counter1 <= counter1 + 1;
 						if(counter1 = 125) then -- 125 = ~1us ## ?!?
@@ -713,7 +759,7 @@ begin
 						end if;
 						
 					when startSampling =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						dwrite_i <= '1';
 						deadTime <= '0';
 						if(registerWrite.sampleMode = x"0") then
@@ -730,7 +776,7 @@ begin
 						end if;
 						
 					when sampling =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						dwrite_i <= '1';
 						if((stopDrs4_old = '0') and (stopDrs4 = '1'))then
 							if(registerWrite.readoutMode = x"0") then
@@ -751,7 +797,7 @@ begin
 								stateDrs4 <= readFull;
 							end if;
 							dwrite_i <= '0';
-							drs4_to_ltm9007_14.realTimeCounter_latched <= internalTiming.realTimeCounter;
+							drs4_to_eventFifoSystem.realTimeCounter_latched <= internalTiming.realTimeCounter;
 							deadTime <= '1'; -- ## lag...
 						end if;
 						
@@ -770,49 +816,96 @@ begin
 						end if;
 						
 					when readRoi =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						spiTransferMode <= regionOfIntrest;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							stateDrs4 <= startSampling;
+							stateDrs4 <= manageDrs4Cascading;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 						
 					when readFull =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						spiTransferMode <= fullReadout;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							stateDrs4 <= startSampling;
+							stateDrs4 <= manageDrs4Cascading;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 
 					when readRoi2 =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						spiTransferMode <= regionOfIntrest2;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							stateDrs4 <= startSampling;
+							stateDrs4 <= manageDrs4Cascading;
 							spiTransfer <= '0'; -- autoreset
 						end if;
 
 					when readRoi3 =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						spiTransferMode <= regionOfIntrest3;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
 							stateDrs4 <= readRoi2;
 							spiTransfer <= '0'; -- autoreset
 						end if;
-						
+
 					when readFull2 =>
-						denable <= '1';
+						denable <= '1'; -- autoreset
 						spiTransferMode <= fullReadout2;
 						spiTransfer <= '1'; -- autoreset
 						if(spiDone = '1') then
-							stateDrs4 <= startSampling;
+							stateDrs4 <= manageDrs4Cascading;
 							spiTransfer <= '0'; -- autoreset
 						end if;
+
+			--		when manageDrs4Cascading =>
+			--			denable <= '1'; -- autoreset
+			--			stateDrs4 <= startSampling;
+					
+					when manageDrs4Cascading =>
+						denable <= '1'; -- autoreset
+						spiTransferMode <= writeShiftRegister_transfer;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= drs4start0;
+							--stateDrs4 <= startSampling;
+							--stateDrs4 <= manageDrs4Cascading2; -- debug
+							spiTransfer <= '0'; -- autoreset
+							writeShiftRegister_readBack <= rxBuffer;
+							drs4_to_eventFifoSystem.cascadingDataReady <= '1'; -- autoreset
+							drs4_to_eventFifoSystem.cascadingData <= rxBuffer; --(8 downto 1);
+							registerRead.cascadingDataDebug <= rxBuffer; --(8 downto 1);
+							
+							case rxBuffer is
+								when "00000001" => drs4_to_eventFifoSystem.cascadingDataShort <= "0000";
+								when "00000010" => drs4_to_eventFifoSystem.cascadingDataShort <= "0001";
+								when "00000100" => drs4_to_eventFifoSystem.cascadingDataShort <= "0010";
+								when "00001000" => drs4_to_eventFifoSystem.cascadingDataShort <= "0011";
+								when "00010000" => drs4_to_eventFifoSystem.cascadingDataShort <= "0100";
+								when "00100000" => drs4_to_eventFifoSystem.cascadingDataShort <= "0101";
+								when "01000000" => drs4_to_eventFifoSystem.cascadingDataShort <= "0110";
+								when "10000000" => drs4_to_eventFifoSystem.cascadingDataShort <= "0111";
+								when others => drs4_to_eventFifoSystem.cascadingDataShort <= "1000";
+							end case;
+						end if;
+
+					when manageDrs4Cascading2 =>
+						denable <= '1'; -- autoreset
+						spiTransferMode <= writeShiftRegister_transfer;
+						spiTransfer <= '1'; -- autoreset
+						if(spiDone = '1') then
+							stateDrs4 <= drs4start0;
+							--stateDrs4 <= startSampling;
+							spiTransfer <= '0'; -- autoreset
+							writeShiftRegister_readBack <= rxBuffer;
+							drs4_to_eventFifoSystem.cascadingDataReady <= '1'; -- autoreset
+							drs4_to_eventFifoSystem.cascadingData <= rxBuffer; --(8 downto 1);
+							registerRead.cascadingDataDebug <= rxBuffer; --(8 downto 1);
+						end if;
+						
+					
 						
 					when others => stateDrs4 <= init1;
 				end case;
@@ -820,7 +913,7 @@ begin
 			end if;
 		end if;
 	end process P2;
-	
+--end generate;
 
 end Behavioral;
 

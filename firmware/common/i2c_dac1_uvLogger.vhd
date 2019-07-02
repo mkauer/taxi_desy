@@ -25,7 +25,7 @@ end i2c_dac1_uvLogger;
 
 architecture behavior of i2c_dac1_uvLogger is
 
-	type state_data_t is (init_0, init_1, init_2, init_3, init_4, idle, build_package, send_package, send_1, send_2);
+	type state_data_t is (init_0, init_1, init_2, init_3, init_4, init_5, idle, build_package, send_package, send_1, send_2);
 	signal state_data : state_data_t := init_0;
 	signal state_callback : state_data_t := init_0;
 	
@@ -128,6 +128,12 @@ begin
 					
 					when init_4 =>
 						i2c_package <= i2c_package_allChannelsToZero;
+						i2c_package(0).data <= i2c_address_dacB & i2c_direction_write_c;
+						state_data <= send_package;
+						state_callback <= init_5;
+
+					when init_5 =>
+						i2c_package <= i2c_package_useInternalReference;
 						i2c_package(0).data <= i2c_address_dacB & i2c_direction_write_c;
 						state_data <= send_package;
 						state_callback <= idle;

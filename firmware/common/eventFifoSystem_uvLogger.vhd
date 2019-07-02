@@ -34,7 +34,8 @@ entity eventFifoSystem is
 		rateCounterTimeOut : in std_logic;
 		irq2arm : out std_logic;
 		triggerTiming : in triggerTiming_t;
-		drs4Data : in ltm9007_14_to_eventFifoSystem_t;
+		drs4AndAdcData : in drs4AndAdcData_t;
+		--drs4Data : in ltm9007_14_to_eventFifoSystem_t;
 		internalTiming : in internalTiming_t;
 		--gpsTiming : in gpsTiming_t;
 		--whiteRabbitTiming : in whiteRabbitTiming_t;
@@ -189,7 +190,13 @@ architecture behavioral of eventFifoSystem is
 	
 	signal deviceId : std_logic_vector(15 downto 0) := (others=>'0');
 
+	signal adcData : ltm9007_14_to_eventFifoSystem_t;
+	signal drs4Data : drs4_to_eventFifoSystem_t;
+
 begin
+
+	adcData <= drs4AndAdcData.adcData;
+	drs4Data <= drs4AndAdcData.drs4Data;
 
 	l: entity work.eventFifo
 	port map (
@@ -286,8 +293,8 @@ begin
 			eventFifoClear <= registerWrite.eventFifoClear;
 			--eventFifoClearBuffer <= registerWrite.eventFifoClear;
 			
-			chargeDone <= chargeDone or drs4Data.chargeDone;
-			baselineDone <= baselineDone or drs4Data.baselineDone;
+			chargeDone <= chargeDone or adcData.chargeDone;
+			baselineDone <= baselineDone or adcData.baselineDone;
 
 			miscEvent_old <= miscEvent;
 			if(((miscEvent = '1') and (miscEvent_old = '0') and (writeMiscToFifo_bit = '1')) or (registerWrite.forceMiscData = '1')) then
@@ -586,7 +593,7 @@ begin
 					state1 <= nextState;
 					
 				when waitForRoiData =>
-					if(drs4Data.roiBufferReady = '1') then
+					if(drs4Data.regionOfInterestReady = '1') then
 						state1 <= writeHeader;
 					end if;
 
@@ -602,7 +609,7 @@ begin
 						eventFifoInSlots(5) <= drs4Data.realTimeCounter_latched(47 downto 32);
 						eventFifoInSlots(6) <= drs4Data.realTimeCounter_latched(31 downto 16);
 						eventFifoInSlots(7) <= drs4Data.realTimeCounter_latched(15 downto 0);
-						eventFifoInSlots(8) <= "000000" & drs4Data.roiBuffer;
+						eventFifoInSlots(8) <= "000000" & drs4Data.regionOfInterest;
 							
 						state1 <= writeDebug;
 
@@ -686,22 +693,22 @@ begin
 				when writeDrs4Sampling =>
 					nextState := writeDrs4Baseline;
 					if(writeDrs4SamplingToFifo_bit = '1') then
-						if(drs4Data.newData = '1') then 
+						if(adcData.newData = '1') then 
 							eventFifoInSlots <= (others=>x"0000");
 							eventFifoInSlots(0) <= DATATYPE_DSR4SAMPLING & std_logic_vector(dataTypeCounter);
-							eventFifoInSlots(1) <= drs4Data.channel(0);
-							eventFifoInSlots(2) <= drs4Data.channel(1);
-							eventFifoInSlots(3) <= drs4Data.channel(2);
-							eventFifoInSlots(4) <= drs4Data.channel(3);
-							eventFifoInSlots(5) <= drs4Data.channel(4);
-							eventFifoInSlots(6) <= drs4Data.channel(5);
-							eventFifoInSlots(7) <= drs4Data.channel(6);
-							eventFifoInSlots(8) <= drs4Data.channel(7);
+							eventFifoInSlots(1) <= adcData.channel(0);
+							eventFifoInSlots(2) <= adcData.channel(1);
+							eventFifoInSlots(3) <= adcData.channel(2);
+							eventFifoInSlots(4) <= adcData.channel(3);
+							eventFifoInSlots(5) <= adcData.channel(4);
+							eventFifoInSlots(6) <= adcData.channel(5);
+							eventFifoInSlots(7) <= adcData.channel(6);
+							eventFifoInSlots(8) <= adcData.channel(7);
 							eventFifoWriteRequest <= '1'; -- autoreset
 							dataTypeCounter <= dataTypeCounter + 1;
 						end if;
 
-						if(drs4Data.samplingDone = '1') then
+						if(adcData.samplingDone = '1') then
 							state1 <= nextState;
 							dataTypeCounter <= (others=>'0');
 						end if;
@@ -716,14 +723,14 @@ begin
 							if(baselinePart = '0') then
 								eventFifoInSlots <= (others=>x"0000");
 								eventFifoInSlots(0) <= DATATYPE_DSR4BASELINE & std_logic_vector(dataTypeCounter);
-								eventFifoInSlots(1) <= x"00" & drs4Data.baseline(0)(23 downto 16);
-								eventFifoInSlots(2) <= x"00" & drs4Data.baseline(1)(23 downto 16);
-								eventFifoInSlots(3) <= x"00" & drs4Data.baseline(2)(23 downto 16);
-								eventFifoInSlots(4) <= x"00" & drs4Data.baseline(3)(23 downto 16);
-								eventFifoInSlots(5) <= x"00" & drs4Data.baseline(4)(23 downto 16);
-								eventFifoInSlots(6) <= x"00" & drs4Data.baseline(5)(23 downto 16);
-								eventFifoInSlots(7) <= x"00" & drs4Data.baseline(6)(23 downto 16);
-								eventFifoInSlots(8) <= x"00" & drs4Data.baseline(7)(23 downto 16);
+								eventFifoInSlots(1) <= x"00" & adcData.baseline(0)(23 downto 16);
+								eventFifoInSlots(2) <= x"00" & adcData.baseline(1)(23 downto 16);
+								eventFifoInSlots(3) <= x"00" & adcData.baseline(2)(23 downto 16);
+								eventFifoInSlots(4) <= x"00" & adcData.baseline(3)(23 downto 16);
+								eventFifoInSlots(5) <= x"00" & adcData.baseline(4)(23 downto 16);
+								eventFifoInSlots(6) <= x"00" & adcData.baseline(5)(23 downto 16);
+								eventFifoInSlots(7) <= x"00" & adcData.baseline(6)(23 downto 16);
+								eventFifoInSlots(8) <= x"00" & adcData.baseline(7)(23 downto 16);
 								eventFifoWriteRequest <= '1'; -- autoreset
 								dataTypeCounter <= dataTypeCounter + 1;
 								baselinePart <= '1';
@@ -731,14 +738,14 @@ begin
 							if(baselinePart = '1') then
 								eventFifoInSlots <= (others=>x"0000");
 								eventFifoInSlots(0) <= DATATYPE_DSR4BASELINE & std_logic_vector(dataTypeCounter); 
-								eventFifoInSlots(1) <= drs4Data.baseline(0)(15 downto 0);
-								eventFifoInSlots(2) <= drs4Data.baseline(1)(15 downto 0);
-								eventFifoInSlots(3) <= drs4Data.baseline(2)(15 downto 0);
-								eventFifoInSlots(4) <= drs4Data.baseline(3)(15 downto 0);
-								eventFifoInSlots(5) <= drs4Data.baseline(4)(15 downto 0);
-								eventFifoInSlots(6) <= drs4Data.baseline(5)(15 downto 0);
-								eventFifoInSlots(7) <= drs4Data.baseline(6)(15 downto 0);
-								eventFifoInSlots(8) <= drs4Data.baseline(7)(15 downto 0);
+								eventFifoInSlots(1) <= adcData.baseline(0)(15 downto 0);
+								eventFifoInSlots(2) <= adcData.baseline(1)(15 downto 0);
+								eventFifoInSlots(3) <= adcData.baseline(2)(15 downto 0);
+								eventFifoInSlots(4) <= adcData.baseline(3)(15 downto 0);
+								eventFifoInSlots(5) <= adcData.baseline(4)(15 downto 0);
+								eventFifoInSlots(6) <= adcData.baseline(5)(15 downto 0);
+								eventFifoInSlots(7) <= adcData.baseline(6)(15 downto 0);
+								eventFifoInSlots(8) <= adcData.baseline(7)(15 downto 0);
 								eventFifoWriteRequest <= '1'; -- autoreset
 								dataTypeCounter <= dataTypeCounter + 1;
 								baselinePart <= '0';
@@ -760,14 +767,14 @@ begin
 							if(chargePart = '0') then
 								eventFifoInSlots <= (others=>x"0000");
 								eventFifoInSlots(0) <= DATATYPE_DSR4CHARGE & std_logic_vector(dataTypeCounter);
-								eventFifoInSlots(1) <= x"00" & drs4Data.charge(0)(23 downto 16);
-								eventFifoInSlots(2) <= x"00" & drs4Data.charge(1)(23 downto 16);
-								eventFifoInSlots(3) <= x"00" & drs4Data.charge(2)(23 downto 16);
-								eventFifoInSlots(4) <= x"00" & drs4Data.charge(3)(23 downto 16);
-								eventFifoInSlots(5) <= x"00" & drs4Data.charge(4)(23 downto 16);
-								eventFifoInSlots(6) <= x"00" & drs4Data.charge(5)(23 downto 16);
-								eventFifoInSlots(7) <= x"00" & drs4Data.charge(6)(23 downto 16);
-								eventFifoInSlots(8) <= x"00" & drs4Data.charge(7)(23 downto 16);
+								eventFifoInSlots(1) <= x"00" & adcData.charge(0)(23 downto 16);
+								eventFifoInSlots(2) <= x"00" & adcData.charge(1)(23 downto 16);
+								eventFifoInSlots(3) <= x"00" & adcData.charge(2)(23 downto 16);
+								eventFifoInSlots(4) <= x"00" & adcData.charge(3)(23 downto 16);
+								eventFifoInSlots(5) <= x"00" & adcData.charge(4)(23 downto 16);
+								eventFifoInSlots(6) <= x"00" & adcData.charge(5)(23 downto 16);
+								eventFifoInSlots(7) <= x"00" & adcData.charge(6)(23 downto 16);
+								eventFifoInSlots(8) <= x"00" & adcData.charge(7)(23 downto 16);
 								eventFifoWriteRequest <= '1'; -- autoreset
 								dataTypeCounter <= dataTypeCounter + 1;
 								chargePart <= '1';
@@ -775,14 +782,14 @@ begin
 							if(chargePart = '1') then
 								eventFifoInSlots <= (others=>x"0000");
 								eventFifoInSlots(0) <= DATATYPE_DSR4CHARGE & std_logic_vector(dataTypeCounter); 
-								eventFifoInSlots(1) <= drs4Data.charge(0)(15 downto 0);
-								eventFifoInSlots(2) <= drs4Data.charge(1)(15 downto 0);
-								eventFifoInSlots(3) <= drs4Data.charge(2)(15 downto 0);
-								eventFifoInSlots(4) <= drs4Data.charge(3)(15 downto 0);
-								eventFifoInSlots(5) <= drs4Data.charge(4)(15 downto 0);
-								eventFifoInSlots(6) <= drs4Data.charge(5)(15 downto 0);
-								eventFifoInSlots(7) <= drs4Data.charge(6)(15 downto 0);
-								eventFifoInSlots(8) <= drs4Data.charge(7)(15 downto 0);
+								eventFifoInSlots(1) <= adcData.charge(0)(15 downto 0);
+								eventFifoInSlots(2) <= adcData.charge(1)(15 downto 0);
+								eventFifoInSlots(3) <= adcData.charge(2)(15 downto 0);
+								eventFifoInSlots(4) <= adcData.charge(3)(15 downto 0);
+								eventFifoInSlots(5) <= adcData.charge(4)(15 downto 0);
+								eventFifoInSlots(6) <= adcData.charge(5)(15 downto 0);
+								eventFifoInSlots(7) <= adcData.charge(6)(15 downto 0);
+								eventFifoInSlots(8) <= adcData.charge(7)(15 downto 0);
 								eventFifoWriteRequest <= '1'; -- autoreset
 								dataTypeCounter <= dataTypeCounter + 1;
 								chargePart <= '0';
@@ -802,14 +809,14 @@ begin
 						--if(chargeDone = '1') then
 							eventFifoInSlots <= (others=>x"0000");
 							eventFifoInSlots(0) <= DATATYPE_DRS4MAX & "00" & x"00";
-							eventFifoInSlots(1) <= "00" & drs4Data.maxValue(0)(13 downto 0);
-							eventFifoInSlots(2) <= "00" & drs4Data.maxValue(1)(13 downto 0);
-							eventFifoInSlots(3) <= "00" & drs4Data.maxValue(2)(13 downto 0);
-							eventFifoInSlots(4) <= "00" & drs4Data.maxValue(3)(13 downto 0);
-							eventFifoInSlots(5) <= "00" & drs4Data.maxValue(4)(13 downto 0);
-							eventFifoInSlots(6) <= "00" & drs4Data.maxValue(5)(13 downto 0);
-							eventFifoInSlots(7) <= "00" & drs4Data.maxValue(6)(13 downto 0);
-							eventFifoInSlots(8) <= "00" & drs4Data.maxValue(7)(13 downto 0);
+							eventFifoInSlots(1) <= "00" & adcData.maxValue(0)(13 downto 0);
+							eventFifoInSlots(2) <= "00" & adcData.maxValue(1)(13 downto 0);
+							eventFifoInSlots(3) <= "00" & adcData.maxValue(2)(13 downto 0);
+							eventFifoInSlots(4) <= "00" & adcData.maxValue(3)(13 downto 0);
+							eventFifoInSlots(5) <= "00" & adcData.maxValue(4)(13 downto 0);
+							eventFifoInSlots(6) <= "00" & adcData.maxValue(5)(13 downto 0);
+							eventFifoInSlots(7) <= "00" & adcData.maxValue(6)(13 downto 0);
+							eventFifoInSlots(8) <= "00" & adcData.maxValue(7)(13 downto 0);
 							eventFifoWriteRequest <= '1'; -- autoreset
 						
 							state1 <= nextState;

@@ -5,11 +5,10 @@
 #Explicittokenvalues\b
 idle=0000\b
 transfer1=0001\b
-transfer2=1111\b
 readregionofinterest=0011\b
 transferend=0100\b
 readfullchip=0101\b
 readregionofinterest2=0110\b
-readfullchip2=0111\b
-transferend2=1000\b
-
+readregionofinterest3=0111\b
+readfullchip2=1000\b
+transferend2=1001\b

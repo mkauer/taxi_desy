@@ -32,8 +32,9 @@ entity clockConfig is
 		asyncReset : in std_logic;
 		triggerSerdesClocks : out triggerSerdesClocks_t;
 		adcClocks : out adcClocks_t;
-		commClock : out std_logic;
-		commClockReset : out std_logic;
+		--commClock : out std_logic;
+		--commClockReset : out std_logic;
+		uv_loggerClocks : out uv_loggerClocks_t;
 		clockValid : out std_logic;
 		debug : in clockConfig_debug_t; -- remove me !!
 		drs4RefClock : out std_logic
@@ -360,7 +361,7 @@ end generate;
         BANDWIDTH            => "OPTIMIZED",
         CLK_FEEDBACK         => "CLKFBOUT",
         COMPENSATION         => "DCM2PLL",
-        CLKIN_PERIOD         => 33.3333333,
+        CLKIN_PERIOD         => 33.333333,
         REF_JITTER           => 0.100,
         DIVCLK_DIVIDE        => 1,
         CLKFBOUT_MULT        => 14,
@@ -563,7 +564,7 @@ end generate;
 		end if;
 	end process;
 	
-	commClock <= commClock_i;
-	commClockReset <= reset_i3(0);
+	uv_loggerClocks.communicationClock <= commClock_i;
+	uv_loggerClocks.communicationClockReset <= reset_i3(0);
 
 end Behavioral;

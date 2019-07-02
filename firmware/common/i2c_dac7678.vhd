@@ -36,6 +36,12 @@ package i2c_dac7678 is
 		(direction => i2c_direction_write_c, sendStartBeforeData => '0', data => x"30",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '0'),
 		(direction => i2c_direction_write_c, sendStartBeforeData => '0', data => x"00",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '0'),
 		(direction => i2c_direction_write_c, sendStartBeforeData => '0', data => x"00",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '1'));
+	
+	constant i2c_package_useInternalReference : i2c_dac767_package_t := (
+		(direction => i2c_direction_write_c, sendStartBeforeData => '1', data => x"00",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '0'),
+		(direction => i2c_direction_write_c, sendStartBeforeData => '0', data => x"80",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '0'),
+		(direction => i2c_direction_write_c, sendStartBeforeData => '0', data => x"00",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '0'),
+		(direction => i2c_direction_write_c, sendStartBeforeData => '0', data => x"10",	waitForAckAfterData => '1', sendAckAfterData=> '0', sendStopAfterData => '1'));
 
 end i2c_dac7678;
 

@@ -50,9 +50,7 @@ entity drs4 is
 		
 		deadTime : out std_logic;
 		
-		--stopDrs4 : in std_logic; -- should be truly async later on
-		--stopDrs4Serdes : in std_logic_vector(7 downto 0); -- should be truly async later on
-		trigger : in triggerLogic_t;
+		trigger : in std_logic; --trigger : in triggerLogic_t;
 		internalTiming : in internalTiming_t;
 		adcClocks : in adcClocks_t;
 		drs4_to_ltm9007_14 : out drs4_to_ltm9007_14_t;
@@ -199,7 +197,8 @@ begin
 
 	stopDrs4 <= sumTrigger;
 	--sumTrigger <=  trigger.triggerNotDelayed or trigger.softTrigger;
-	sumTrigger <=  trigger.triggerDelayed or trigger.softTrigger;
+	--sumTrigger <=  trigger.triggerDelayed or trigger.softTrigger;
+	sumTrigger <=  trigger;
 	dwriteSerdes <= (dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i&dwrite_i) when sumTrigger = '0' else x"00";
 	dwrite <= dwrite_i when sumTrigger = '0' else '0';
 
@@ -729,7 +728,7 @@ begin
 					when sampling =>
 						denable <= '1';
 						dwrite_i <= '1';
-						if((stopDrs4_old = '0') and (stopDrs4 = '1'))then -- or (trigger.softTrigger = '1')) then
+						if((stopDrs4_old = '0') and (stopDrs4 = '1'))then
 							if(registerWrite.readoutMode = x"0") then
 								stateDrs4 <= readFull;
 							elsif(registerWrite.readoutMode = x"1") then
