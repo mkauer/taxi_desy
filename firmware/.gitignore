@@ -82,4 +82,10 @@ pa.from*
 planAhead.*
 #PlanAhead-*
 
+# bit and flash files
+*.mcs
+*.cfi
+*.prm
+
 _ignore/
+isim/
